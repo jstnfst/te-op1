@@ -150,7 +150,55 @@ parameter type.
 | 1 | PITCH AMOUNT | `discrete-99` | 0–99; 985 → 3, 2264 → 7 |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
-| 7 | LFO SHAPE | `selector` | Confirmed at index 7 (not 4); 0 → default, 19456 → "exponential"; indices 4–6 are null |
+| 7 | LFO SHAPE | `selector` | Confirmed at index 7; 0 → default, 19456 → "exponential"; indices 4–6 are null |
+
+### fx.terminal
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | FREQUENCY | `hz` | Log Hz scale; raw 0 → 100 Hz, raw 32767 → 20 kHz |
+| 1 | BITS | `decimal` | raw 0 → 2.0 bits, raw 32767 → 16 bits |
+| 2 | MODEL | `decimal` | Continuous decimal scale 1.0–6.0; raw 0 → 1.0, raw 32767 → 6.0 |
+| 3 | MIX | `%` | raw 32767 → 100%; raw 14322 → 50% |
+
+### synth.sampler
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | START | `%` | raw 0 → 0 |
+| 1 | LOOP IN | `%` | raw 9821 → ~30% |
+| 2 | LOOP OUT | `%` | raw 18033 → ~55% |
+| 3 | END | `%` | raw 31301 → ~96% |
+| 4 | DIRECTION | `selector-bipolar` | forward/reverse; larger values = reverse; raw 12000 → "forward" |
+| 5 | FINE TUNE | `%` | raw 30195 → ~92% |
+| 6 | LOOP FADE | `%` | raw 9103 → ~28% |
+| 7 | GAIN | `%` | raw 8192 → ~25% |
+
+### synth.vocoder
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | WAVEFORM | `selector-8` | Named options: S, 1, 2, 3, 4, 5, 6, N (8 options); raw 0 → "S" |
+| 1 | FORMANT | `discrete-centered` | Range -4 to +4 (9 steps); raw 0 → -4 (so 0 is the minimum, not center) |
+| 2 | BANDS | `discrete-7` | 0–7 inclusive (8 steps); raw 0 → 0 |
+| 3 | MIX | `%` | raw 0 → 0 |
+
+### fx.cwo
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | FREQUENCY | `%` | ~linear; raw 16366 → 50% |
+| 1 | DELAY | `%` | ~linear; raw 16677 → 50% |
+| 2 | FEEDBACK | `%` | ~linear; raw 16610 → 50% |
+| 3 | SIDEBAND | `%` | ~linear; raw 15345 → 50% |
+
+### lfo.midi
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | PARAMETER 1 | `selector-4` | Selects target knob: 1, 2, 3, 4; raw 1024 → 1 (confirmed) |
+| 1 | PARAMETER 2 | `selector-4` | Same scale as PARAMETER 1; raw 5824 → 2 (inferred) |
+| 2 | PARAMETER 3 | `selector-4` | Same scale as PARAMETER 1; raw 10144 → 3 (inferred) |
+| 3 | PARAMETER 4 | `selector-4` | Same scale as PARAMETER 1; raw 15360 → 4 (inferred) |
+| 4 | DESTINATION 1 | `selector-4` | Options: synth, envelope, fx, sound output; raw 1024 → "synth" (confirmed) |
+| 5 | DESTINATION 2 | `selector-4` | Same options; raw 2144 → "envelope" (inferred) |
+| 6 | DESTINATION 3 | `selector-4` | Same options; raw 4384 → "fx" (inferred) |
+| 7 | DESTINATION 4 | `selector-4` | Same options; raw 7168 → "sound output" (inferred) |
 
 ### lfo.velocity
 | Index | Name | Scale | Notes |
