@@ -1,0 +1,51 @@
+{
+    "adsr": [
+        4928,
+        16320,
+        22015,
+        9920,
+        14336,
+        7360,
+        11264,
+        21093
+    ],
+    "fx_active": true,
+    "fx_params": [
+        9832,
+        0,
+        9205,
+        13299,
+        0,
+        0,
+        0,
+        0
+    ],
+    "fx_type": "mother",
+    "knobs": [
+        10959,
+        13734,
+        13742,
+        21490,
+        0,
+        0,
+        0,
+        0
+    ],
+    "lfo_active": true,
+    "lfo_params": [
+        4688,
+        6245,
+        1024,
+        10640,
+        0,
+        0,
+        0,
+        0
+    ],
+    "lfo_type": "element",
+    "mtime": 1745488125.0,
+    "name": "knife edge",
+    "octave": -1,
+    "synth_version": 3,
+    "type": "dimension"
+}

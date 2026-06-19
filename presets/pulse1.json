@@ -1,0 +1,1 @@
+{"adsr":[3136,6720,32767,4544,2048,4800,4000,4000],"fx_active":true,"fx_params":[6112,9560,5584,12287,8000,8000,8000,8000],"fx_type":"spring","knobs":[18848,3984,10752,-6144,0,0,0,0],"lfo_active":true,"lfo_params":[6488,985,-12759,12136,0,0,0,19456],"lfo_type":"tremolo","name":"pd_just_a_phase","octave":1,"synth_version":2,"type":"pulse"}

@@ -1,0 +1,35 @@
+{
+  "_firmware": "1.5.7",
+
+  "synth.amp":       ["VOLUME", "COMPRESSOR", "TONE", "DRIVE"],
+  "synth.cluster":   ["WAVES", "WAVE ENV", "SPREAD", "UNITOR"],
+  "synth.digital":   ["WAVE SHAPER", "OCTAVE", "DETUNE+RINGMOD", "DIGITALNESS"],
+  "synth.dimension": ["WAVEFORM", "STEREO", "FILTER FREQ", "RES"],
+  "synth.dna":       ["FILTER", "WAVE NUMBER", "WAVE MODIFIER", "NOISE"],
+  "synth.drwave":    ["WAVE TYPE AND LENGTH", "FILTER", "PHASE", "CHORUS"],
+  "synth.dsynth":    ["ENV CROSSFADER", "WAVEFORM", "ENVELOPE", "CROSS MODULATION", "FREQUENCY", "WAVEFORM", "ENVELOPE", "FILTER CUTOFF FREQUENCY"],
+  "synth.fm":        ["FM AMOUNT", "FREQUENCY", "TOPOLOGY", "DETUNE"],
+  "synth.phase":     ["PHASE SHIFT", "DISTORTION AMOUNT", "PHASE FILTER", "PHASE TILT"],
+  "synth.pulse":     ["FILTER", "AMPLITUDE", "SECOND PULSE", "MODULATION"],
+  "synth.sampler":   ["START", "LOOP IN", "LOOP OUT", "END", "DIRECTION", "FINE TUNE", "LOOP FADE", "GAIN"],
+  "synth.string":    ["TENSION", "IMPULSE", "STEREO", "IMPULSE TYPE"],
+  "synth.vocoder":   ["WAVEFORM", "FORMANT", "BANDS", "MIX"],
+  "synth.voltage":   ["MODULATION", "GROUND NOISE", "PHASE FILTER", "DETUNE"],
+
+  "fx.cwo":          ["FREQUENCY", "DELAY", "FEEDBACK", "SIDEBAND"],
+  "fx.delay":        ["RANGE", "SPEED", "FEEDBACK", "LEVEL"],
+  "fx.grid":         ["X SIZE", "Y SIZE", "Z FEEDBACK", "MIX"],
+  "fx.mother":       ["DISTANCE", "GATE", "COLOR", "MIX"],
+  "fx.nitro":        ["FREQUENCY LOWS", "FILTER FOLLOW", "FEEDBACK", "FREQUENCY HIGHS"],
+  "fx.phone":        ["TONE", "GSM", "BAUD", "TELEMATIC"],
+  "fx.punch":        ["FREQUENCY", "PUNCH", "ROUNDS", "POWER"],
+  "fx.spring":       ["TONE", "TURNS", "DAMPING", "MIX"],
+  "fx.terminal":     ["FREQUENCY", "BITS", "MODEL", "MIX"],
+
+  "lfo.element":     ["SOURCE", "AMOUNT", "DESTINATION", "PARAMETER"],
+  "lfo.midi":        ["PARAMETER 1", "PARAMETER 2", "PARAMETER 3", "PARAMETER 4", "DESTINATION 1", "DESTINATION 2", "DESTINATION 3", "DESTINATION 4"],
+  "lfo.random":      ["SPEED", "AMOUNT", "DESTINATION", "ENVELOPE", "PARAMETER"],
+  "lfo.tremolo":     ["SPEED", "PITCH AMOUNT", "VOLUME LEVEL", "PITCH ENVELOPE", null, null, null, "LFO SHAPE"],
+  "lfo.value":       ["SPEED", "AMOUNT", "DESTINATION", "PARAMETER", "LFO SHAPE"],
+  "lfo.velocity":    ["DESTINATION AMOUNT", "VOLUME AMOUNT", "DESTINATION", "PARAMETER"]
+}
