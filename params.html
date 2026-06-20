@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Complete parameter reference for Teenage Engineering OP-1 Field synth patch files.">
+  <title>OP-1 Field — Parameter Reference</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #EEEDE9; --surface: #FFFFFF; --border: #E0DDD7;
+      --text: #1C1C1C; --muted: #9B9791; --header-bg: #1A1A1A;
+      --knob-null: #C8C5BF; --orange: #FF4800; --blue: #0E8FE8;
+      --purple: #8B5CF6; --green: #22C55E;
+    }
+    body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header { background: var(--header-bg); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
+    .header-row { display: flex; align-items: center; gap: 10px; padding: 16px 32px 10px; }
+    .site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
+    .site-title:hover { color: rgba(255,255,255,.8); }
+    .site-sep { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.2); }
+    .site-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.42); letter-spacing: .03em; }
+    .fw-tag { margin-left: auto; font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; }
+    .page-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.06); gap: 2px; }
+    .nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px; text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
+    .nav-btn:hover { color: rgba(255,255,255,.72); }
+    .nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
+    .filter-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.04); }
+    .f-btn { font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: .12em; color: rgba(255,255,255,.28); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 7px 12px 6px; transition: color .15s, border-color .15s; }
+    .f-btn:hover { color: rgba(255,255,255,.65); }
+    .f-btn.active { color: rgba(255,255,255,.85); border-bottom-color: rgba(255,255,255,.3); }
+    .f-btn .n { font-weight: 300; opacity: .5; margin-left: 4px; }
+
+    /* ── MAIN ── */
+    main { max-width: 1200px; margin: 0 auto; padding: 28px 32px 80px; }
+    .intro { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .intro p { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.9; max-width: 660px; }
+    .intro code { font-family: inherit; background: var(--border); padding: 1px 5px; border-radius: 2px; font-size: 11px; color: var(--text); }
+    .intro a { color: var(--muted); }
+    .intro a:hover { color: var(--text); }
+
+    /* ── GRID + CARD ── */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 10px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 16px 18px 14px; transition: box-shadow .18s, transform .18s; }
+    .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.09); transform: translateY(-2px); }
+    .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .g-badge { font-size: 8px; font-weight: 700; letter-spacing: .18em; padding: 2px 6px 1px; border-radius: 2px; }
+    .g-badge.synth { background: rgba(255,72,0,.1);    color: var(--orange); }
+    .g-badge.fx    { background: rgba(14,143,232,.1);  color: var(--blue);   }
+    .g-badge.lfo   { background: rgba(139,92,246,.1);  color: var(--purple); }
+    .v-badge { margin-left: auto; font-size: 8px; font-weight: 400; letter-spacing: .1em; color: var(--green); opacity: .85; }
+    .card-type { font-size: 18px; font-weight: 700; letter-spacing: .01em; margin-bottom: 12px; }
+    .knob-strip { margin-bottom: 12px; }
+    .knob-strip svg { display: block; overflow: visible; }
+    .knob-tick { transform-box: fill-box; transform-origin: 50% 100%; transition: transform .35s ease; }
+    .card:hover .knob-tick { transform: rotate(45deg); transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
+    .param-list { list-style: none; }
+    .param-item { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
+    .param-item + .param-item { border-top: 1px solid #F3F1EE; }
+    .p-idx { font-size: 9px; font-weight: 300; color: var(--knob-null); width: 14px; flex-shrink: 0; text-align: right; }
+    .p-name { font-size: 11px; font-weight: 400; letter-spacing: .03em; }
+
+    /* ── FOOTER ── */
+    footer { text-align: center; padding: 32px; font-size: 11px; font-weight: 300; color: var(--muted); letter-spacing: .04em; }
+    footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); padding-bottom: 1px; }
+    footer a:hover { color: var(--text); border-bottom-color: var(--text); }
+
+    @media (max-width: 640px) {
+      .header-row { padding: 12px 16px 8px; }
+      .site-sub { display: none; }
+      main { padding: 20px 16px 60px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card, .knob-tick, .card:hover .knob-tick { transition: none; transform: none; }
+      .card:hover { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <a href="index.html" class="site-title">OP-1 FIELD</a>
+    <span class="site-sep">//</span>
+    <span class="site-sub">parameter reference</span>
+    <span class="fw-tag" id="fw-tag"></span>
+  </div>
+  <nav class="page-nav" aria-label="Site navigation">
+    <a href="index.html" class="nav-btn">HOME</a>
+    <a href="params.html" class="nav-btn active">PARAMS</a>
+    <a href="display.html" class="nav-btn">DISPLAY NOTES</a>
+  </nav>
+  <div class="filter-nav" aria-label="Filter by group">
+    <button class="f-btn active" data-g="all">ALL<span class="n" id="count-all">29</span></button>
+    <button class="f-btn" data-g="synth">SYNTH<span class="n">14</span></button>
+    <button class="f-btn" data-g="fx">FX<span class="n">9</span></button>
+    <button class="f-btn" data-g="lfo">LFO<span class="n">6</span></button>
+  </div>
+</header>
+
+<main>
+  <section class="intro">
+    <p>
+      Each OP-1 Field patch embeds a 1028-byte JSON blob in an AIFF-C container.
+      The blob holds the synth engine, dual ADSR envelopes, one FX chain, and one LFO —
+      all as 16-bit integers (0&ndash;32767) in fixed 8-element arrays.
+      This page maps every known array index to a named parameter.
+      See <a href="display.html">Display Notes</a> for raw&harr;display value mappings
+      and <code>display-notes.md</code> for full scale documentation.
+    </p>
+  </section>
+  <div id="grid" class="grid" role="list" aria-label="Parameter reference cards"></div>
+</main>
+
+<footer id="footer"></footer>
+
+<script>
+  // ── Single edit to update the firmware version sitewide ──
+  const FW = '1.7.3';
+
+  document.getElementById('fw-tag').textContent = 'fw ' + FW;
+  document.getElementById('footer').innerHTML =
+    'Reverse-engineered against OP-1 Field firmware&nbsp;' + FW +
+    ' &middot; <a href="https://github.com/jstnfst/te-op1">github.com/jstnfst/te-op1</a>';
+  document.querySelector('meta[name="description"]').content =
+    'Complete parameter reference for Teenage Engineering OP-1 Field synth patch files (firmware ' + FW + ').';
+
+  const PARAMS = {
+    "synth.amp":       ["VOLUME","COMPRESSOR","TONE","DRIVE"],
+    "synth.cluster":   ["WAVES","WAVE ENV","SPREAD","UNITOR"],
+    "synth.digital":   ["WAVE SHAPER","OCTAVE","DETUNE+RINGMOD","DIGITALNESS"],
+    "synth.dimension": ["WAVEFORM","STEREO","FILTER FREQ","RES"],
+    "synth.dna":       ["FILTER","WAVE NUMBER","WAVE MODIFIER","NOISE"],
+    "synth.drwave":    ["WAVE TYPE AND LENGTH","FILTER","PHASE","CHORUS"],
+    "synth.dsynth":    ["ENV CROSSFADER","WAVEFORM","ENVELOPE","CROSS MODULATION","FREQUENCY","WAVEFORM","ENVELOPE","FILTER CUTOFF FREQUENCY"],
+    "synth.fm":        ["FM AMOUNT","FREQUENCY","TOPOLOGY","DETUNE"],
+    "synth.phase":     ["PHASE SHIFT","DISTORTION AMOUNT","PHASE FILTER","PHASE TILT"],
+    "synth.pulse":     ["FILTER","AMPLITUDE","SECOND PULSE","MODULATION"],
+    "synth.sampler":   ["START","LOOP IN","LOOP OUT","END","DIRECTION","FINE TUNE","LOOP FADE","GAIN"],
+    "synth.string":    ["TENSION","IMPULSE","STEREO","IMPULSE TYPE"],
+    "synth.vocoder":   ["WAVEFORM","FORMANT","BANDS","MIX"],
+    "synth.voltage":   ["MODULATION","GROUND NOISE","PHASE FILTER","DETUNE"],
+    "fx.cwo":          ["FREQUENCY","DELAY","FEEDBACK","SIDEBAND"],
+    "fx.delay":        ["RANGE","SPEED","FEEDBACK","LEVEL"],
+    "fx.grid":         ["X SIZE","Y SIZE","Z FEEDBACK","MIX"],
+    "fx.mother":       ["DISTANCE","GATE","COLOR","MIX"],
+    "fx.nitro":        ["FREQUENCY LOWS","FILTER FOLLOW","FEEDBACK","FREQUENCY HIGHS"],
+    "fx.phone":        ["TONE","GSM","BAUD","TELEMATIC"],
+    "fx.punch":        ["FREQUENCY","PUNCH","ROUNDS","POWER"],
+    "fx.spring":       ["TONE","TURNS","DAMPING","MIX"],
+    "fx.terminal":     ["FREQUENCY","BITS","MODEL","MIX"],
+    "lfo.element":     ["SOURCE","AMOUNT","DESTINATION","PARAMETER"],
+    "lfo.midi":        ["PARAMETER 1","PARAMETER 2","PARAMETER 3","PARAMETER 4","DESTINATION 1","DESTINATION 2","DESTINATION 3","DESTINATION 4"],
+    "lfo.random":      ["SPEED","AMOUNT","DESTINATION","ENVELOPE","PARAMETER"],
+    "lfo.tremolo":     ["SPEED","PITCH AMOUNT","VOLUME LEVEL","PITCH ENVELOPE",null,null,null,"LFO SHAPE"],
+    "lfo.value":       ["SPEED","AMOUNT","DESTINATION","PARAMETER","LFO SHAPE"],
+    "lfo.velocity":    ["DESTINATION AMOUNT","VOLUME AMOUNT","DESTINATION","PARAMETER"]
+  };
+
+  const VERIFIED = new Set([
+    "synth.amp","synth.cluster","synth.digital","synth.dimension","synth.dna",
+    "synth.drwave","synth.dsynth","synth.fm","synth.phase","synth.pulse",
+    "synth.sampler","synth.string","synth.vocoder","synth.voltage",
+    "fx.cwo","fx.delay","fx.grid","fx.mother","fx.nitro",
+    "fx.punch","fx.spring","fx.terminal",
+    "lfo.element","lfo.midi","lfo.random","lfo.tremolo","lfo.velocity"
+    // excluded: fx.phone (unverified), lfo.value index 4 (unverified)
+  ]);
+
+  function knobSVG(slots) {
+    const R = 7, gap = 19, pad = 2;
+    const w = 7 * gap + R * 2, h = R * 2 + pad * 2;
+    const circles = slots.map((name, i) => {
+      const cx = R + i * gap, cy = R + pad;
+      return name !== null
+        ? `<g transform="translate(${cx},${cy})"><circle r="${R}" fill="#FF4800"/>` +
+          `<line class="knob-tick" x1="0" y1="0" x2="0" y2="${-(R-2)}" stroke="white" stroke-width="1.5" stroke-linecap="round"/></g>`
+        : `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#C8C5BF" stroke-width="1.5"/>`;
+    }).join('');
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${circles}</svg>`;
+  }
+
+  function renderCards(filter) {
+    const grid = document.getElementById('grid');
+    grid.innerHTML = '';
+    Object.entries(PARAMS).forEach(([key, rawParams]) => {
+      const [group, type] = key.split('.');
+      if (filter !== 'all' && group !== filter) return;
+      const slots = [...rawParams];
+      while (slots.length < 8) slots.push(null);
+      const activeParams = slots.map((n, i) => n !== null ? {idx: i, name: n} : null).filter(Boolean);
+      const card = document.createElement('article');
+      card.className = 'card';
+      card.setAttribute('role', 'listitem');
+      card.innerHTML =
+        `<div class="card-head">
+          <span class="g-badge ${group}">${group.toUpperCase()}</span>
+          ${VERIFIED.has(key) ? '<span class="v-badge">&#10003; verified</span>' : ''}
+        </div>
+        <div class="card-type">${type}</div>
+        <div class="knob-strip">${knobSVG(slots)}</div>
+        <ul class="param-list" aria-label="${type} parameters">
+          ${activeParams.map(({idx, name}) =>
+            `<li class="param-item"><span class="p-idx">${idx}</span><span class="p-name">${name}</span></li>`
+          ).join('')}
+        </ul>`;
+      grid.appendChild(card);
+    });
+  }
+
+  document.querySelectorAll('.f-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderCards(btn.dataset.g);
+    });
+  });
+
+  renderCards('all');
+</script>
+</body>
+</html>
