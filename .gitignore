@@ -2,3 +2,6 @@
 *.exe
 *.obj
 .idea/
+
+# generated boundary-exploration patches (can be regenerated with gen-explore.ps1)
+/explore/
