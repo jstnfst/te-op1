@@ -1,7 +1,21 @@
 # OP-1 Field Patch File Format
 
 Notes and tools for reading and writing `.aif` synth patch files for the
-Teenage Engineering OP-1 Field.
+Teenage Engineering OP-1 Field (firmware 1.5.7).
+
+---
+
+## Research Status
+
+All synth, FX, and LFO parameter types have been fully mapped and verified
+against hardware. See `op1-params.json` for the complete name database and
+`display-notes.md` for hardware display scale details per parameter.
+
+| Group | Verified types |
+|-------|---------------|
+| synth | amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage |
+| fx    | cwo, delay, grid, mother, nitro, phone, punch, spring, terminal |
+| lfo   | element, midi, random, tremolo, value, velocity |
 
 ---
 
@@ -48,14 +62,14 @@ When `summarize.ps1` reports a type under **"Missing from op1-params.json"**:
 ```json
 {
   "synth.cluster": ["WAVES", "WAVE ENV", "SPREAD", "UNITOR"],
-  "fx.mother":     [null, null, null, "MIX"],
-  "lfo.tremolo":   []
+  "fx.mother":     ["DISTANCE", "GATE", "COLOR", "MIX"],
+  "lfo.tremolo":   ["SPEED", "PITCH AMOUNT", "VOLUME LEVEL", "PITCH ENVELOPE", null, null, null, "LFO SHAPE"]
 }
 ```
 
 - Key format: `"group.type"` — group is `synth`, `fx`, or `lfo`
 - Values: array of up to 8 strings (index = knob position)
-- `null` = knob position known to exist but not yet named
+- `null` = knob position exists but is unused for this type
 - Missing key = type not yet seen; `summarize.ps1` will flag it red
 
 ### Rebuilding the tools
@@ -145,25 +159,270 @@ All numeric parameters are **16-bit integers in the range 0–32767**
 
 ## Known Knob Mappings
 
-Knob names live in **`op1-params.json`** and are loaded at runtime — no
-recompile needed when adding new entries.
+Full name database is in `op1-params.json`. Display scale details and
+observed raw↔display value mappings are in `display-notes.md`.
+`op1-params-ok.json` tracks which indices have been hardware-verified.
 
-### Synth: `cluster`
+Note: most types use 4 active params (indices 0–3). Exceptions:
+`synth.dsynth` and `synth.sampler` use all 8; `lfo.midi` uses all 8;
+`lfo.random` and `lfo.value` use 5; `lfo.tremolo` uses indices 0–3 and 7.
 
-| Index | Name      |
-|-------|-----------|
-| 0     | WAVES     |
-| 1     | WAVE ENV  |
-| 2     | SPREAD    |
-| 3     | UNITOR    |
+### Synth types
 
-### FX: `mother`
-
+#### `amp`
 | Index | Name |
 |-------|------|
-| 3     | MIX  |
+| 0 | VOLUME |
+| 1 | COMPRESSOR |
+| 2 | TONE |
+| 3 | DRIVE |
 
-*(indices 0–2 active but not yet named)*
+#### `cluster`
+| Index | Name |
+|-------|------|
+| 0 | WAVES |
+| 1 | WAVE ENV |
+| 2 | SPREAD |
+| 3 | UNITOR |
+
+#### `digital`
+| Index | Name |
+|-------|------|
+| 0 | WAVE SHAPER |
+| 1 | OCTAVE |
+| 2 | DETUNE+RINGMOD |
+| 3 | DIGITALNESS |
+
+#### `dimension`
+| Index | Name |
+|-------|------|
+| 0 | WAVEFORM |
+| 1 | STEREO |
+| 2 | FILTER FREQ |
+| 3 | RES |
+
+#### `dna`
+| Index | Name |
+|-------|------|
+| 0 | FILTER |
+| 1 | WAVE NUMBER |
+| 2 | WAVE MODIFIER |
+| 3 | NOISE |
+
+#### `drwave`
+| Index | Name |
+|-------|------|
+| 0 | WAVE TYPE AND LENGTH |
+| 1 | FILTER |
+| 2 | PHASE |
+| 3 | CHORUS |
+
+#### `dsynth`
+| Index | Name |
+|-------|------|
+| 0 | ENV CROSSFADER |
+| 1 | WAVEFORM |
+| 2 | ENVELOPE |
+| 3 | CROSS MODULATION |
+| 4 | FREQUENCY |
+| 5 | WAVEFORM |
+| 6 | ENVELOPE |
+| 7 | FILTER CUTOFF FREQUENCY |
+
+#### `fm`
+| Index | Name |
+|-------|------|
+| 0 | FM AMOUNT |
+| 1 | FREQUENCY |
+| 2 | TOPOLOGY |
+| 3 | DETUNE |
+
+#### `phase`
+| Index | Name |
+|-------|------|
+| 0 | PHASE SHIFT |
+| 1 | DISTORTION AMOUNT |
+| 2 | PHASE FILTER |
+| 3 | PHASE TILT |
+
+#### `pulse`
+| Index | Name |
+|-------|------|
+| 0 | FILTER |
+| 1 | AMPLITUDE |
+| 2 | SECOND PULSE |
+| 3 | MODULATION |
+
+#### `sampler`
+| Index | Name |
+|-------|------|
+| 0 | START |
+| 1 | LOOP IN |
+| 2 | LOOP OUT |
+| 3 | END |
+| 4 | DIRECTION |
+| 5 | FINE TUNE |
+| 6 | LOOP FADE |
+| 7 | GAIN |
+
+#### `string`
+| Index | Name |
+|-------|------|
+| 0 | TENSION |
+| 1 | IMPULSE |
+| 2 | STEREO |
+| 3 | IMPULSE TYPE |
+
+#### `vocoder`
+| Index | Name |
+|-------|------|
+| 0 | WAVEFORM |
+| 1 | FORMANT |
+| 2 | BANDS |
+| 3 | MIX |
+
+#### `voltage`
+| Index | Name |
+|-------|------|
+| 0 | MODULATION |
+| 1 | GROUND NOISE |
+| 2 | PHASE FILTER |
+| 3 | DETUNE |
+
+---
+
+### FX types
+
+#### `cwo`
+| Index | Name |
+|-------|------|
+| 0 | FREQUENCY |
+| 1 | DELAY |
+| 2 | FEEDBACK |
+| 3 | SIDEBAND |
+
+#### `delay`
+| Index | Name |
+|-------|------|
+| 0 | RANGE |
+| 1 | SPEED |
+| 2 | FEEDBACK |
+| 3 | LEVEL |
+
+#### `grid`
+| Index | Name |
+|-------|------|
+| 0 | X SIZE |
+| 1 | Y SIZE |
+| 2 | Z FEEDBACK |
+| 3 | MIX |
+
+#### `mother`
+| Index | Name |
+|-------|------|
+| 0 | DISTANCE |
+| 1 | GATE |
+| 2 | COLOR |
+| 3 | MIX |
+
+#### `nitro`
+| Index | Name |
+|-------|------|
+| 0 | FREQUENCY LOWS |
+| 1 | FILTER FOLLOW |
+| 2 | FEEDBACK |
+| 3 | FREQUENCY HIGHS |
+
+#### `phone`
+| Index | Name |
+|-------|------|
+| 0 | TONE |
+| 1 | GSM |
+| 2 | BAUD |
+| 3 | TELEMATIC |
+
+#### `punch`
+| Index | Name |
+|-------|------|
+| 0 | FREQUENCY |
+| 1 | PUNCH |
+| 2 | ROUNDS |
+| 3 | POWER |
+
+#### `spring`
+| Index | Name |
+|-------|------|
+| 0 | TONE |
+| 1 | TURNS |
+| 2 | DAMPING |
+| 3 | MIX |
+
+#### `terminal`
+| Index | Name |
+|-------|------|
+| 0 | FREQUENCY |
+| 1 | BITS |
+| 2 | MODEL |
+| 3 | MIX |
+
+---
+
+### LFO types
+
+#### `element`
+| Index | Name |
+|-------|------|
+| 0 | SOURCE |
+| 1 | AMOUNT |
+| 2 | DESTINATION |
+| 3 | PARAMETER |
+
+#### `midi`
+| Index | Name |
+|-------|------|
+| 0 | PARAMETER 1 |
+| 1 | PARAMETER 2 |
+| 2 | PARAMETER 3 |
+| 3 | PARAMETER 4 |
+| 4 | DESTINATION 1 |
+| 5 | DESTINATION 2 |
+| 6 | DESTINATION 3 |
+| 7 | DESTINATION 4 |
+
+#### `random`
+| Index | Name |
+|-------|------|
+| 0 | SPEED |
+| 1 | AMOUNT |
+| 2 | DESTINATION |
+| 3 | ENVELOPE |
+| 4 | PARAMETER |
+
+#### `tremolo`
+| Index | Name |
+|-------|------|
+| 0 | SPEED |
+| 1 | PITCH AMOUNT |
+| 2 | VOLUME LEVEL |
+| 3 | PITCH ENVELOPE |
+| 7 | LFO SHAPE |
+
+#### `value`
+| Index | Name |
+|-------|------|
+| 0 | SPEED |
+| 1 | AMOUNT |
+| 2 | DESTINATION |
+| 3 | PARAMETER |
+| 4 | LFO SHAPE |
+
+#### `velocity`
+| Index | Name |
+|-------|------|
+| 0 | DESTINATION AMOUNT |
+| 1 | VOLUME AMOUNT |
+| 2 | DESTINATION |
+| 3 | PARAMETER |
 
 ---
 
@@ -175,11 +434,18 @@ Reads a `.aif` patch file, prints all synth metadata with named parameters,
 and writes a `.json` sidecar.
 
 ```
+op1dump.exe <file.aif>
+```
+
+```
 op1dump.exe epiphany.aif         → prints metadata, writes epiphany.json
 ```
 
-Reads labels from `op1-params.json` in the current directory. Non-zero
-unnamed slots are printed as `knob N [unknown]` so they surface for mapping.
+- Reads `op1-params.json` from the **current working directory** (not the file's directory)
+- Console output: container info, audio format, synth knobs, dual ADSR envelope, FX params, LFO params, raw JSON
+- Each parameter printed as `name : raw_value  (normalized)` where normalized = raw / 32767
+- Non-zero unnamed slots printed as `knob N [unknown]` — add them to `op1-params.json` once identified
+- Always writes a `.json` sidecar at the same path as the input file
 
 ### `dump-all.bat`
 
@@ -189,40 +455,83 @@ Runs `op1dump.exe` on every `.aif` in `presets/`.
 dump-all.bat
 ```
 
+### `json2aif.exe`
+
+Creates a valid OP-1 Field `.aif` from a `.json` patch file.
+
+```
+json2aif.exe <patch.json> [output.aif]
+```
+
+```
+json2aif.exe mypatch.json            → writes mypatch.aif
+json2aif.exe mypatch.json out.aif    → writes out.aif
+```
+
+- Output format: AIFC with FVER + COMM (mono, 16-bit, 44100 Hz, `sowt`) + APPL (1028 bytes) + SSND (1 s silence)
+- JSON must be ≤ 1024 bytes; exits with an error message if too large
+- APPL chunk: `"op-1"` signature + JSON + `\n` + space padding to fill the fixed 1028-byte area
+- Audio is always silence (all zero samples) — replace SSND manually if real audio is needed
+- **Note:** real OP-1 Field patches use 22050 Hz. If the device rejects the file, change `SAMPLE_RATE` to `22050` in `json2aif.c` and rebuild with `build.bat`
+
 ### `summarize.ps1`
 
-Reads all `presets/*.json` and produces a discovery report grouped by
-synth/fx/lfo type with value ranges and mapping status.
+Reads all parsed presets and produces a grouped discovery report.
 
 ```
 .\summarize.ps1
 ```
 
-Color coding: green = fully named, yellow = type known but names TBD, red = type missing from `op1-params.json`.
+- No parameters
+- **Prerequisite:** run `dump-all.bat` first to generate the `.json` sidecars
+- Reads: `presets/*.json`, `op1-params.json`, `op1-params-ok.json`
+- Output sections: **Synth Engines**, **FX**, **LFO** — each type shows:
+  - Mapping status tag and per-knob min/max raw + normalized ranges + patch count
+  - How many patches have that engine/fx/lfo active
+- Color coding:
+  - Green — all params named and hardware-verified
+  - Yellow — type known but some params unnamed or unverified
+  - Red — type not in `op1-params.json` at all
+- Trailing **"Missing from op1-params.json"** section prints the exact stub lines to paste in
 
 ### `diff-patches.ps1`
 
-Diffs two patch files (JSON or AIF) and shows exactly which fields and
-array indices changed.
+Diffs two patch files and shows exactly which fields and array indices changed.
+
+```
+.\diff-patches.ps1 -FileA <path> -FileB <path>
+```
 
 ```
 .\diff-patches.ps1 presets\name0001.json presets\name0002.json
 .\diff-patches.ps1 sandbox\epiphany.aif  presets\epiphany0005.aif
 ```
 
-Skips `name` and `mtime` automatically (they always change in snapshots).
-
-### `json2aif.exe`
-
-Creates a `.aif` from a `.json` patch file with one second of silence for audio.
-
-```
-json2aif.exe mypatch.json        → writes mypatch.aif
-```
+- Both `-FileA` and `-FileB` are required (positional, no flag name needed)
+- Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it — run `op1dump.exe` first if the sidecar is missing
+- Skips `name`, `mtime`, and `_file` automatically (they always differ between snapshots)
+- For scalar fields: prints before/after values
+- For array fields: lists each changed index with before → after and signed delta (`+N` / `-N`)
+- Prints "No differences" if the patches are identical (excluding skipped fields)
 
 ### `explore-aif.ps1`
 
-Low-level inspector for `.aif` file internals (chunk structure, hex dump, etc.).
+Low-level binary inspector for `.aif` file internals. Multiple flags can be combined in one call.
+
+```
+.\explore-aif.ps1 -File <path> [flags]
+```
+
+| Flag | Description |
+|------|-------------|
+| `-ReadBytes` | Hex + ASCII dump of the first N bytes of the file |
+| `-ByteCount N` | Number of bytes to show with `-ReadBytes` (default: 128) |
+| `-ParseChunks` | Walk the IFF chunk tree — prints chunk ID, file offset, and size for every chunk; peeks COMM channel/frame/bit-depth and APPL signature |
+| `-DumpChunk <ID>` | Hex + ASCII dump of a specific chunk by its 4-char ID (e.g. `APPL`, `COMM`, `SSND`, `FVER`); also prints the chunk as UTF-8 text |
+| `-ShowJson` | Scan the file for `{...}` blocks and pretty-print each one found |
+| `-DecodeFver` | Print the FVER version constant and confirm whether it matches the AIFC standard value `0xA2805140` |
+| `-DecodeComm` | Full COMM decode: channels, frame count, bit depth, 80-bit extended sample rate in Hz, compression type and name; includes raw hex |
+| `-AnalyzeSsnd` | SSND audio stats: offset/blockSize header, audio byte count, sample count, min/max sample, zero-sample ratio (silence %), peak level in dBFS; shows first and last 32 bytes of audio |
 
 ```powershell
 .\explore-aif.ps1 -File epiphany.aif -ParseChunks
@@ -230,6 +539,8 @@ Low-level inspector for `.aif` file internals (chunk structure, hex dump, etc.).
 .\explore-aif.ps1 -File epiphany.aif -DecodeComm
 .\explore-aif.ps1 -File epiphany.aif -AnalyzeSsnd
 .\explore-aif.ps1 -File epiphany.aif -ShowJson
+.\explore-aif.ps1 -File epiphany.aif -ReadBytes -ByteCount 256
+.\explore-aif.ps1 -File epiphany.aif -ParseChunks -DecodeComm -ShowJson
 ```
 
 ---
@@ -243,11 +554,12 @@ te-op1/
   json2aif.c         source — JSON to AIF writer
   json2aif.exe       compiled writer
   op1-params.json    knob/param name database (edit freely, no recompile)
+  op1-params-ok.json tracks hardware-verified param indices per type
+  display-notes.md   raw↔display value mappings and scale notes per param
   build.bat          recompile both tools (requires MSVC)
   dump-all.bat       batch-process presets/ folder
   summarize.ps1      discovery report across all presets
   diff-patches.ps1   diff two patch files
   explore-aif.ps1    low-level AIF inspector
-  presets/           drop .aif files here for processing
-  sandbox/           reference patches from reverse engineering
+  presets/           .aif patch files and their .json sidecars
 ```

@@ -226,5 +226,6 @@ parameter type.
 - FILTER FREQ-style params likely use a logarithmic Hz mapping.
 - The `AMOUNT` parameter on LFOs commonly uses a 0–24 scale.
 - Negative raw values appear for centered/bipolar params (e.g. DETUNE).
-- FX knobs at indices 4–7 consistently show 8000 across all presets —
-  confirmed as uninitialized defaults, not real parameters.
+- FX and LFO param arrays are always 8 elements long in the JSON, but the
+  number of *active* indices varies by type. Do not assume indices 4–7 are
+  unused for any type — verify each type independently.
