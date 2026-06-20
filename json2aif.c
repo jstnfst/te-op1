@@ -1,10 +1,13 @@
 /*
  * json2aif.c — create an OP-1 Field AIFF-C patch file from a JSON file
  *
- * Usage: json2aif <patch.json>
+ * Usage:
+ *   json2aif <patch.json> [output.aif]        — pass-through
+ *   json2aif zero <patch.json> [output.aif]   — zero knobs/fx_params/lfo_params
+ *   json2aif max  <patch.json> [output.aif]   — set all three arrays to 32767
  *
  * Reads synth metadata from <patch.json>.
- * Produces <patch.aif> with:
+ * Produces an AIFF-C file with:
  *   - Standard AIFC container (FVER + COMM + APPL + SSND)
  *   - COMM: mono, 16-bit, 44100 Hz, sowt (little-endian signed PCM)
  *   - APPL: "op-1" signature + JSON padded to 1028 bytes (OP-1 fixed size)
@@ -73,7 +76,7 @@ static void write_80bit_extended(uint8_t *p, uint32_t hz) {
     p[9] = (uint8_t)(mantissa      );
 }
 
-/* ---- output path: replace extension with .aif ---------------------------- */
+/* ---- output path helpers ------------------------------------------------- */
 
 static char *make_aif_path(const char *json_path) {
     size_t len = strlen(json_path);
@@ -95,6 +98,79 @@ static char *make_aif_path(const char *json_path) {
     return out;
 }
 
+/* Like make_aif_path but inserts _<suffix> before the .aif extension.
+   foo.json -> foo_zero.aif  (suffix="zero") */
+static char *make_aif_path_mode(const char *json_path, const char *suffix)
+{
+    size_t len  = strlen(json_path);
+    size_t slen = strlen(suffix);
+    char *out = malloc(len + slen + 6);   /* _<suffix>.aif\0 */
+    if (!out) return NULL;
+    memcpy(out, json_path, len);
+    out[len] = '\0';
+
+    char *dot = strrchr(out, '.');
+    char *sep = strrchr(out, '/');
+#ifdef _WIN32
+    char *bsep = strrchr(out, '\\');
+    if (!sep || (bsep && bsep > sep)) sep = bsep;
+#endif
+    if (dot && (!sep || dot > sep)) *dot = '\0';   /* strip extension */
+
+    strcat(out, "_");
+    strcat(out, suffix);
+    strcat(out, ".aif");
+    return out;
+}
+
+/* ---- JSON array replacement ---------------------------------------------- */
+
+/*
+ * In src (length srclen), replace the first occurrence of "key":[...] with
+ * "key":[fill,fill,...,fill] (always 8 values) and write the result to out.
+ * Returns the new string length, or -1 if the key is not found.
+ */
+static int json_replace_array(const char *src, size_t srclen,
+                               char *out,  size_t outsz,
+                               const char *key, int fill)
+{
+    char pat[64];
+    snprintf(pat, sizeof(pat), "\"%s\":[", key);
+
+    const char *p = strstr(src, pat);
+    if (!p) return -1;
+
+    /* copy everything up to and including the opening '[' */
+    size_t prefix = (size_t)(p - src) + strlen(pat);
+    if (prefix >= outsz) return -1;
+    memcpy(out, src, prefix);
+    size_t pos = prefix;
+
+    /* write 8 fill values */
+    for (int i = 0; i < 8; i++) {
+        int w = snprintf(out + pos, outsz - pos, "%s%d", i ? "," : "", fill);
+        if (w <= 0 || (size_t)w >= outsz - pos) return -1;
+        pos += (size_t)w;
+    }
+
+    /* closing bracket */
+    if (pos >= outsz - 1) return -1;
+    out[pos++] = ']';
+
+    /* skip the old array in src (find matching ']') and copy the rest */
+    const char *arr_open  = p + strlen(pat) - 1;   /* points at '[' in src */
+    const char *arr_close = strchr(arr_open, ']');
+    if (!arr_close) return -1;
+    arr_close++;                                     /* step past ']' */
+
+    size_t rest = srclen - (size_t)(arr_close - src);
+    if (pos + rest >= outsz) return -1;
+    memcpy(out + pos, arr_close, rest);
+    pos += rest;
+    out[pos] = '\0';
+    return (int)pos;
+}
+
 /* ---- chunk builders ------------------------------------------------------ */
 
 /* Write 8-byte chunk header (ID + big-endian size) and return new pos */
@@ -108,11 +184,21 @@ static uint32_t write_chunk_header(uint8_t *buf, uint32_t pos,
 /* ---- main ---------------------------------------------------------------- */
 
 int main(int argc, char *argv[]) {
-    if (argc < 2 || argc > 3) {
-        fprintf(stderr, "Usage: %s <patch.json> [output.aif]\n", argv[0]);
+    /* detect optional zero / max subcommand */
+    int  mode      = 0;   /* 0 = pass-through, 1 = zero, 2 = max */
+    int  arg_shift = 0;
+    if (argc >= 2) {
+        if      (strcmp(argv[1], "zero") == 0) { mode = 1; arg_shift = 1; }
+        else if (strcmp(argv[1], "max")  == 0) { mode = 2; arg_shift = 1; }
+    }
+    int    real_argc = argc - arg_shift;
+    char **real_argv = argv + arg_shift;
+
+    if (real_argc < 2 || real_argc > 3) {
+        fprintf(stderr, "Usage: %s [zero|max] <patch.json> [output.aif]\n", argv[0]);
         return 1;
     }
-    const char *json_path = argv[1];
+    const char *json_path = real_argv[1];
 
     /* --- read and validate JSON --- */
     FILE *jf = fopen(json_path, "rb");
@@ -134,9 +220,37 @@ int main(int argc, char *argv[]) {
         json_size--;
     json_raw[json_size] = '\0';
 
-    if (json_size > APPL_JSON_MAX) {
+    /* --- apply zero / max transform if requested ---
+     * Scratch buffers ping-pong so we never write back into json_raw,
+     * which may be too small for the expanded (max) result.            */
+    static char scratch[2][APPL_JSON_MAX + 2];
+    const char *json_write_ptr  = json_raw;
+    long        json_write_size = json_size;
+
+    if (mode != 0) {
+        static const char *KEYS[] = { "knobs", "fx_params", "lfo_params" };
+        int         fill = (mode == 1) ? 0 : 32767;
+        int         cur  = 0;
+        const char *src  = json_raw;
+        size_t      slen = (size_t)json_size;
+
+        for (int k = 0; k < 3; k++) {
+            int r = json_replace_array(src, slen,
+                                       scratch[cur], sizeof(scratch[0]),
+                                       KEYS[k], fill);
+            if (r > 0) {
+                src  = scratch[cur];
+                slen = (size_t)r;
+                cur ^= 1;
+            }
+        }
+        json_write_ptr  = src;
+        json_write_size = (long)slen;
+    }
+
+    if (json_write_size > APPL_JSON_MAX) {
         fprintf(stderr, "JSON too large (%ld bytes, max %d)\n",
-                json_size, APPL_JSON_MAX);
+                json_write_size, APPL_JSON_MAX);
         return 1;
     }
 
@@ -196,11 +310,11 @@ int main(int argc, char *argv[]) {
 
     /* --- APPL chunk --- */
     pos = write_chunk_header(buf, pos, "APPL", APPL_DATA_SIZE);
-    memcpy(buf + pos, "op-1", 4);      pos += 4;
-    memcpy(buf + pos, json_raw, json_size); pos += json_size;
+    memcpy(buf + pos, "op-1", 4);                           pos += 4;
+    memcpy(buf + pos, json_write_ptr, json_write_size);     pos += json_write_size;
     buf[pos++] = '\n';
     /* fill remainder of 1024-byte JSON area with spaces */
-    uint32_t remaining = APPL_JSON_MAX - (uint32_t)json_size - 1;
+    uint32_t remaining = APPL_JSON_MAX - (uint32_t)json_write_size - 1;
     memset(buf + pos, ' ', remaining);  pos += remaining;
 
     /* --- SSND chunk --- */
@@ -211,7 +325,20 @@ int main(int argc, char *argv[]) {
     pos += audio_bytes;
 
     /* --- write output file --- */
-    char *out_path = (argc == 3) ? (char *)argv[2] : make_aif_path(json_path);
+    char *out_path;
+    int   out_path_allocated = 0;
+    if (real_argc == 3) {
+        out_path = (char *)real_argv[2];
+    } else if (mode == 1) {
+        out_path = make_aif_path_mode(json_path, "zero");
+        out_path_allocated = 1;
+    } else if (mode == 2) {
+        out_path = make_aif_path_mode(json_path, "max");
+        out_path_allocated = 1;
+    } else {
+        out_path = make_aif_path(json_path);
+        out_path_allocated = 1;
+    }
     if (!out_path) { fprintf(stderr, "out of memory\n"); return 1; }
 
     FILE *of = fopen(out_path, "wb");
@@ -226,12 +353,12 @@ int main(int argc, char *argv[]) {
     printf("  COMM : %u ch, %u frames, %u-bit, %u Hz, sowt\n",
            NUM_CHANNELS, NUM_FRAMES, BIT_DEPTH, SAMPLE_RATE);
     printf("  APPL : %d bytes  (%ld bytes JSON + padding)\n",
-           APPL_DATA_SIZE, json_size);
+           APPL_DATA_SIZE, json_write_size);
     printf("  SSND : %u bytes  (%u frames silence)\n", ssnd_size, NUM_FRAMES);
     printf("  Total: %u bytes\n", total_size);
 
     free(json_raw);
     free(buf);
-    if (argc != 3) free(out_path);
+    if (out_path_allocated) free(out_path);
     return 0;
 }
