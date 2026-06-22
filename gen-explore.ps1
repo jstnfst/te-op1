@@ -161,6 +161,10 @@ $synthKnobsMax = @{
 # Active params (0-3) use 32767 unless oracle data shows a lower ceiling.
 # [oracle] = confirmed from min oracle work (fx0-fx5.aif).
 $fxParamsMax = @{
+    # [oracle] indices 4-7 must be 0 (confirmed 0 in min oracles; must not be 32767)
+    cwo    = '32767,32767,32767,32767,0,0,0,0'
+    delay  = '32767,32767,32767,32767,0,0,0,0'
+    nitro  = '32767,32767,32767,32767,0,0,0,0'
     # [oracle] indices 4-7 must be 8000
     grid   = '32767,32767,32767,32767,8000,8000,8000,8000'
     phone  = '32767,32767,32767,32767,8000,8000,8000,8000'
@@ -173,9 +177,9 @@ $fxParamsMax = @{
 # Max for selector-4 params inferred as 15360 (4th option, from lfo.midi/element data).
 # [inferred] = derived from selector-4 pattern; not yet hardware-verified.
 $lfoMaxParams = @{
-    # SOURCE[0]=selector-4 max, AMOUNT[1]=centered% max=32767,
-    # DESTINATION[2]=selector-4 max, PARAMETER[3]=selector (using 32767 as last option)
-    element  = '15360,32767,15360,32767,0,0,0,0'
+    # [oracle] element-max-0000.aif: SOURCE=7168, AMOUNT=32767, DESTINATION=7168, PARAMETER=15360
+    # element selector-4 uses different raw values than midi (max=7168, not 15360)
+    element  = '7168,32767,7168,15360,0,0,0,0'
     # All 8 indices are selectors (knob 1-4, dest 1-4); selector-4 max=15360
     midi     = '15360,15360,15360,15360,15360,15360,15360,15360'
     # DESTINATION[2]=selector max, PARAMETER[4]=selector max; others are %/non-linear

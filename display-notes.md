@@ -109,10 +109,10 @@ parameter type.
 ### lfo.element
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SOURCE | `selector-4` | 4 options in order: **gravity, microphone, envelope, sum**. raw 1024 → gravity (minimum/first). "envelope" seen in presets means this knob was turned to that option. |
-| 1 | AMOUNT | `centered %` | Bipolar -100 to +100; raw -32767 → -100 (confirmed min), -13743 → -41, 6245 → 19, 8265 → ~25, 32767 → +100 |
-| 2 | DESTINATION | `selector-4` | 4 options in order: **synth (synthesizer engine), envelope, fx, mix**. raw 1024 → synth (minimum/first). Changing this changes what PARAMETER (index 3) can select. |
-| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION. When dest=synth: options are the active synth engine's own knob names (e.g. for amp: VOLUME, COMPRESSOR, TONE, DRIVE; for fm: FM AMOUNT, FREQUENCY, TOPOLOGY, DETUNE). raw 1024 → first knob of whatever synth is loaded (confirmed min). When dest=envelope/fx/mix: different options. Examples: "cutoff" (dimension+synth), "filter" (dna+synth), "crossfade" (dsynth+synth), "tilt" (phase+synth, raw 15360) |
+| 0 | SOURCE | `selector-4` | 4 options in order: **gravity, microphone, envelope, sum**. raw 1024 → gravity (min), raw 7168 → sum (max). Note: element uses different selector raw values than lfo.midi. |
+| 1 | AMOUNT | `centered %` | Bipolar -100 to +100; raw -32767 → -100 (min), 32767 → +100 (max) |
+| 2 | DESTINATION | `selector-4` | 4 options in order: **synth, envelope, fx, mix**. raw 1024 → synth (min), raw 7168 → mix (max). Changing this changes what PARAMETER (index 3) can select. |
+| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION. raw 1024 → first knob (min), raw 15360 → last option (max). When dest=synth: options are the active synth engine's knob names. Examples: "tilt" (phase+synth, raw 15360) |
 
 ### synth.pulse
 | Index | Name | Scale | Notes |
