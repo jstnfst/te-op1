@@ -86,6 +86,7 @@ $lfoMinParams = @{
 # ── Output directories ───────────────────────────────────────────────────────
 $minDir = "explore\min"
 $maxDir = "explore\max"
+if (Test-Path "explore") { Remove-Item -Recurse -Force "explore" }
 $null = New-Item -ItemType Directory -Force $minDir
 $null = New-Item -ItemType Directory -Force $maxDir
 
