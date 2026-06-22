@@ -115,7 +115,7 @@ foreach ($synth in $synthTypes) {
                 [System.IO.File]::WriteAllText(
                     (Resolve-Path $dir).Path + "\${slug}.json",
                     $jsonContent,
-                    [System.Text.Encoding]::UTF8
+                    [System.Text.UTF8Encoding]::new($false)
                 )
 
                 $null = & .\json2aif.exe $jsonOut $aifOut 2>&1

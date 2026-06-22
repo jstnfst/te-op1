@@ -23,14 +23,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
 
 /* ---- tunables ------------------------------------------------------------ */
 
 #define SAMPLE_RATE   22050
 #define NUM_CHANNELS  1
 #define BIT_DEPTH     16
-#define DURATION_SEC  1
-#define NUM_FRAMES    (SAMPLE_RATE * DURATION_SEC)   /* 44100 */
+#define NUM_FRAMES    28896   /* matches OP-1 Field hardware export frame count */
 
 /* OP-1 APPL chunk: fixed 1028 bytes (4-byte "op-1" sig + 1024-byte JSON area) */
 #define APPL_DATA_SIZE  1028
@@ -171,6 +171,59 @@ static int json_replace_array(const char *src, size_t srclen,
     return (int)pos;
 }
 
+/* ---- mtime injection ----------------------------------------------------- */
+
+/*
+ * Inject the current Unix timestamp as "mtime":<ts>.0 into src.
+ * If "mtime": is already present its value is replaced.
+ * If absent it is inserted immediately before "name": (alphabetical order).
+ * Returns new length, or -1 on error.
+ */
+static int json_inject_mtime(const char *src, size_t srclen,
+                              char *out, size_t outsz)
+{
+    char ts_str[32];
+    snprintf(ts_str, sizeof(ts_str), "%.1f", (double)time(NULL));
+    size_t ts_len = strlen(ts_str);
+
+    const char *p = strstr(src, "\"mtime\":");
+    if (p) {
+        size_t prefix = (size_t)(p - src) + 8;  /* past "mtime": */
+        if (prefix >= outsz) return -1;
+        memcpy(out, src, prefix);
+        size_t pos = prefix;
+        if (pos + ts_len >= outsz) return -1;
+        memcpy(out + pos, ts_str, ts_len);
+        pos += ts_len;
+        const char *v = src + prefix;
+        if (*v == '-') v++;
+        while (*v >= '0' && *v <= '9') v++;
+        if (*v == '.') { v++; while (*v >= '0' && *v <= '9') v++; }
+        size_t rest = srclen - (size_t)(v - src);
+        if (pos + rest >= outsz) return -1;
+        memcpy(out + pos, v, rest);
+        pos += rest;
+        out[pos] = '\0';
+        return (int)pos;
+    }
+
+    /* insert before "name": */
+    const char *name_key = strstr(src, "\"name\":");
+    if (!name_key) return -1;
+    size_t prefix = (size_t)(name_key - src);
+    char insert[48];
+    snprintf(insert, sizeof(insert), "\"mtime\":%s,", ts_str);
+    size_t ins_len = strlen(insert);
+    size_t rest = srclen - prefix;
+    if (prefix + ins_len + rest >= outsz) return -1;
+    memcpy(out, src, prefix);
+    memcpy(out + prefix, insert, ins_len);
+    memcpy(out + prefix + ins_len, name_key, rest);
+    size_t pos = prefix + ins_len + rest;
+    out[pos] = '\0';
+    return (int)pos;
+}
+
 /* ---- chunk builders ------------------------------------------------------ */
 
 /* Write 8-byte chunk header (ID + big-endian size) and return new pos */
@@ -213,6 +266,16 @@ int main(int argc, char *argv[]) {
     fclose(jf);
     json_raw[json_size] = '\0';
 
+    /* strip UTF-8 BOM if present */
+    if (json_size >= 3 &&
+        (uint8_t)json_raw[0] == 0xEF &&
+        (uint8_t)json_raw[1] == 0xBB &&
+        (uint8_t)json_raw[2] == 0xBF) {
+        memmove(json_raw, json_raw + 3, json_size - 3);
+        json_size -= 3;
+        json_raw[json_size] = '\0';
+    }
+
     /* strip trailing whitespace */
     while (json_size > 0 && (json_raw[json_size-1] == '\n' ||
                               json_raw[json_size-1] == '\r' ||
@@ -220,19 +283,26 @@ int main(int argc, char *argv[]) {
         json_size--;
     json_raw[json_size] = '\0';
 
-    /* --- apply zero / max transform if requested ---
-     * Scratch buffers ping-pong so we never write back into json_raw,
-     * which may be too small for the expanded (max) result.            */
-    static char scratch[2][APPL_JSON_MAX + 2];
-    const char *json_write_ptr  = json_raw;
-    long        json_write_size = json_size;
+    /* --- three scratch buffers:
+     *   [2] — mtime injection (always applied)
+     *   [0],[1] — ping-pong for zero/max array replacement             */
+    static char scratch[3][APPL_JSON_MAX + 2];
+
+    /* inject current timestamp as mtime */
+    int mt_r = json_inject_mtime(json_raw, (size_t)json_size,
+                                  scratch[2], sizeof(scratch[2]));
+    const char *mt_src  = (mt_r > 0) ? scratch[2]       : json_raw;
+    size_t      mt_slen = (mt_r > 0) ? (size_t)mt_r     : (size_t)json_size;
+
+    const char *json_write_ptr  = mt_src;
+    long        json_write_size = (long)mt_slen;
 
     if (mode != 0) {
         static const char *KEYS[] = { "knobs", "fx_params", "lfo_params" };
         int         fill = (mode == 1) ? 0 : 32767;
         int         cur  = 0;
-        const char *src  = json_raw;
-        size_t      slen = (size_t)json_size;
+        const char *src  = mt_src;
+        size_t      slen = mt_slen;
 
         for (int k = 0; k < 3; k++) {
             int r = json_replace_array(src, slen,
