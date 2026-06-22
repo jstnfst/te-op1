@@ -31,5 +31,5 @@
   "lfo.random":      ["SPEED", "AMOUNT", "DESTINATION", "ENVELOPE", "PARAMETER"],
   "lfo.tremolo":     ["SPEED", "PITCH AMOUNT", "VOLUME LEVEL", "PITCH ENVELOPE", null, null, null, "LFO SHAPE"],
   "lfo.value":       ["SPEED", "AMOUNT", "DESTINATION", "PARAMETER", "LFO SHAPE"],
-  "lfo.velocity":    ["DESTINATION AMOUNT", "VOLUME AMOUNT", "DESTINATION", "PARAMETER"]
+  "lfo.velocity":    ["AMP", "VOLUME AMOUNT", "DESTINATION", "PARAMETER"]
 }

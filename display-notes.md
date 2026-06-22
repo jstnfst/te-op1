@@ -211,10 +211,10 @@ parameter type.
 ### lfo.velocity
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | DESTINATION AMOUNT | `%` | ~linear; 16381 → ~50% |
-| 1 | VOLUME AMOUNT | `%` | ~linear; 16694 → ~51% |
-| 2 | DESTINATION | `selector` | 6048 → "fx" |
-| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION; 15360 → "telematic" when destination = fx/phone — hardware uses "TELEMATIC" (not "TELEMETRY") |
+| 0 | AMP | `%` | Hardware label "AMP"; destination volume level; 16381 → ~50% |
+| 1 | VOLUME AMOUNT | `centered %` | Bipolar -100 to +100; 16694 → ~51% (positive side) |
+| 2 | DESTINATION | `selector-4` | synth=1024 (inferred), envelope≈5824 [inferred], fx≈10144 [inferred], mix≈15360 [inferred] — values based on lfo.midi selector-4 pattern |
+| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION and synth type. For synth=amp (dest=synth): volume→1024, comp≈5824, tone≈10144, drive≈15360 [inferred]. 15360 → "telematic" when dest=fx/phone |
 
 ### lfo.random
 | Index | Name | Scale | Notes |

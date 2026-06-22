@@ -22,7 +22,24 @@
 
     Run from the te-op1 root.  Output goes to explore\ which is gitignored.
     Requires: json2aif.exe in the current directory.
+
+.PARAMETER VelocityDest
+    DESTINATION selector value for lfo.velocity min presets.
+    Options (inferred from selector-4 pattern): synth=1024, envelope=5824, fx=10144, mix=15360.
+    Default: synth (1024).
+
+.PARAMETER VelocityParam
+    Raw value for the PARAMETER selector in lfo.velocity min presets.
+    Meaning is context-dependent on VelocityDest and the loaded synth.
+    For dest=synth with synth.amp: volume=1024, comp≈5824, tone≈10144, drive≈15360.
+    Default: 1024 (first knob / volume for amp).
 #>
+
+param(
+    [ValidateSet('synth','envelope','fx','mix')]
+    [string]$VelocityDest  = 'synth',
+    [int]   $VelocityParam = 1024
+)
 
 Set-StrictMode -Version 2
 $ErrorActionPreference = 'Stop'
@@ -79,9 +96,12 @@ $lfoMinParams = @{
     # [inferred] AMOUNT=centered%→-32767, DESTINATION=selector→1024, PARAMETER=selector→1024
     value    = '0,-32767,1024,1024,0,0,0,0'
 
-    # [inferred] DESTINATION=selector→1024, PARAMETER=selector→1024
-    velocity = '0,0,1024,1024,0,0,0,0'
+    # [inferred] AMP=%→0, VOLUME AMOUNT=centered%→-32767, DESTINATION/PARAMETER=selector (see -VelocityDest/-VelocityParam)
+    velocity = $null  # filled dynamically below
 }
+
+$velocityDestRaw = @{ synth=1024; envelope=5824; fx=10144; mix=15360 }[$VelocityDest]
+$lfoMinParams['velocity'] = "0,-32767,$velocityDestRaw,$VelocityParam,0,0,0,0"
 
 # ── Output directories ───────────────────────────────────────────────────────
 $minDir = "explore\min"
