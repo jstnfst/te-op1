@@ -22,6 +22,14 @@ parameter type.
 
 ## Per-parameter notes
 
+### synth.amp
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | VOLUME | `%` | raw 0 → 0% (confirmed min) |
+| 1 | COMPRESSOR | `%` | raw 0 → 0% (confirmed min) |
+| 2 | TONE | `%` | raw 0 → 0% (confirmed min) |
+| 3 | DRIVE | `%` | raw 0 → 0% (confirmed min) |
+
 ### synth.digital
 | Index | Name | Scale | Notes |
 |---|---|---|---|
@@ -90,10 +98,10 @@ parameter type.
 ### lfo.element
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SOURCE | `selector` | Discrete; seen: "envelope" (dimen1g, dna1g, dsyn1g), "gravity sensor" (phase1g, raw 2000) |
-| 1 | AMOUNT | `centered %` | Bipolar -100 to +100; -13743 → -41, 6245 → 19, 8265 → ~25, 32767 → +100 |
-| 2 | DESTINATION | `selector` | Discrete; seen: "synthesizer" / "synth" — refers to the active synth engine |
-| 3 | PARAMETER | `selector` | Discrete, context-dependent on DESTINATION and the loaded synth type. Examples: "cutoff" (dimension), "filter" (dna), "crossfade" (dsynth — maps to ENV CROSSFADER), "tilt" (phase, raw 15360) |
+| 0 | SOURCE | `selector-4` | 4 options in order: **gravity, microphone, envelope, sum**. raw 1024 → gravity (minimum/first). "envelope" seen in presets means this knob was turned to that option. |
+| 1 | AMOUNT | `centered %` | Bipolar -100 to +100; raw -32767 → -100 (confirmed min), -13743 → -41, 6245 → 19, 8265 → ~25, 32767 → +100 |
+| 2 | DESTINATION | `selector-4` | 4 options in order: **synth (synthesizer engine), envelope, fx, mix**. raw 1024 → synth (minimum/first). Changing this changes what PARAMETER (index 3) can select. |
+| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION. When dest=synth: options are the active synth engine's own knob names (e.g. for amp: VOLUME, COMPRESSOR, TONE, DRIVE; for fm: FM AMOUNT, FREQUENCY, TOPOLOGY, DETUNE). raw 1024 → first knob of whatever synth is loaded (confirmed min). When dest=envelope/fx/mix: different options. Examples: "cutoff" (dimension+synth), "filter" (dna+synth), "crossfade" (dsynth+synth), "tilt" (phase+synth, raw 15360) |
 
 ### synth.pulse
 | Index | Name | Scale | Notes |

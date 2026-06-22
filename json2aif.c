@@ -411,6 +411,18 @@ int main(int argc, char *argv[]) {
     }
     if (!out_path) { fprintf(stderr, "out of memory\n"); return 1; }
 
+    /* refuse to overwrite — oracle files must never be clobbered */
+    {
+        FILE *chk = fopen(out_path, "rb");
+        if (chk) {
+            fclose(chk);
+            fprintf(stderr, "error: output file already exists: %s\n", out_path);
+            fprintf(stderr, "  delete it first or choose a different output path.\n");
+            if (out_path_allocated) free(out_path);
+            return 1;
+        }
+    }
+
     FILE *of = fopen(out_path, "wb");
     if (!of) { perror(out_path); return 1; }
     if (fwrite(buf, 1, total_size, of) != total_size) {
