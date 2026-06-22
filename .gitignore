@@ -8,3 +8,4 @@
 
 # oracle/ contains hardware-verified reference exports — tracked in git, never generated
 # (oracle/ is intentionally NOT listed here)
+/sandbox/

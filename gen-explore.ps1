@@ -109,7 +109,7 @@ function Build-Json {
         [string]$fillArr8,
         [string]$lfoArr8
     )
-    $adsr  = '0,0,32767,8192,0,0,32767,8192'
+    $adsr  = '576,4160,17408,15808,14336,7872,18432,3276'
     $mtime = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     return (
         '{"adsr":['        + $adsr     + '],' +
