@@ -121,6 +121,26 @@ $synthKnobsMin = @{
     string  = '64,512,0,8256,0,0,0,0'
 }
 
+# ── Minimum fx_params per FX type ────────────────────────────────────────────
+# Hardware-confirmed minimum fx_params values (all FX knobs at leftmost position).
+# Only FX types whose hardware mins differ from all-zeros are listed here.
+# Indices 4-7 are 8000 for some FX types (delay/cwo/nitro use 0 there).
+# [oracle] = raw JSON extracted from fx0-fx5.aif hardware exports.
+$fxParamsMin = @{
+    # [oracle] fx0.aif: RANGE=1024, SPEED=3276 have non-zero floors
+    delay  = '1024,3276,0,0,0,0,0,0'
+    # [oracle] fx1.aif: X SIZE=1344, Y SIZE=1344; indices 4-7=8000
+    grid   = '1344,1344,0,0,8000,8000,8000,8000'
+    # [oracle] fx2.aif: FREQ LOWS=64, FILTER FOLLOW=-32768 (bipolar), FREQ HIGHS=64
+    nitro  = '64,-32768,0,64,0,0,0,0'
+    # [oracle] fx3.aif: TONE=204, GSM=3072, BAUD=1536; indices 4-7=8000
+    phone  = '204,3072,1536,0,8000,8000,8000,8000'
+    # [oracle] fx4.aif: FREQUENCY=1344, ROUNDS=1536; indices 4-7=8000
+    punch  = '1344,0,1536,0,8000,8000,8000,8000'
+    # [oracle] fx5.aif: TONE=1344, TURNS=7744; indices 4-7=8000
+    spring = '1344,7744,0,0,8000,8000,8000,8000'
+}
+
 # ── Output directories ───────────────────────────────────────────────────────
 # Structure: explore\aif\[mode]\[synth]\[fx]\*.aif
 #            explore\json\[mode]\[synth]\[fx]\*.json
@@ -191,7 +211,7 @@ foreach ($synth in $synthTypes) {
 
                 if ($mode -eq 'min') {
                     $knobsArr8 = if ($synthKnobsMin.ContainsKey($synth)) { $synthKnobsMin[$synth] } else { $zeros8 }
-                    $fxArr8    = $zeros8
+                    $fxArr8    = if ($fxParamsMin.ContainsKey($fx))     { $fxParamsMin[$fx] }     else { $zeros8 }
                     $lfoArr8   = $lfoMinParams[$lfo]
                 } else {
                     $knobsArr8 = $max8

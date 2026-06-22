@@ -49,10 +49,20 @@ parameter type.
 ### fx.punch
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FREQUENCY | `hz` | Log Hz scale; 8952 → above halfway, 11248 → near max; not linear % |
+| 0 | FREQUENCY | `hz` | Log Hz scale; 8952 → above halfway, 11248 → near max; not linear %; hardware min=1344 |
 | 1 | PUNCH | `%` | 24512 → 74 |
-| 2 | ROUNDS | `discrete-24` | 1–24 inclusive; non-linear mapping: 3744 → 3, 11904 → 11 |
+| 2 | ROUNDS | `discrete-24` | 1–24 inclusive; non-linear mapping: 3744 → 3, 11904 → 11; hardware min=1536 (step 1) |
 | 3 | POWER | `%` | 29159 → 88, 31783 → 96 |
+| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
+
+### fx.phone
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | TONE | `%` | Hardware min=204 (does not go to 0) |
+| 1 | GSM | `%` | Hardware min=3072 (~9%); named confirmed from oracle fx3.aif |
+| 2 | BAUD | `%` | Hardware min=1536 (~5%); named confirmed from oracle fx3.aif |
+| 3 | TELEMATIC | `%` | Hardware min=0 |
+| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
 
 ### lfo.value
 | Index | Name | Scale | Notes |
@@ -74,18 +84,18 @@ parameter type.
 ### fx.delay
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | RANGE | `ms-inverse` | Delay time in ms; **inverse**: lower raw = more time; range 31.25–1000ms; raw 8000 → 125ms |
-| 1 | SPEED | `discrete-99` | 0–99; raw 10624 → 25 |
+| 0 | RANGE | `ms-inverse` | Delay time in ms; **inverse**: lower raw = more time; range 31.25–1000ms; raw 8000 → 125ms; hardware min=1024 |
+| 1 | SPEED | `discrete-99` | 0–99; raw 10624 → 25; hardware min=3276 |
 | 2 | FEEDBACK | `discrete-99` | 0–99; effective max ~16383; raw 8328 → 50 |
 | 3 | LEVEL | `%` | Approximately linear |
 
 ### fx.nitro
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FREQUENCY LOWS | `%` | 64 → near min |
-| 1 | FILTER FOLLOW | `centered` | 0 = neutral center (not min); bipolar scale |
+| 0 | FREQUENCY LOWS | `%` | Hardware min=64 (not 0) |
+| 1 | FILTER FOLLOW | `centered %` | Bipolar; hardware min=-32768; 0 = neutral center |
 | 2 | FEEDBACK | `%` | 0 = min |
-| 3 | FREQUENCY HIGHS | `%` | 9344 → 50%; internal max ~18688 (not 32767) |
+| 3 | FREQUENCY HIGHS | `%` | Hardware min=64 (not 0); 9344 → 50%; internal max ~18688 (not 32767) |
 
 ### synth.dna
 | Index | Name | Scale | Notes |
@@ -150,18 +160,20 @@ parameter type.
 ### fx.grid
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | X SIZE | `discrete-99` | 0–99; non-linear; 9064 → 50 |
-| 1 | Y SIZE | `discrete-99` | 0–99; non-linear; 6032 → 30 |
+| 0 | X SIZE | `discrete-99` | 0–99; non-linear; 9064 → 50; hardware min=1344 |
+| 1 | Y SIZE | `discrete-99` | 0–99; non-linear; 6032 → 30; hardware min=1344 |
 | 2 | Z FEEDBACK | `discrete-99` | 0–99; ~linear; 23248 → 72 |
 | 3 | MIX | `%` | approximately linear |
+| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
 
 ### fx.spring
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | TONE | `%` | Linear 0–100; 16448 → ~50% |
-| 1 | TURNS | `%` | Linear 0–100; 14544 → ~44% |
+| 0 | TONE | `%` | Linear 0–100; 16448 → ~50%; hardware min=1344 |
+| 1 | TURNS | `%` | Linear 0–100; 14544 → ~44%; hardware min=7744 (~24%) |
 | 2 | DAMPING | `%` | Linear 0–100; 4096 → ~12% |
 | 3 | MIX | `%` | Linear 0–100; 32767 → max |
+| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
 
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
