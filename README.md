@@ -110,16 +110,17 @@ to reach the 1028-byte boundary.
 
 For sample-based synths like **cluster**, the SSND contains the actual
 waveform the engine operates on. Replacing it with silence produces a
-valid but soundless patch. The sample rate in `epiphany.aif` is 22050 Hz;
-`json2aif` defaults to 44100 Hz — change `SAMPLE_RATE` in `json2aif.c`
-if the device rejects it.
+valid but soundless patch. `json2aif.exe` writes 28896 frames of silence
+at 22050 Hz (~1.310 s), which matches hardware-exported patches.
 
 ---
 
 ## JSON Schema
 
-All numeric parameters are **16-bit integers in the range 0–32767**
-(0.0–1.0 normalized).
+Most numeric parameters are **16-bit integers in the range 0–32767**
+(0.0–1.0 normalized). Exception: `centered %` parameters (e.g. AMOUNT in
+`lfo.element`, VOLUME LEVEL in `lfo.tremolo`) use a signed range with minimum
+**-32767**.
 
 ```jsonc
 {
@@ -141,6 +142,11 @@ All numeric parameters are **16-bit integers in the range 0–32767**
   "lfo_params":    [5476, 1017, 4190, 15696, 0, 0, 0, 0]   // 8 LFO knobs
 }
 ```
+
+> **Key order:** The OP-1 Field firmware uses a streaming JSON parser that requires keys in
+> strict **alphabetical order**. `json2aif.exe` passes JSON through as-is — callers must order
+> keys correctly. Required order:
+> `adsr, fx_active, fx_params, fx_type, knobs, lfo_active, lfo_params, lfo_type, mtime, name, octave, synth_version, type`
 
 ### ADSR (always 8 values — two envelopes)
 
@@ -468,11 +474,30 @@ json2aif.exe mypatch.json            → writes mypatch.aif
 json2aif.exe mypatch.json out.aif    → writes out.aif
 ```
 
-- Output format: AIFC with FVER + COMM (mono, 16-bit, 44100 Hz, `sowt`) + APPL (1028 bytes) + SSND (1 s silence)
+- Output format: AIFC with FVER + COMM (mono, 16-bit, 22050 Hz, `sowt`, 28896 frames ~1.310 s) + APPL (1028 bytes) + SSND (silence)
 - JSON must be ≤ 1024 bytes; exits with an error message if too large
 - APPL chunk: `"op-1"` signature + JSON + `\n` + space padding to fill the fixed 1028-byte area
 - Audio is always silence (all zero samples) — replace SSND manually if real audio is needed
-- **Note:** real OP-1 Field patches use 22050 Hz. If the device rejects the file, change `SAMPLE_RATE` to `22050` in `json2aif.c` and rebuild with `build.bat`
+- Automatically injects `"mtime":<unix_ts>.0` at write time in alphabetical position (before `"name"`)
+- Refuses to overwrite an existing output file — delete it first or choose a different path
+- Strips UTF-8 BOM from input JSON if present
+
+### `gen-explore.ps1`
+
+Generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO combinations.
+
+```
+.\gen-explore.ps1
+```
+
+- Writes to `explore\min\` and `explore\max\` (created if absent)
+- `explore\` is gitignored — delete the folder and re-run to regenerate
+- **min** uses actual hardware minimum values per parameter type: selectors → 1024,
+  centered % → -32767, % → 0. `lfo.element` min values are oracle-verified;
+  other LFO types are inferred from documented scale types
+- **max** sets all parameter arrays to 32767
+- ADSR is fixed to instant-attack / full-sustain so every combination produces audible output
+- Requires `json2aif.exe` in the current directory (run `build.bat` first)
 
 ### `summarize.ps1`
 
@@ -558,8 +583,31 @@ te-op1/
   display-notes.md   raw↔display value mappings and scale notes per param
   build.bat          recompile both tools (requires MSVC)
   dump-all.bat       batch-process presets/ folder
+  gen-explore.ps1    generate min+max boundary patches for all 756 combinations
   summarize.ps1      discovery report across all presets
   diff-patches.ps1   diff two patch files
   explore-aif.ps1    low-level AIF inspector
   presets/           .aif patch files and their .json sidecars
+  oracle/            hardware-verified reference exports (tracked in git, never regenerated)
+  explore/           generated boundary patches — gitignored, recreate with gen-explore.ps1
 ```
+
+---
+
+## Oracle Workflow
+
+`oracle/` stores hardware-verified reference exports — patch files saved directly from the
+OP-1 Field with known knob positions. These are the ground truth for parameter values.
+
+**Rules:**
+- Never regenerate oracle files from JSON. `json2aif.exe` will refuse to overwrite them.
+- To capture a new oracle: set knobs on hardware → export preset → copy `.aif` to `oracle/` →
+  run `op1dump.exe oracle\<file>.aif` → inspect the JSON sidecar for raw values.
+- Naming convention: `<synth>-<fx>-<lfo>-<tag>.aif` where tag is `0000` (all-min),
+  `ffff` (all-max), or a short descriptor.
+
+**Currently verified oracles:**
+
+| File | Synth | FX | LFO | Knob position |
+|------|-------|----|-----|---------------|
+| `amp-cwo-elem-0000.aif` | amp | cwo | element | all-min |

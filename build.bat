@@ -7,6 +7,9 @@ if errorlevel 1 goto fail
 cl json2aif.c /Fe:json2aif.exe /W3 /D_CRT_SECURE_NO_WARNINGS
 if errorlevel 1 goto fail
 
+cl test_aif.c /Fe:test_aif.exe /W3 /D_CRT_SECURE_NO_WARNINGS
+if errorlevel 1 goto fail
+
 del *.obj >nul 2>&1
 echo.
 echo Build OK

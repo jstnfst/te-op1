@@ -109,7 +109,8 @@ function Build-Json {
         [string]$fillArr8,
         [string]$lfoArr8
     )
-    $adsr = '0,0,32767,8192,0,0,32767,8192'
+    $adsr  = '0,0,32767,8192,0,0,32767,8192'
+    $mtime = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     return (
         '{"adsr":['        + $adsr     + '],' +
         '"fx_active":true,' +
@@ -119,6 +120,7 @@ function Build-Json {
         '"lfo_active":true,' +
         '"lfo_params":['  + $lfoArr8  + '],' +
         '"lfo_type":"'    + $lfo      + '",' +
+        '"mtime":'        + $mtime    + '.0,' +
         '"name":"'        + $name     + '",' +
         '"octave":0,' +
         '"synth_version":' + $ver     + ',' +
@@ -140,8 +142,8 @@ foreach ($synth in $synthTypes) {
     $ver = $synthVersion[$synth]
     foreach ($fx in $fxTypes) {
         foreach ($lfo in $lfoTypes) {
-            $slug = "[$(Get-Slug $synth)$(Get-Slug $fx)$(Get-Slug $lfo)]"
-            $name = ($slug -replace '[\[\]]', '')
+            $slug = "$(Get-Slug $synth)$(Get-Slug $fx)$(Get-Slug $lfo)"
+            $name = $slug
 
             foreach ($mode in @('min', 'max')) {
                 $dir = if ($mode -eq 'min') { $minDir } else { $maxDir }
