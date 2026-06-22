@@ -153,10 +153,10 @@ parameter type.
 ### synth.string
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | TENSION | `%` | Hardware min = 64 (does not go to 0); 3392 → ~10% |
-| 1 | IMPULSE | `max~24064` | Hardware min = 512; internal max ~24064 (not 32767), similar to drwave |
-| 2 | STEREO | `%` | 16384 → ~50% |
-| 3 | IMPULSE TYPE | `selector` | Hardware min = 8256; 9792 → ~30% — appears to be a selector, not a linear % |
+| 0 | TENSION | `%` | Hardware min=64, hardware max=8256 (narrow raw range) |
+| 1 | IMPULSE | `max~24064` | Hardware min=512, hardware max=24064 (not 32767); similar to drwave |
+| 2 | STEREO | `%` | Hardware max=16384; 16384 → 100% display |
+| 3 | IMPULSE TYPE | `selector` | Hardware min=8256, hardware max=16448 |
 
 ### fx.grid
 | Index | Name | Scale | Notes |

@@ -148,8 +148,8 @@ $synthKnobsMax = @{
     pulse     = '23168,16384,16384,16384,0,0,0,0'
     # [inferred] sampler: no oracle; uses indices 0-7; using 32767 for all
     sampler   = '32767,32767,32767,32767,32767,32767,32767,32767'
-    # [inferred] string: no oracle; IMPULSE TYPE is selector (min=8256, max unknown); using 32767
-    string    = '32767,32767,32767,32767,0,0,0,0'
+    # [oracle] synthmax-string-0000.aif: TENSION=8256, IMPULSE=24064, STEREO=16384, IMPULSE TYPE=16448
+    string    = '8256,24064,16384,16448,0,0,0,0'
     # [oracle] synthmax(11).aif: indices 4-7=0
     vocoder   = '32767,32767,32767,32767,0,0,0,0'
     # [oracle] synthmax(12).aif: indices 4-7=0
