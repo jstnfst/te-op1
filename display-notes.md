@@ -155,7 +155,7 @@ parameter type.
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial |
-| 1 | PITCH AMOUNT | `discrete-99` | 0–99; 985 → 3, 2264 → 7 |
+| 1 | PITCH AMOUNT | `centered %` | Bipolar -100 to +100; 985 → ~3%, 2264 → ~7% |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
 | 7 | LFO SHAPE | `selector` | Confirmed at index 7; 0 → default, 19456 → "exponential"; indices 4–6 are null |
