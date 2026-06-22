@@ -69,23 +69,23 @@ function Build-Json {
         [int]   $ver,
         [int]   $fill
     )
-    $arr8    = ($fill, $fill, $fill, $fill, $fill, $fill, $fill, $fill) -join ','
-    $adsr    = '0,0,32767,8192,0,0,32767,8192'
-    # Field order matches what op1dump writes so diff-patches.ps1 stays happy
+    $arr8 = ($fill, $fill, $fill, $fill, $fill, $fill, $fill, $fill) -join ','
+    $adsr = '0,0,32767,8192,0,0,32767,8192'
+    # Keys must be in strict alphabetical order — the OP-1 Field firmware
+    # uses a streaming parser that expects the same order its serializer writes.
     return (
-        '{"name":"' + $name + '",' +
-        '"type":"'  + $synth + '",' +
-        '"synth_version":' + $ver + ',' +
-        '"octave":0,' +
-        '"mtime":1709403000.0,' +
-        '"knobs":['       + $arr8 + '],' +
-        '"adsr":['        + $adsr + '],' +
-        '"fx_type":"'     + $fx  + '",' +
+        '{"adsr":['        + $adsr + '],' +
         '"fx_active":true,' +
         '"fx_params":['   + $arr8 + '],' +
-        '"lfo_type":"'    + $lfo + '",' +
+        '"fx_type":"'     + $fx   + '",' +
+        '"knobs":['       + $arr8 + '],' +
         '"lfo_active":true,' +
-        '"lfo_params":['  + $arr8 + ']}')
+        '"lfo_params":['  + $arr8 + '],' +
+        '"lfo_type":"'    + $lfo  + '",' +
+        '"name":"'        + $name + '",' +
+        '"octave":0,' +
+        '"synth_version":' + $ver + ',' +
+        '"type":"'        + $synth + '"}')
 }
 
 # ── Main loop ────────────────────────────────────────────────────────────────
