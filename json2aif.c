@@ -26,7 +26,7 @@
 
 /* ---- tunables ------------------------------------------------------------ */
 
-#define SAMPLE_RATE   44100
+#define SAMPLE_RATE   22050
 #define NUM_CHANNELS  1
 #define BIT_DEPTH     16
 #define DURATION_SEC  1
