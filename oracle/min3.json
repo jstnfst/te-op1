@@ -1,0 +1,55 @@
+﻿File      : C:\Users\jstnf\hack\te-op1\oracle\min3.aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#04
+  Type          : fm
+  Synth version : 3
+  Octave        : -2
+  mtime         : 1782138625
+
+  Synth knobs (fm):
+    FM AMOUNT        :      0  (0.000)
+    FREQUENCY        :      0  (0.000)
+    TOPOLOGY         :   1024  (0.031)
+    DETUNE           :      0  (0.000)
+    knob 4           :  15000  (0.458)  [unknown]
+    knob 6           :    100  (0.003)  [unknown]
+    knob 7           :   1500  (0.046)  [unknown]
+
+  Envelope:
+    Attack           :    576  (0.018)
+    Decay            :   4160  (0.127)
+    Sustain          :  17408  (0.531)
+    Release          :  15808  (0.482)
+    Attack2          :  14336  (0.438)
+    Decay2           :   7872  (0.240)
+    Sustain2         :  18432  (0.563)
+    Release2         :   3276  (0.100)
+
+  FX (punch)  active: yes
+  FX params (punch):
+    FREQUENCY        :  10512  (0.321)
+    PUNCH            :  10823  (0.330)
+    ROUNDS           :  25088  (0.766)
+    POWER            :  28831  (0.880)
+    knob 4           :   8000  (0.244)  [unknown]
+    knob 5           :   8000  (0.244)  [unknown]
+    knob 6           :   8000  (0.244)  [unknown]
+    knob 7           :   8000  (0.244)  [unknown]
+
+  LFO (value)  active: no
+  LFO params (value):
+    SPEED            :   1000  (0.031)
+    AMOUNT           :   4000  (0.122)
+    DESTINATION      :   2000  (0.061)
+    PARAMETER        :   2000  (0.061)
+    LFO SHAPE        :      0  (0.000)
+
+--- raw JSON ---
+{"adsr":[576,4160,17408,15808,14336,7872,18432,3276],"fx_active":true,"fx_params":[10512,10823,25088,28831,8000,8000,8000,8000],"fx_type":"punch","knobs":[0,0,1024,0,15000,0,100,1500],"lfo_active":false,"lfo_params":[1000,4000,2000,2000,0,0,0,0],"lfo_type":"value","mtime":1782138625.0,"name":"2026-173#04","octave":-2,"synth_version":3,"type":"fm"}

@@ -51,21 +51,22 @@ $fxTypes    = @('cwo','delay','grid','mother','nitro','phone','punch','spring','
 $lfoTypes   = @('element','midi','random','tremolo','value','velocity')
 
 # synth_version per engine type
+# [oracle] = confirmed from hardware export. [inferred] = not yet hardware-verified.
 $synthVersion = @{
-    amp       = 3
-    cluster   = 3   # no oracle on disk; 3 matches README example
-    digital   = 2
-    dimension = 3
-    dna       = 2
-    drwave    = 2
-    dsynth    = 2
-    fm        = 2
-    phase     = 2
-    pulse     = 2
-    sampler   = 3
-    string    = 2
-    vocoder   = 3
-    voltage   = 2
+    amp       = 3   # [oracle]
+    cluster   = 3   # [oracle] min0.aif
+    digital   = 3   # [oracle] min1.aif
+    dimension = 3   # [oracle] amp-cwo-elem-0000
+    dna       = 3   # [oracle] min2.aif
+    drwave    = 2   # [inferred]
+    dsynth    = 2   # [inferred]
+    fm        = 3   # [oracle] min3.aif
+    phase     = 2   # [inferred]
+    pulse     = 2   # [inferred]
+    sampler   = 3   # [oracle]
+    string    = 3   # [oracle] min4.aif
+    vocoder   = 3   # [oracle]
+    voltage   = 2   # [inferred]
 }
 
 # ── Minimum lfo_params per LFO type ──────────────────────────────────────────
@@ -103,6 +104,23 @@ $lfoMinParams = @{
 $velocityDestRaw = @{ synth=1024; envelope=5824; fx=10144; mix=15360 }[$VelocityDest]
 $lfoMinParams['velocity'] = "0,-32767,$velocityDestRaw,$VelocityParam,0,0,0,0"
 
+# ── Minimum synth knobs per engine type ──────────────────────────────────────
+# Hardware-confirmed minimum knob values (all knobs at leftmost position).
+# Only engines whose hardware mins differ from all-zeros are listed here.
+# [oracle] = raw JSON extracted from hardware export with all knobs at min.
+$synthKnobsMin = @{
+    # [oracle] min0.aif: WAVES=3072, SPREAD=512, UNITOR=3 have non-zero floors
+    cluster = '3072,0,512,3,0,0,0,0'
+    # [oracle] min1.aif: OCTAVE min=2048 (selector floor), DETUNE+RINGMOD is bipolar min=-32768
+    digital = '0,2048,-32768,0,0,0,0,0'
+    # [oracle] min2.aif: FILTER is bipolar (min=-29491), WAVE NUMBER min=4608
+    dna     = '-29491,4608,0,0,0,0,0,0'
+    # [oracle] min3.aif: TOPOLOGY min=1024 (selector), knobs[4-7] are fixed FM operator params
+    fm      = '0,0,1024,0,15000,0,100,1500'
+    # [oracle] min4.aif: TENSION=64, IMPULSE=512, IMPULSE TYPE=8256 have non-zero floors
+    string  = '64,512,0,8256,0,0,0,0'
+}
+
 # ── Output directories ───────────────────────────────────────────────────────
 $minDir = "explore\min"
 $maxDir = "explore\max"
@@ -116,8 +134,6 @@ function Get-Slug([string]$s) {
 }
 
 # Build a compact OP-1 patch JSON string.
-# $lfoArr8: the 8-value comma-separated string for lfo_params
-# $fillArr8: the 8-value comma-separated string for knobs and fx_params
 # ADSR is fixed (neutral: instant attack, full sustain) regardless of mode.
 # Keys are in strict alphabetical order — OP-1 Field firmware requires this.
 function Build-Json {
@@ -127,25 +143,26 @@ function Build-Json {
         [string]$lfo,
         [string]$name,
         [int]   $ver,
-        [string]$fillArr8,
+        [string]$knobsArr8,
+        [string]$fxArr8,
         [string]$lfoArr8
     )
     $adsr  = '576,4160,17408,15808,14336,7872,18432,3276'
     $mtime = [DateTimeOffset]::UtcNow.ToUnixTimeSeconds()
     return (
-        '{"adsr":['        + $adsr     + '],' +
+        '{"adsr":['        + $adsr      + '],' +
         '"fx_active":true,' +
-        '"fx_params":['   + $fillArr8 + '],' +
-        '"fx_type":"'     + $fx       + '",' +
-        '"knobs":['       + $fillArr8 + '],' +
+        '"fx_params":['    + $fxArr8    + '],' +
+        '"fx_type":"'      + $fx        + '",' +
+        '"knobs":['        + $knobsArr8 + '],' +
         '"lfo_active":true,' +
-        '"lfo_params":['  + $lfoArr8  + '],' +
-        '"lfo_type":"'    + $lfo      + '",' +
-        '"mtime":'        + $mtime    + '.0,' +
-        '"name":"'        + $name     + '",' +
+        '"lfo_params":['   + $lfoArr8   + '],' +
+        '"lfo_type":"'     + $lfo       + '",' +
+        '"mtime":'         + $mtime     + '.0,' +
+        '"name":"'         + $name      + '",' +
         '"octave":0,' +
-        '"synth_version":' + $ver     + ',' +
-        '"type":"'        + $synth    + '"}')
+        '"synth_version":' + $ver       + ',' +
+        '"type":"'         + $synth     + '"}')
 }
 
 # ── Main loop ────────────────────────────────────────────────────────────────
@@ -169,12 +186,19 @@ foreach ($synth in $synthTypes) {
             foreach ($mode in @('min', 'max')) {
                 $dir = if ($mode -eq 'min') { $minDir } else { $maxDir }
 
-                $fillArr8 = if ($mode -eq 'min') { $zeros8 } else { $max8 }
-                $lfoArr8  = if ($mode -eq 'min') { $lfoMinParams[$lfo] } else { $max8 }
+                if ($mode -eq 'min') {
+                    $knobsArr8 = if ($synthKnobsMin.ContainsKey($synth)) { $synthKnobsMin[$synth] } else { $zeros8 }
+                    $fxArr8    = $zeros8
+                    $lfoArr8   = $lfoMinParams[$lfo]
+                } else {
+                    $knobsArr8 = $max8
+                    $fxArr8    = $max8
+                    $lfoArr8   = $max8
+                }
 
                 $jsonContent = Build-Json -synth $synth -fx $fx -lfo $lfo `
                                           -name $name -ver $ver `
-                                          -fillArr8 $fillArr8 -lfoArr8 $lfoArr8
+                                          -knobsArr8 $knobsArr8 -fxArr8 $fxArr8 -lfoArr8 $lfoArr8
 
                 $absJson = (Resolve-Path $dir).Path + "\${slug}.json"
                 $absAif  = (Resolve-Path $dir).Path + "\${slug}.aif"

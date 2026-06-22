@@ -1,0 +1,47 @@
+﻿File      : C:\Users\jstnf\hack\te-op1\oracle\min2.aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#03
+  Type          : dna
+  Synth version : 3
+  Octave        : 2
+  mtime         : 1782138625
+
+  Synth knobs (dna):
+    FILTER           : -29491  (-0.900)
+    WAVE NUMBER      :   4608  (0.141)
+    WAVE MODIFIER    :      0  (0.000)
+    NOISE            :      0  (0.000)
+
+  Envelope:
+    Attack           :     64  (0.002)
+    Decay            :  16320  (0.498)
+    Sustain          :  32767  (1.000)
+    Release          :  11712  (0.357)
+    Attack2          :   2048  (0.063)
+    Decay2           :   6432  (0.196)
+    Sustain2         :  18432  (0.563)
+    Release2         :   9829  (0.300)
+
+  FX (cwo)  active: yes
+  FX params (cwo):
+    FREQUENCY        :   3072  (0.094)
+    DELAY            :   3072  (0.094)
+    FEEDBACK         :   4096  (0.125)
+    SIDEBAND         :  32767  (1.000)
+
+  LFO (element)  active: yes
+  LFO params (element):
+    SOURCE           :   2000  (0.061)
+    AMOUNT           :  14071  (0.429)
+    DESTINATION      :   4160  (0.127)
+    PARAMETER        :   2000  (0.061)
+
+--- raw JSON ---
+{"adsr":[64,16320,32767,11712,2048,6432,18432,9829],"fx_active":true,"fx_params":[3072,3072,4096,32767,0,0,0,0],"fx_type":"cwo","knobs":[-29491,4608,0,0,0,0,0,0],"lfo_active":true,"lfo_params":[2000,14071,4160,2000,0,0,0,0],"lfo_type":"element","mtime":1782138625.0,"name":"2026-173#03","octave":2,"synth_version":3,"type":"dna"}

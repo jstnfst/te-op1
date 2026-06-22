@@ -34,8 +34,8 @@ parameter type.
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | WAVE SHAPER | `%` | |
-| 1 | OCTAVE | `discrete-6` | 0–6 inclusive; 19712 → 4 |
-| 2 | DETUNE+RINGMOD | `centered %` | Negative values; -10369 → 33 |
+| 1 | OCTAVE | `discrete-6` | 0–6 inclusive; 19712 → 4; hardware min = 2048 (does not go to 0) |
+| 2 | DETUNE+RINGMOD | `centered %` | Negative values; -10369 → 33; hardware min = -32768 |
 | 3 | DIGITALNESS | `%` | |
 
 ### synth.dimension
@@ -90,8 +90,8 @@ parameter type.
 ### synth.dna
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FILTER | `%` | max = 32767 |
-| 1 | WAVE NUMBER | `%` | |
+| 0 | FILTER | `centered %` | Bipolar; hardware min = -29491 (≈ -90%); not a simple 0–100 % |
+| 1 | WAVE NUMBER | `%` | Hardware min = 4608 (does not go to 0) |
 | 2 | WAVE MODIFIER | `%` | max = 32767 |
 | 3 | NOISE | `%` | |
 
@@ -119,21 +119,33 @@ parameter type.
 | 2 | PHASE FILTER | `%` | 0 → min |
 | 3 | PHASE TILT | `%` | 0 → min |
 
+### synth.cluster
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | WAVES | `%` | Hardware min = 3072 (does not go to 0) |
+| 1 | WAVE ENV | `%` | Hardware min = 0 |
+| 2 | SPREAD | `%` | Hardware min = 512 (does not go to 0) |
+| 3 | UNITOR | `selector` | Hardware min = 3 (not 0 or 1024 — distinct selector encoding) |
+
 ### synth.fm
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | FM AMOUNT | `discrete-99` | 0–99; 31743 → 95 |
 | 1 | FREQUENCY | `discrete-99` | 0–99; 17352 → 52 |
-| 2 | TOPOLOGY | `discrete-8` | 0–8 (9 options); non-linear mapping: 13312 → 6 |
+| 2 | TOPOLOGY | `selector` | Hardware min = 1024 (does not go to 0); 13312 → 6 |
 | 3 | DETUNE | `discrete-99` | 0–99; 0 → 0 |
+| 4 | (unknown) | — | Fixed at 15000 in all observed presets; FM operator param |
+| 5 | (unknown) | — | Fixed at 0 in all observed presets |
+| 6 | (unknown) | — | Fixed at 100 in all observed presets; FM operator param |
+| 7 | (unknown) | — | Fixed at 1500 in all observed presets; FM operator param |
 
 ### synth.string
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | TENSION | `%` | 3392 → ~10% |
-| 1 | IMPULSE | `max~24064` | Shows max at raw 24064; internal max ~24064 (not 32767), similar to drwave |
+| 0 | TENSION | `%` | Hardware min = 64 (does not go to 0); 3392 → ~10% |
+| 1 | IMPULSE | `max~24064` | Hardware min = 512; internal max ~24064 (not 32767), similar to drwave |
 | 2 | STEREO | `%` | 16384 → ~50% |
-| 3 | IMPULSE TYPE | `%` | 9792 → ~30% |
+| 3 | IMPULSE TYPE | `selector` | Hardware min = 8256; 9792 → ~30% — appears to be a selector, not a linear % |
 
 ### fx.grid
 | Index | Name | Scale | Notes |

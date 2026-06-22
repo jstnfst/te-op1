@@ -1,0 +1,52 @@
+﻿File      : C:\Users\jstnf\hack\te-op1\oracle\min4.aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#05
+  Type          : string
+  Synth version : 3
+  Octave        : 0
+  mtime         : 1782138625
+
+  Synth knobs (string):
+    TENSION          :     64  (0.002)
+    IMPULSE          :    512  (0.016)
+    STEREO           :      0  (0.000)
+    IMPULSE TYPE     :   8256  (0.252)
+
+  Envelope:
+    Attack           :   1088  (0.033)
+    Decay            :   3066  (0.094)
+    Sustain          :  21504  (0.656)
+    Release          :  13376  (0.408)
+    Attack2          :   2048  (0.063)
+    Decay2           :   4000  (0.122)
+    Sustain2         :  18432  (0.563)
+    Release2         :  18021  (0.550)
+
+  FX (spring)  active: yes
+  FX params (spring):
+    TONE             :  14560  (0.444)
+    TURNS            :  14816  (0.452)
+    DAMPING          :  13824  (0.422)
+    MIX              :  13814  (0.422)
+    knob 4           :   8000  (0.244)  [unknown]
+    knob 5           :   8000  (0.244)  [unknown]
+    knob 6           :   8000  (0.244)  [unknown]
+    knob 7           :   8000  (0.244)  [unknown]
+
+  LFO (value)  active: yes
+  LFO params (value):
+    SPEED            :   9704  (0.296)
+    AMOUNT           :   8191  (0.250)
+    DESTINATION      :   2432  (0.074)
+    PARAMETER        :   2000  (0.061)
+    LFO SHAPE        :      0  (0.000)
+
+--- raw JSON ---
+{"adsr":[1088,3066,21504,13376,2048,4000,18432,18021],"fx_active":true,"fx_params":[14560,14816,13824,13814,8000,8000,8000,8000],"fx_type":"spring","knobs":[64,512,0,8256,0,0,0,0],"lfo_active":true,"lfo_params":[9704,8191,2432,2000,0,0,0,0],"lfo_type":"value","mtime":1782138625.0,"name":"2026-173#05","octave":0,"synth_version":3,"type":"string"}
