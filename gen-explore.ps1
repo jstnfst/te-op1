@@ -122,11 +122,9 @@ $synthKnobsMin = @{
 }
 
 # ── Output directories ───────────────────────────────────────────────────────
-$minDir = "explore\min"
-$maxDir = "explore\max"
+# Structure: explore\aif\[mode]\[synth]\[fx]\*.aif
+#            explore\json\[mode]\[synth]\[fx]\*.json
 if (Test-Path "explore") { Remove-Item -Recurse -Force "explore" }
-$null = New-Item -ItemType Directory -Force $minDir
-$null = New-Item -ItemType Directory -Force $maxDir
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 function Get-Slug([string]$s) {
@@ -179,12 +177,17 @@ $n = 0
 foreach ($synth in $synthTypes) {
     $ver = $synthVersion[$synth]
     foreach ($fx in $fxTypes) {
-        foreach ($lfo in $lfoTypes) {
-            $slug = "$(Get-Slug $synth)$(Get-Slug $fx)$(Get-Slug $lfo)"
-            $name = $slug
+        foreach ($mode in @('min', 'max')) {
+            $aifDir  = "explore\aif\$mode\$synth\$fx"
+            $jsonDir = "explore\json\$mode\$synth\$fx"
+            $null = New-Item -ItemType Directory -Force $aifDir
+            $null = New-Item -ItemType Directory -Force $jsonDir
+            $absAifDir  = (Resolve-Path $aifDir).Path
+            $absJsonDir = (Resolve-Path $jsonDir).Path
 
-            foreach ($mode in @('min', 'max')) {
-                $dir = if ($mode -eq 'min') { $minDir } else { $maxDir }
+            foreach ($lfo in $lfoTypes) {
+                $slug = "$(Get-Slug $synth)$(Get-Slug $fx)$(Get-Slug $lfo)"
+                $name = $slug
 
                 if ($mode -eq 'min') {
                     $knobsArr8 = if ($synthKnobsMin.ContainsKey($synth)) { $synthKnobsMin[$synth] } else { $zeros8 }
@@ -200,8 +203,8 @@ foreach ($synth in $synthTypes) {
                                           -name $name -ver $ver `
                                           -knobsArr8 $knobsArr8 -fxArr8 $fxArr8 -lfoArr8 $lfoArr8
 
-                $absJson = (Resolve-Path $dir).Path + "\${slug}.json"
-                $absAif  = (Resolve-Path $dir).Path + "\${slug}.aif"
+                $absJson = "$absJsonDir\${slug}.json"
+                $absAif  = "$absAifDir\${slug}.aif"
 
                 [System.IO.File]::WriteAllText($absJson, $jsonContent,
                     [System.Text.UTF8Encoding]::new($false))
@@ -212,11 +215,11 @@ foreach ($synth in $synthTypes) {
                     Write-Warning "json2aif failed for $slug ($mode): $out"
                 }
             }
+        }
 
-            $n++
-            if ($n % 50 -eq 0) {
-                Write-Host "  $n / $total  (last: $slug)"
-            }
+        $n += $lfoTypes.Count
+        if ($n % ($lfoTypes.Count * 9) -eq 0) {
+            Write-Host "  $n / $total  (last synth: $synth)"
         }
     }
 }
@@ -226,11 +229,13 @@ Write-Host "Done.  $total combinations processed."
 Write-Host ""
 
 # ── Summary ──────────────────────────────────────────────────────────────────
-$minJson = (Get-ChildItem "$minDir\*.json").Count
-$minAif  = (Get-ChildItem "$minDir\*.aif" ).Count
-$maxJson = (Get-ChildItem "$maxDir\*.json" ).Count
-$maxAif  = (Get-ChildItem "$maxDir\*.aif"  ).Count
+$minAif  = (Get-ChildItem "explore\aif\min"  -Recurse -Filter "*.aif" ).Count
+$maxAif  = (Get-ChildItem "explore\aif\max"  -Recurse -Filter "*.aif" ).Count
+$minJson = (Get-ChildItem "explore\json\min" -Recurse -Filter "*.json").Count
+$maxJson = (Get-ChildItem "explore\json\max" -Recurse -Filter "*.json").Count
 
-Write-Host "  explore\min\   $minJson JSON + $minAif AIF  (hardware minimum values)"
-Write-Host "  explore\max\   $maxJson JSON + $maxAif AIF  (all params = 32767)"
+Write-Host "  explore\aif\min\[synth]\[fx]\   $minAif AIF  (hardware minimum values)"
+Write-Host "  explore\aif\max\[synth]\[fx]\   $maxAif AIF  (all params = 32767)"
+Write-Host "  explore\json\min\[synth]\[fx]\  $minJson JSON"
+Write-Host "  explore\json\max\[synth]\[fx]\  $maxJson JSON"
 Write-Host ""
