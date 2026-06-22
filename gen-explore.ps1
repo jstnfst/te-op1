@@ -176,16 +176,16 @@ $max8   = '32767,32767,32767,32767,32767,32767,32767,32767'
 $n = 0
 foreach ($synth in $synthTypes) {
     $ver = $synthVersion[$synth]
-    foreach ($fx in $fxTypes) {
+    foreach ($lfo in $lfoTypes) {
         foreach ($mode in @('min', 'max')) {
-            $aifDir  = "explore\aif\$mode\$synth\$fx"
-            $jsonDir = "explore\json\$mode\$synth\$fx"
+            $aifDir  = "explore\aif\$mode\$synth\$lfo"
+            $jsonDir = "explore\json\$mode\$synth\$lfo"
             $null = New-Item -ItemType Directory -Force $aifDir
             $null = New-Item -ItemType Directory -Force $jsonDir
             $absAifDir  = (Resolve-Path $aifDir).Path
             $absJsonDir = (Resolve-Path $jsonDir).Path
 
-            foreach ($lfo in $lfoTypes) {
+            foreach ($fx in $fxTypes) {
                 $slug = "$(Get-Slug $synth)$(Get-Slug $fx)$(Get-Slug $lfo)"
                 $name = $slug
 
@@ -217,8 +217,8 @@ foreach ($synth in $synthTypes) {
             }
         }
 
-        $n += $lfoTypes.Count
-        if ($n % ($lfoTypes.Count * 9) -eq 0) {
+        $n += $fxTypes.Count
+        if ($n % ($fxTypes.Count * 6) -eq 0) {
             Write-Host "  $n / $total  (last synth: $synth)"
         }
     }
@@ -234,8 +234,8 @@ $maxAif  = (Get-ChildItem "explore\aif\max"  -Recurse -Filter "*.aif" ).Count
 $minJson = (Get-ChildItem "explore\json\min" -Recurse -Filter "*.json").Count
 $maxJson = (Get-ChildItem "explore\json\max" -Recurse -Filter "*.json").Count
 
-Write-Host "  explore\aif\min\[synth]\[fx]\   $minAif AIF  (hardware minimum values)"
-Write-Host "  explore\aif\max\[synth]\[fx]\   $maxAif AIF  (all params = 32767)"
-Write-Host "  explore\json\min\[synth]\[fx]\  $minJson JSON"
-Write-Host "  explore\json\max\[synth]\[fx]\  $maxJson JSON"
+Write-Host "  explore\aif\min\[synth]\[lfo]\   $minAif AIF  (hardware minimum values)"
+Write-Host "  explore\aif\max\[synth]\[lfo]\   $maxAif AIF  (all params = 32767)"
+Write-Host "  explore\json\min\[synth]\[lfo]\  $minJson JSON"
+Write-Host "  explore\json\max\[synth]\[lfo]\  $maxJson JSON"
 Write-Host ""
