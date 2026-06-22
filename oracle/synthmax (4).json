@@ -1,0 +1,47 @@
+﻿File      : C:\Users\jstnf\hack\te-op1\oracle\synthmax (4).aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#04
+  Type          : dimension
+  Synth version : 3
+  Octave        : 0
+  mtime         : 1782145375
+
+  Synth knobs (dimension):
+    WAVEFORM         :  32767  (1.000)
+    STEREO           :  32767  (1.000)
+    FILTER FREQ      :  32767  (1.000)
+    RES              :  32767  (1.000)
+
+  Envelope:
+    Attack           :   2624  (0.080)
+    Decay            :   8640  (0.264)
+    Sustain          :   7168  (0.219)
+    Release          :   6720  (0.205)
+    Attack2          :   2048  (0.063)
+    Decay2           :    192  (0.006)
+    Sustain2         :  18432  (0.563)
+    Release2         :  21093  (0.644)
+
+  FX (mother)  active: yes
+  FX params (mother):
+    DISTANCE         :  25281  (0.772)
+    GATE             :      0  (0.000)
+    COLOR            :   1339  (0.041)
+    MIX              :  25599  (0.781)
+
+  LFO (element)  active: yes
+  LFO params (element):
+    SOURCE           :   4688  (0.143)
+    AMOUNT           : -16427  (-0.501)
+    DESTINATION      :   5584  (0.170)
+    PARAMETER        :  14000  (0.427)
+
+--- raw JSON ---
+{"adsr":[2624,8640,7168,6720,2048,192,18432,21093],"fx_active":true,"fx_params":[25281,0,1339,25599,0,0,0,0],"fx_type":"mother","knobs":[32767,32767,32767,32767,0,0,0,0],"lfo_active":true,"lfo_params":[4688,-16427,5584,14000,0,0,0,0],"lfo_type":"element","mtime":1782145375.0,"name":"2026-173#04","octave":0,"synth_version":3,"type":"dimension"}

@@ -1,0 +1,49 @@
+﻿File      : C:\Users\jstnf\hack\te-op1\oracle\synthmax (6).aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#06
+  Type          : drwave
+  Synth version : 3
+  Octave        : -2
+  mtime         : 1782145375
+
+  Synth knobs (drwave):
+    WAVE TYPE AND LENGTH :  24568  (0.750)
+    FILTER           :  16379  (0.500)
+    PHASE            :  16377  (0.500)
+    CHORUS           :  32767  (1.000)
+    knob 4           :  32000  (0.977)  [unknown]
+
+  Envelope:
+    Attack           :     64  (0.002)
+    Decay            :   5696  (0.174)
+    Sustain          :  12800  (0.391)
+    Release          :  12736  (0.389)
+    Attack2          :   6140  (0.187)
+    Decay2           :     64  (0.002)
+    Sustain2         :  18432  (0.563)
+    Release2         :  26981  (0.823)
+
+  FX (delay)  active: no
+  FX params (delay):
+    RANGE            :   7168  (0.219)
+    SPEED            :  32767  (1.000)
+    FEEDBACK         :   5520  (0.168)
+    LEVEL            :   2616  (0.080)
+
+  LFO (value)  active: no
+  LFO params (value):
+    SPEED            :   9192  (0.281)
+    AMOUNT           :   8077  (0.246)
+    DESTINATION      :   1648  (0.050)
+    PARAMETER        :  11120  (0.339)
+    LFO SHAPE        :      0  (0.000)
+
+--- raw JSON ---
+{"adsr":[64,5696,12800,12736,6140,64,18432,26981],"fx_active":false,"fx_params":[7168,32767,5520,2616,0,0,0,0],"fx_type":"delay","knobs":[24568,16379,16377,32767,32000,0,0,0],"lfo_active":false,"lfo_params":[9192,8077,1648,11120,0,0,0,0],"lfo_type":"value","mtime":1782145375.0,"name":"2026-173#06","octave":-2,"synth_version":3,"type":"drwave"}

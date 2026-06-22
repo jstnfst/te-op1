@@ -34,8 +34,8 @@ parameter type.
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | WAVE SHAPER | `%` | |
-| 1 | OCTAVE | `discrete-6` | 0–6 inclusive; 19712 → 4; hardware min = 2048 (does not go to 0) |
-| 2 | DETUNE+RINGMOD | `centered %` | Negative values; -10369 → 33; hardware min = -32768 |
+| 1 | OCTAVE | `discrete-6` | 0–6 inclusive; 19712 → 4; hardware min=2048, hardware max=26624 |
+| 2 | DETUNE+RINGMOD | `centered %` | Negative values; -10369 → 33; hardware min=-32768 |
 | 3 | DIGITALNESS | `%` | |
 
 ### synth.dimension
@@ -76,10 +76,11 @@ parameter type.
 ### synth.drwave
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVE TYPE AND LENGTH | `discrete-98` | 0–98; internal max ~24400 (not 32767 or 16383); encodes wave type + length together; 14209 → 57 |
-| 1 | FILTER | `discrete-98` | 0–98; internal max 16383; 11735 → 70 |
-| 2 | PHASE | `discrete-98` | 0–98; internal max 16383; 8199 → 49 |
+| 0 | WAVE TYPE AND LENGTH | `discrete-98` | 0–98; hardware max=24568; encodes wave type + length together; 14209 → 57 |
+| 1 | FILTER | `discrete-98` | 0–98; hardware max=16379; 11735 → 70 |
+| 2 | PHASE | `discrete-98` | 0–98; hardware max=16377; 8199 → 49 |
 | 3 | CHORUS | `discrete-99` | 0–99; 100 steps; 0 → 0 |
+| 4 | (unknown) | — | hardware max=32000; non-zero at max position |
 
 ### fx.delay
 | Index | Name | Scale | Notes |
@@ -100,9 +101,9 @@ parameter type.
 ### synth.dna
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FILTER | `centered %` | Bipolar; hardware min = -29491 (≈ -90%); not a simple 0–100 % |
-| 1 | WAVE NUMBER | `%` | Hardware min = 4608 (does not go to 0) |
-| 2 | WAVE MODIFIER | `%` | max = 32767 |
+| 0 | FILTER | `centered %` | Bipolar; hardware min=-29491 (≈ -90%); not a simple 0–100 % |
+| 1 | WAVE NUMBER | `%` | Hardware min=4608, hardware max=12800 (limited range) |
+| 2 | WAVE MODIFIER | `%` | max=32767 |
 | 3 | NOISE | `%` | |
 
 ### lfo.element
@@ -116,33 +117,33 @@ parameter type.
 ### synth.pulse
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FILTER | `%` | 18848 → ~57% |
-| 1 | AMPLITUDE | `%` | 3984 → ~12% |
-| 2 | SECOND PULSE | `%` | 10752 → ~33% |
-| 3 | MODULATION | `centered %` | Bipolar; -6144 → negative |
+| 0 | FILTER | `%` | 18848 → ~57%; hardware max=23168 |
+| 1 | AMPLITUDE | `%` | 3984 → ~12%; hardware max=16384 |
+| 2 | SECOND PULSE | `%` | 10752 → ~33%; hardware max=16384 |
+| 3 | MODULATION | `centered %` | Bipolar; -6144 → negative; hardware max=16384 (positive side) |
 
 ### synth.phase
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | PHASE SHIFT | `%` | 0 → min |
-| 1 | DISTORTION AMOUNT | `%` | 14310 → ~44% |
+| 1 | DISTORTION AMOUNT | `%` | 14310 → ~44%; hardware max=29491 (does not reach 32767) |
 | 2 | PHASE FILTER | `%` | 0 → min |
 | 3 | PHASE TILT | `%` | 0 → min |
 
 ### synth.cluster
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVES | `%` | Hardware min = 3072 (does not go to 0) |
-| 1 | WAVE ENV | `%` | Hardware min = 0 |
-| 2 | SPREAD | `%` | Hardware min = 512 (does not go to 0) |
-| 3 | UNITOR | `selector` | Hardware min = 3 (not 0 or 1024 — distinct selector encoding) |
+| 0 | WAVES | `%` | Hardware min=3072, hardware max=17408 (does not span full 0–32767) |
+| 1 | WAVE ENV | `%` | Hardware min=0 |
+| 2 | SPREAD | `%` | Hardware min=512, hardware max=24064 |
+| 3 | UNITOR | `selector` | Hardware min=3, hardware max=1638 (distinct selector encoding, not 1024-based) |
 
 ### synth.fm
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | FM AMOUNT | `discrete-99` | 0–99; 31743 → 95 |
 | 1 | FREQUENCY | `discrete-99` | 0–99; 17352 → 52 |
-| 2 | TOPOLOGY | `selector` | Hardware min = 1024 (does not go to 0); 13312 → 6 |
+| 2 | TOPOLOGY | `selector` | Hardware min=1024, hardware max=17408; 13312 → 6 |
 | 3 | DETUNE | `discrete-99` | 0–99; 0 → 0 |
 | 4 | (unknown) | — | Fixed at 15000 in all observed presets; FM operator param |
 | 5 | (unknown) | — | Fixed at 0 in all observed presets |

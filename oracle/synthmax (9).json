@@ -1,0 +1,48 @@
+﻿File      : C:\Users\jstnf\hack\te-op1\oracle\synthmax (9).aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#09
+  Type          : phase
+  Synth version : 3
+  Octave        : -2
+  mtime         : 1782145750
+
+  Synth knobs (phase):
+    PHASE SHIFT      :  32767  (1.000)
+    DISTORTION AMOUNT :  29491  (0.900)
+    PHASE FILTER     :  32767  (1.000)
+    PHASE TILT       :  32767  (1.000)
+
+  Envelope:
+    Attack           :     64  (0.002)
+    Decay            :   7162  (0.219)
+    Sustain          :  32767  (1.000)
+    Release          :  15808  (0.482)
+    Attack2          :   5120  (0.156)
+    Decay2           :   6464  (0.197)
+    Sustain2         :   4000  (0.122)
+    Release2         :   4000  (0.122)
+
+  FX (nitro)  active: yes
+  FX params (nitro):
+    FREQUENCY LOWS   :    500  (0.015)
+    FILTER FOLLOW    :      0  (0.000)
+    FEEDBACK         :  10500  (0.320)
+    FREQUENCY HIGHS  :  16000  (0.488)
+
+  LFO (value)  active: yes
+  LFO params (value):
+    SPEED            :   7680  (0.234)
+    AMOUNT           :   9225  (0.282)
+    DESTINATION      :   1024  (0.031)
+    PARAMETER        :   1520  (0.046)
+    LFO SHAPE        :      0  (0.000)
+
+--- raw JSON ---
+{"adsr":[64,7162,32767,15808,5120,6464,4000,4000],"fx_active":true,"fx_params":[500,0,10500,16000,0,0,0,0],"fx_type":"nitro","knobs":[32767,29491,32767,32767,0,0,0,0],"lfo_active":true,"lfo_params":[7680,9225,1024,1520,0,0,0,0],"lfo_type":"value","mtime":1782145750.0,"name":"2026-173#09","octave":-2,"synth_version":3,"type":"phase"}

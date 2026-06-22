@@ -121,6 +121,73 @@ $synthKnobsMin = @{
     string  = '64,512,0,8256,0,0,0,0'
 }
 
+# ── Maximum synth knobs per engine type ──────────────────────────────────────
+# Hardware-confirmed maximum knob values (all knobs at rightmost position).
+# Only engines whose hardware maxes differ from all-32767 are listed here.
+# Missing: sampler, string (no synthmax oracle provided).
+# [oracle] = raw JSON extracted from synthmax(N).aif hardware exports.
+$synthKnobsMax = @{
+    # [oracle] synthmax(1).aif: indices 4-7 fixed at 0
+    amp       = '32767,32767,32767,32767,0,0,0,0'
+    # [oracle] synthmax(2).aif: WAVES=17408 (selector max), SPREAD=24064, UNITOR=1638 (selector max)
+    cluster   = '17408,32767,24064,1638,0,0,0,0'
+    # [oracle] synthmax(3).aif: OCTAVE=26624 (discrete-6 max), indices 4-7=0
+    digital   = '32767,26624,32767,32767,0,0,0,0'
+    # [oracle] synthmax(4).aif: indices 4-7 fixed at 0
+    dimension = '32767,32767,32767,32767,0,0,0,0'
+    # [oracle] synthmax(5).aif: WAVE NUMBER=12800 (selector max), indices 4-7=0
+    dna       = '32767,12800,32767,32767,0,0,0,0'
+    # [oracle] synthmax(6).aif: WAVE TYPE=24568, FILTER=16379, PHASE=16377, index4=32000
+    drwave    = '24568,16379,16377,32767,32000,0,0,0'
+    # dsynth: all 32767 including indices 4-7 — no entry needed
+    # [oracle] synthmax(8).aif: TOPOLOGY=17408 (selector max), indices 4-7=fixed FM operator params
+    fm        = '32767,32767,17408,32767,15000,0,100,1500'
+    # [oracle] synthmax(9).aif: DISTORTION AMOUNT=29491, indices 4-7=0
+    phase     = '32767,29491,32767,32767,0,0,0,0'
+    # [oracle] synthmax(10).aif: FILTER=23168, AMPLITUDE=16384, SECOND PULSE=16384, MODULATION=16384
+    pulse     = '23168,16384,16384,16384,0,0,0,0'
+    # [inferred] sampler: no oracle; uses indices 0-7; using 32767 for all
+    sampler   = '32767,32767,32767,32767,32767,32767,32767,32767'
+    # [inferred] string: no oracle; IMPULSE TYPE is selector (min=8256, max unknown); using 32767
+    string    = '32767,32767,32767,32767,0,0,0,0'
+    # [oracle] synthmax(11).aif: indices 4-7=0
+    vocoder   = '32767,32767,32767,32767,0,0,0,0'
+    # [oracle] synthmax(12).aif: indices 4-7=0
+    voltage   = '32767,32767,32767,32767,0,0,0,0'
+}
+
+# ── Maximum fx_params per FX type ────────────────────────────────────────────
+# Indices 4-7 must remain 8000 for these FX types (same as min; firmware requirement).
+# Active params (0-3) use 32767 unless oracle data shows a lower ceiling.
+# [oracle] = confirmed from min oracle work (fx0-fx5.aif).
+$fxParamsMax = @{
+    # [oracle] indices 4-7 must be 8000
+    grid   = '32767,32767,32767,32767,8000,8000,8000,8000'
+    phone  = '32767,32767,32767,32767,8000,8000,8000,8000'
+    punch  = '32767,32767,32767,32767,8000,8000,8000,8000'
+    spring = '32767,32767,32767,32767,8000,8000,8000,8000'
+}
+
+# ── Maximum lfo_params per LFO type ──────────────────────────────────────────
+# Selector params cannot be 32767 — they select an out-of-range option.
+# Max for selector-4 params inferred as 15360 (4th option, from lfo.midi/element data).
+# [inferred] = derived from selector-4 pattern; not yet hardware-verified.
+$lfoMaxParams = @{
+    # SOURCE[0]=selector-4 max, AMOUNT[1]=centered% max=32767,
+    # DESTINATION[2]=selector-4 max, PARAMETER[3]=selector (using 32767 as last option)
+    element  = '15360,32767,15360,32767,0,0,0,0'
+    # All 8 indices are selectors (knob 1-4, dest 1-4); selector-4 max=15360
+    midi     = '15360,15360,15360,15360,15360,15360,15360,15360'
+    # DESTINATION[2]=selector max, PARAMETER[4]=selector max; others are %/non-linear
+    random   = '32767,32767,32767,32767,32767,0,0,0'
+    # LFO SHAPE[7]=selector; indices 4-6=null (keep 0); other indices are fine at 32767
+    tremolo  = '32767,32767,32767,32767,0,0,0,32767'
+    # DESTINATION[2]=selector max, PARAMETER[3]=selector max
+    value    = '32767,32767,15360,32767,0,0,0,0'
+    # AMP[0]=% max, VOLUME AMOUNT[1]=centered% max, DESTINATION[2]=selector-4 max, PARAMETER[3]=selector max
+    velocity = '32767,32767,15360,32767,0,0,0,0'
+}
+
 # ── Minimum fx_params per FX type ────────────────────────────────────────────
 # Hardware-confirmed minimum fx_params values (all FX knobs at leftmost position).
 # Only FX types whose hardware mins differ from all-zeros are listed here.
@@ -214,9 +281,9 @@ foreach ($synth in $synthTypes) {
                     $fxArr8    = if ($fxParamsMin.ContainsKey($fx))     { $fxParamsMin[$fx] }     else { $zeros8 }
                     $lfoArr8   = $lfoMinParams[$lfo]
                 } else {
-                    $knobsArr8 = $max8
-                    $fxArr8    = $max8
-                    $lfoArr8   = $max8
+                    $knobsArr8 = if ($synthKnobsMax.ContainsKey($synth)) { $synthKnobsMax[$synth] } else { $max8 }
+                    $fxArr8    = if ($fxParamsMax.ContainsKey($fx))      { $fxParamsMax[$fx] }      else { $max8 }
+                    $lfoArr8   = if ($lfoMaxParams.ContainsKey($lfo))    { $lfoMaxParams[$lfo] }    else { $max8 }
                 }
 
                 $jsonContent = Build-Json -synth $synth -fx $fx -lfo $lfo `
