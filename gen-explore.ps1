@@ -146,8 +146,8 @@ $synthKnobsMax = @{
     phase     = '32767,29491,32767,32767,0,0,0,0'
     # [oracle] synthmax(10).aif: FILTER=23168, AMPLITUDE=16384, SECOND PULSE=16384, MODULATION=16384
     pulse     = '23168,16384,16384,16384,0,0,0,0'
-    # [oracle] sampler-max-0000.aif: START=32766, DIRECTION=12000 (forward selector max), GAIN=8192
-    sampler   = '32766,32767,32767,32767,12000,32767,32767,8192'
+    # [oracle] sampler-max-0001.aif: START=32766, DIRECTION=24576 (reverse/max), GAIN=32767
+    sampler   = '32766,32767,32767,32767,24576,32767,32767,32767'
     # [oracle] synthmax-string-0000.aif: TENSION=8256, IMPULSE=24064, STEREO=16384, IMPULSE TYPE=16448
     string    = '8256,24064,16384,16448,0,0,0,0'
     # [oracle] synthmax(11).aif: indices 4-7=0

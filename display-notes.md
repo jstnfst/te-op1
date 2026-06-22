@@ -200,10 +200,10 @@ parameter type.
 | 1 | LOOP IN | `%` | raw 9821 → ~30% |
 | 2 | LOOP OUT | `%` | raw 18033 → ~55% |
 | 3 | END | `%` | raw 31301 → ~96% |
-| 4 | DIRECTION | `selector-bipolar` | forward/reverse; larger values = reverse; raw 12000 → "forward" (hardware max) |
+| 4 | DIRECTION | `selector-bipolar` | forward/reverse; raw 12000 → "forward", hardware max=24576 (reverse) |
 | 5 | FINE TUNE | `%` | raw 30195 → ~92% |
 | 6 | LOOP FADE | `%` | raw 9103 → ~28% |
-| 7 | GAIN | `%` | raw 8192 → 100% display (hardware max; not 32767) |
+| 7 | GAIN | `%` | raw 8192 → ~25%; hardware max=32767 |
 
 Note: sampler presets on hardware include extra JSON fields (`base_freq`, `fade`, `stereo`)
 not present in our generated explore presets. Explore presets for sampler may not load
