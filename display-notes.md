@@ -58,7 +58,7 @@ parameter type.
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | SPEED | `tempo-dial` | Non-linear BPM dial; no simple numeric reading |
-| 1 | AMOUNT | `discrete-24` | 0–24; 23255 → 17 (23255/32767 × 24 = 17.0) |
+| 1 | AMOUNT | `centered %` | Bipolar -100 to +100; 23255 → ~71% |
 | 2 | DESTINATION | `selector` | Discrete named options (e.g. "waveform") |
 | 3 | PARAMETER | `selector` | Discrete, options depend on DESTINATION value |
 | 4 | LFO SHAPE | `selector` | Wave shape control; always 0 in observed presets (defaults to sine); unverified index — may be at index 7 instead (consistent with lfo.tremolo where shape is at index 7). Need a preset with non-zero shape to confirm. |

@@ -76,8 +76,8 @@ $lfoMinParams = @{
     # [inferred] PITCH AMOUNT=centered%→-32767, VOLUME LEVEL=centered%→-32767; SPEED/ENV are 0
     tremolo  = '0,-32767,-32767,0,0,0,0,0'
 
-    # [inferred] DESTINATION=selector→1024, PARAMETER=selector→1024
-    value    = '0,0,1024,1024,0,0,0,0'
+    # [inferred] AMOUNT=centered%→-32767, DESTINATION=selector→1024, PARAMETER=selector→1024
+    value    = '0,-32767,1024,1024,0,0,0,0'
 
     # [inferred] DESTINATION=selector→1024, PARAMETER=selector→1024
     velocity = '0,0,1024,1024,0,0,0,0'
