@@ -220,16 +220,16 @@
     ['synth.amp', 2, 'TONE',       'linear',   [], 'no display notes; assumed linear'],
     ['synth.amp', 3, 'DRIVE',      'linear',   [], 'no display notes; assumed linear'],
 
-    // synth.cluster — no display notes; assumed linear
-    ['synth.cluster', 0, 'WAVES',    'linear', [], 'no display notes; assumed linear'],
-    ['synth.cluster', 1, 'WAVE ENV', 'linear', [], 'no display notes; assumed linear'],
-    ['synth.cluster', 2, 'SPREAD',   'linear', [], 'no display notes; assumed linear'],
-    ['synth.cluster', 3, 'UNITOR',   'linear', [], 'no display notes; assumed linear'],
+    // synth.cluster — oracle min confirmed (min0.aif); scale types partially inferred
+    ['synth.cluster', 0, 'WAVES',    'linear',   [], 'hardware min=3072 (knob does not reach 0)'],
+    ['synth.cluster', 1, 'WAVE ENV', 'linear',   [], 'hardware min=0'],
+    ['synth.cluster', 2, 'SPREAD',   'linear',   [], 'hardware min=512 (knob does not reach 0)'],
+    ['synth.cluster', 3, 'UNITOR',   'selector', [[3,'min']], 'hardware min=3; selector-like encoding (not 0 or 1024)'],
 
-    // synth.digital
+    // synth.digital — oracle min confirmed (min1.aif)
     ['synth.digital', 0, 'WAVE SHAPER',    'linear',   [], ''],
-    ['synth.digital', 1, 'OCTAVE',         'discrete', [[19712, 4]], '0–6 inclusive'],
-    ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-10369, 33]], 'negative raw values possible'],
+    ['synth.digital', 1, 'OCTAVE',         'discrete', [[19712, 4]], '0–6 inclusive; hardware min=2048 (not 0)'],
+    ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-32768,'min'],[-10369, 33]], 'bipolar; hardware min=-32768'],
     ['synth.digital', 3, 'DIGITALNESS',    'linear',   [], ''],
 
     // synth.dimension
@@ -238,11 +238,11 @@
     ['synth.dimension', 2, 'FILTER FREQ', 'hz',     [[13742, '1320 Hz']], 'log Hz scale'],
     ['synth.dimension', 3, 'RES',         'linear', [], ''],
 
-    // synth.dna
-    ['synth.dna', 0, 'FILTER',        'linear', [], 'max=32767'],
-    ['synth.dna', 1, 'WAVE NUMBER',   'linear', [], ''],
-    ['synth.dna', 2, 'WAVE MODIFIER', 'linear', [], 'max=32767'],
-    ['synth.dna', 3, 'NOISE',         'linear', [], ''],
+    // synth.dna — oracle min confirmed (min2.aif)
+    ['synth.dna', 0, 'FILTER',        'centered', [[-29491,'~-90%']], 'bipolar; hardware min=-29491 (not 0)'],
+    ['synth.dna', 1, 'WAVE NUMBER',   'linear',   [], 'hardware min=4608 (not 0)'],
+    ['synth.dna', 2, 'WAVE MODIFIER', 'linear',   [], 'max=32767'],
+    ['synth.dna', 3, 'NOISE',         'linear',   [], ''],
 
     // synth.drwave
     ['synth.drwave', 0, 'WAVE TYPE AND LENGTH', 'discrete', [[14209, 57]], '0–98; internal max ~24400 (not 32767); encodes wave type + length'],
@@ -260,11 +260,15 @@
     ['synth.dsynth', 6, 'ENVELOPE',                'unknown', [], '', 'no display notes — needs characterization'],
     ['synth.dsynth', 7, 'FILTER CUTOFF FREQUENCY', 'unknown', [], '', 'no display notes — needs characterization'],
 
-    // synth.fm
-    ['synth.fm', 0, 'FM AMOUNT', 'discrete', [[31743, 95]], '0–99'],
-    ['synth.fm', 1, 'FREQUENCY', 'discrete', [[17352, 52]], '0–99'],
-    ['synth.fm', 2, 'TOPOLOGY',  'discrete', [[13312, 6]],  '0–8 (9 options); non-linear raw mapping'],
-    ['synth.fm', 3, 'DETUNE',    'discrete', [[0, 0]],      '0–99'],
+    // synth.fm — oracle min confirmed (min3.aif); indices 4-7 are unknown FM operator params
+    ['synth.fm', 0, 'FM AMOUNT',  'discrete', [[31743, 95]],          '0–99'],
+    ['synth.fm', 1, 'FREQUENCY',  'discrete', [[17352, 52]],          '0–99'],
+    ['synth.fm', 2, 'TOPOLOGY',   'selector', [[1024,'min'],[13312, 6]],'hardware min=1024 (not 0); 9 options; non-linear raw mapping'],
+    ['synth.fm', 3, 'DETUNE',     'discrete', [[0, 0]],               '0–99'],
+    ['synth.fm', 4, '(unknown)',  'unknown',  [[15000,'fixed']],       'FM operator param; always 15000 in observed presets'],
+    ['synth.fm', 5, '(unknown)',  'unknown',  [[0,'fixed']],           'FM operator param; always 0 in observed presets'],
+    ['synth.fm', 6, '(unknown)',  'unknown',  [[100,'fixed']],         'FM operator param; always 100 in observed presets'],
+    ['synth.fm', 7, '(unknown)',  'unknown',  [[1500,'fixed']],        'FM operator param; always 1500 in observed presets'],
 
     // synth.phase
     ['synth.phase', 0, 'PHASE SHIFT',       'linear', [[0, 0]],       ''],
@@ -288,11 +292,11 @@
     ['synth.sampler', 6, 'LOOP FADE', 'linear',   [[9103, 28]],          ''],
     ['synth.sampler', 7, 'GAIN',      'linear',   [[8192, 25]],          ''],
 
-    // synth.string
-    ['synth.string', 0, 'TENSION',      'linear',    [[3392, 10]],         ''],
-    ['synth.string', 1, 'IMPULSE',      'nonlinear', [[24064, 'max']],     'max at raw 24064, not 32767'],
-    ['synth.string', 2, 'STEREO',       'linear',    [[16384, 50]],        ''],
-    ['synth.string', 3, 'IMPULSE TYPE', 'linear',    [[9792, 30]],         ''],
+    // synth.string — oracle min confirmed (min4.aif)
+    ['synth.string', 0, 'TENSION',      'linear',    [[3392, 10]],        'hardware min=64 (not 0)'],
+    ['synth.string', 1, 'IMPULSE',      'nonlinear', [[24064, 'max']],    'max at raw 24064; hardware min=512 (not 0); silence below min'],
+    ['synth.string', 2, 'STEREO',       'linear',    [[16384, 50]],       ''],
+    ['synth.string', 3, 'IMPULSE TYPE', 'selector',  [[8256,'min']],      'hardware min=8256; selector-like (not linear %)'],
 
     // synth.vocoder
     ['synth.vocoder', 0, 'WAVEFORM', 'selector', [[0, 'S']],  '8 options: S,1,2,3,4,5,6,N'],
@@ -384,24 +388,24 @@
     ['lfo.random', 4, 'PARAMETER',   'selector', [[0,'freq']],   'context-dep on DESTINATION; raw 0="freq" when dest=fx'],
 
     // lfo.tremolo
-    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [],              ''],
-    ['lfo.tremolo', 1, 'PITCH AMOUNT',   'discrete', [[985,3],[2264,7]],'0–99'],
-    ['lfo.tremolo', 2, 'VOLUME LEVEL',   'centered', [[-12759,-38]],  '-100 to +100'],
-    ['lfo.tremolo', 3, 'PITCH ENVELOPE', 'linear',   [[4592,14],[12136,37]],''],
+    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [],                        ''],
+    ['lfo.tremolo', 1, 'PITCH AMOUNT',   'centered', [[985,'~3%'],[2264,'~7%']],'bipolar -100 to +100'],
+    ['lfo.tremolo', 2, 'VOLUME LEVEL',   'centered', [[-12759,-38]],            '-100 to +100'],
+    ['lfo.tremolo', 3, 'PITCH ENVELOPE', 'linear',   [[4592,14],[12136,37]],    ''],
     ['lfo.tremolo', 7, 'LFO SHAPE',      'selector', [[0,'default'],[19456,'exponential']], 'active at index 7; indices 4–6 are null'],
 
     // lfo.value
-    ['lfo.value', 0, 'SPEED',       'tempo',    [],              ''],
-    ['lfo.value', 1, 'AMOUNT',      'discrete', [[23255, 17]],   '0–24'],
-    ['lfo.value', 2, 'DESTINATION', 'selector', [],              'seen: waveform'],
-    ['lfo.value', 3, 'PARAMETER',   'selector', [],              'context-dep on DESTINATION'],
+    ['lfo.value', 0, 'SPEED',       'tempo',    [],                   ''],
+    ['lfo.value', 1, 'AMOUNT',      'centered', [[23255,'~71%']],     'bipolar -100 to +100'],
+    ['lfo.value', 2, 'DESTINATION', 'selector', [],                   'seen: waveform'],
+    ['lfo.value', 3, 'PARAMETER',   'selector', [],                   'context-dep on DESTINATION'],
     ['lfo.value', 4, 'LFO SHAPE',   'selector', [[0,'default']], '⚠ index unverified — may be at index 7 (consistent with lfo.tremolo)', '⚠ index uncertain'],
 
     // lfo.velocity
-    ['lfo.velocity', 0, 'DESTINATION AMOUNT', 'linear',   [[16381, 50]],        ''],
-    ['lfo.velocity', 1, 'VOLUME AMOUNT',      'linear',   [[16694, 51]],        ''],
-    ['lfo.velocity', 2, 'DESTINATION',        'selector', [[6048,'fx']],        ''],
-    ['lfo.velocity', 3, 'PARAMETER',          'selector', [[15360,'telematic']],'context-dep; "telematic" when dest=fx/phone'],
+    ['lfo.velocity', 0, 'AMP',          'linear',   [[16381, 50]],                                  'hardware label "AMP"; destination volume level'],
+    ['lfo.velocity', 1, 'VOLUME AMOUNT','centered', [[16694,'~51%']],                               'bipolar -100 to +100'],
+    ['lfo.velocity', 2, 'DESTINATION',  'selector', [[1024,'synth'],[5824,'envelope'],[10144,'fx'],[15360,'mix']], 'options: synth/envelope/fx/mix; 1024=synth [inferred]'],
+    ['lfo.velocity', 3, 'PARAMETER',    'selector', [[15360,'telematic']],                          'context-dep on DESTINATION+synth; "telematic" when dest=fx/phone'],
   ];
 
   // ── GAPS (priority items for further research) ──────────
@@ -414,7 +418,8 @@
     { priority: 'medium', key: 'lfo.element PARAM','reason': 'Selector options are context-dependent on both DESTINATION and the loaded synth type. Need a matrix of (destination × synth type) to enumerate.' },
     { priority: 'medium', key: 'synth.drwave [0]', reason: 'WAVE TYPE AND LENGTH internal max is ~24400 (not 32767). The encoding packs wave type + length together — how the bits are split is unknown.' },
     { priority: 'low',    key: 'synth.amp',        reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
-    { priority: 'low',    key: 'synth.cluster',    reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
+    { priority: 'low',    key: 'synth.cluster',    reason: 'Oracle min confirmed (WAVES=3072, SPREAD=512, UNITOR=3). Scale types partially inferred — UNITOR appears selector-like. Full scale characterization still needed.' },
+    { priority: 'low',    key: 'synth.fm [4–7]',  reason: 'Four extra knob indices (4–7) with fixed values (15000, 0, 100, 1500) observed in all presets. Their meaning (FM operator levels/envelope?) is unknown.' },
     { priority: 'low',    key: 'synth.voltage',    reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
     { priority: 'low',    key: 'fx.mother',        reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
   ];
