@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Notes and tools for reading and writing OP-1 Field patch files. All 29 parameter types mapped and verified against hardware.">
+  <meta name="description" content="Tools for reading and writing OP-1 Field patch files. 30 parameter types across 14 synth engines, 9 FX, 6 LFO, and global ADSR.">
   <title>OP-1 Field — Patch Format</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -60,16 +60,13 @@
     .page-card-arrow { font-size: 16px; font-weight: 300; color: var(--muted); margin-top: 14px; display: block; transition: color .15s; }
     .page-card:hover .page-card-arrow { color: var(--text); }
 
-    /* ── RESEARCH STATUS TABLE ── */
+    /* ── FEATURES TABLE ── */
     h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted); margin-bottom: 14px; }
     .status-table { width: 100%; border-collapse: collapse; margin-bottom: 48px; }
     .status-table th { font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--muted); text-align: left; padding: 6px 12px 5px; border-bottom: 2px solid var(--border); }
     .status-table td { font-size: 12px; font-weight: 400; padding: 7px 12px; border-bottom: 1px solid #F0EEE9; }
     .status-table tr:last-child td { border-bottom: none; }
     .status-table tr:hover td { background: #F8F7F4; }
-    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
-    .dot-green  { background: var(--green); }
-    .dot-yellow { background: #F59E0B; }
     .types-list { font-size: 10px; font-weight: 300; color: var(--muted); }
 
     /* ── FORMAT SUMMARY ── */
@@ -108,7 +105,7 @@
   <nav class="page-nav" aria-label="Site navigation">
     <a href="index.html" class="nav-btn active">HOME</a>
     <a href="params.html" class="nav-btn">PARAMS</a>
-    <a href="display.html" class="nav-btn">DISPLAY NOTES</a>
+    <a href="display.html" class="nav-btn">REFERENCE</a>
   </nav>
 </header>
 
@@ -118,10 +115,10 @@
     <div class="hero-eyebrow">REVERSE ENGINEERING</div>
     <h1 class="hero-title">OP-1 Field<br>Patch File Format</h1>
     <p class="hero-body">
-      Notes and tools for reading and writing <code>.aif</code> synth patch files for the
-      Teenage Engineering OP-1 Field. All 30 parameter types — 14 synth, 9 FX, 6 LFO, and
-      global ADSR — have been mapped and verified against hardware. See the pages below for
-      the parameter name database and raw&harr;display value mappings.
+      Tools for reading and writing <code>.aif</code> synth patch files for the
+      Teenage Engineering OP-1 Field. Covers 30 parameter types across 14 synth engines,
+      9 FX, 6 LFO, and global ADSR. See the pages below for the parameter name database
+      and raw&harr;display value mappings.
     </p>
   </section>
 
@@ -130,7 +127,7 @@
     <div class="stat"><div class="stat-num orange">14</div><div class="stat-label">SYNTH ENGINES</div></div>
     <div class="stat"><div class="stat-num blue">9</div><div class="stat-label">FX TYPES</div></div>
     <div class="stat"><div class="stat-num purple">6</div><div class="stat-label">LFO TYPES</div></div>
-    <div class="stat"><div class="stat-num green" id="stat-verified">30</div><div class="stat-label">TYPES VERIFIED</div></div>
+    <div class="stat"><div class="stat-num green">30</div><div class="stat-label">PARAM TYPES</div></div>
     <div class="stat"><div class="stat-num" id="stat-fw" style="color:var(--muted)"></div><div class="stat-label">FIRMWARE</div></div>
   </div>
 
@@ -146,45 +143,40 @@
       <span class="page-card-arrow">&rarr;</span>
     </a>
     <a href="display.html" class="page-card">
-      <div class="page-card-eyebrow">ANALYSIS</div>
-      <div class="page-card-title">Display Notes</div>
+      <div class="page-card-eyebrow">REFERENCE</div>
+      <div class="page-card-title">Param Reference</div>
       <div class="page-card-desc">
         Raw&harr;display value mappings per parameter. Scale type taxonomy
-        and oracle-confirmed sample points for all 30 verified types.
+        and sample points for all 30 param types.
       </div>
       <span class="page-card-arrow">&rarr;</span>
     </a>
   </div>
 
-  <!-- RESEARCH STATUS -->
-  <h2>Research status</h2>
+  <!-- FEATURES -->
+  <h2>Features</h2>
   <table class="status-table">
     <thead>
       <tr>
         <th>GROUP</th>
-        <th>STATUS</th>
         <th>TYPES</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td>Synth</td>
-        <td><span class="dot dot-green"></span>All 14 verified</td>
+        <td>Synth (14)</td>
         <td class="types-list">amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage</td>
       </tr>
       <tr>
-        <td>FX</td>
-        <td><span class="dot dot-green"></span>All 9 verified</td>
+        <td>FX (9)</td>
         <td class="types-list">cwo, delay, grid, mother, nitro, phone, punch, spring, terminal</td>
       </tr>
       <tr>
-        <td>LFO</td>
-        <td><span class="dot dot-green"></span>All 6 verified</td>
+        <td>LFO (6)</td>
         <td class="types-list">element, midi, random, tremolo, value, velocity</td>
       </tr>
       <tr>
         <td>ADSR</td>
-        <td><span class="dot dot-green"></span>Verified (global)</td>
         <td class="types-list">attack, decay, sustain, release, play mode, portamento, bend range, volume</td>
       </tr>
     </tbody>
@@ -225,6 +217,7 @@
   const FW = '1.7.3';
   document.getElementById('fw-tag').textContent = 'fw ' + FW;
   document.getElementById('stat-fw').textContent = FW;
+
   document.getElementById('footer').innerHTML =
     'Reverse-engineered against OP-1 Field firmware&nbsp;' + FW +
     ' &middot; <a href="https://github.com/jstnfst/te-op1">github.com/jstnfst/te-op1</a>';
