@@ -185,16 +185,17 @@ $lfoMaxParams = @{
     # [oracle] element-max-0000.aif: SOURCE=7168, AMOUNT=32767, DESTINATION=7168, PARAMETER=15360
     # element selector-4 uses different raw values than midi (max=7168, not 15360)
     element  = '7168,32767,7168,15360,0,0,0,0'
-    # All 8 indices are selectors (knob 1-4, dest 1-4); selector-4 max=15360
-    midi     = '15360,15360,15360,15360,15360,15360,15360,15360'
+    # PARAMETER[0-3]=selector(knob1-4) max=15360; DESTINATION[4-7]=selector(synth/env/fx/out) max=7168
+    # 7168 inferred from lfo.element DESTINATION oracle (same selector type)
+    midi     = '15360,15360,15360,15360,7168,7168,7168,7168'
     # DESTINATION[2]=selector max, PARAMETER[4]=selector max; others are %/non-linear
     random   = '32767,32767,32767,32767,32767,0,0,0'
     # LFO SHAPE[7]=selector; indices 4-6=null (keep 0); other indices are fine at 32767
     tremolo  = '32767,32767,32767,32767,0,0,0,32767'
-    # DESTINATION[2]=selector max, PARAMETER[3]=selector max
-    value    = '32767,32767,15360,32767,0,0,0,0'
-    # AMP[0]=% max, VOLUME AMOUNT[1]=centered% max, DESTINATION[2]=selector-4 max, PARAMETER[3]=selector max
-    velocity = '32767,32767,15360,32767,0,0,0,0'
+    # DESTINATION[2]=selector(synth/env/fx/mix) max=7168 (from element oracle); PARAMETER[3]=selector max=15360
+    value    = '32767,32767,7168,15360,0,0,0,0'
+    # AMP[0]=% max, VOLUME AMOUNT[1]=centered% max, DESTINATION[2]=selector max=7168, PARAMETER[3]=selector max=15360
+    velocity = '32767,32767,7168,15360,0,0,0,0'
 }
 
 # ── Minimum fx_params per FX type ────────────────────────────────────────────
