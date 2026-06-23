@@ -318,7 +318,7 @@
     ['fx.delay', 2, 'FEEDBACK', 'discrete', [[8328, 50]],       '0–99; effective max ~16383'],
     ['fx.delay', 3, 'LEVEL',    'linear',   [[0,'min'],[32767,'max']], 'hardware min=0, max=32767 (oracle)'],
 
-    // fx.grid — oracle min (fx1.aif) + max (fx-max(3).aif) confirmed for index 3
+    // fx.grid — oracle min (fx1.aif) + max (fx-max(3).aif) confirmed for index 3; indices 4–7 firmware-managed constants (8000)
     ['fx.grid', 0, 'X SIZE',     'discrete', [[9064, 50]],  '0–99; non-linear mapping'],
     ['fx.grid', 1, 'Y SIZE',     'discrete', [[6032, 30]],  '0–99; non-linear mapping'],
     ['fx.grid', 2, 'Z FEEDBACK', 'discrete', [[23248, 72]], '0–99; ~linear'],
@@ -336,19 +336,19 @@
     ['fx.nitro', 2, 'FEEDBACK',        'linear',   [[0,'min'],[20643,'max']], 'hardware max=20643 (oracle); does not reach 32767'],
     ['fx.nitro', 3, 'FREQUENCY HIGHS', 'linear',   [[64,'min'],[16448,'max']], 'hardware min=64, max=16448 (oracle)'],
 
-    // fx.phone — oracle fx3 (min), fx-max(7) (max), captures (10-11) confirm linear %
+    // fx.phone — oracle fx3 (min), fx-max(7) (max), captures (10-11) confirm linear %; indices 4–7 firmware-managed constants (8000)
     ['fx.phone', 0, 'TONE',     'linear', [[204,'min'],[5458,26],[10522,51],[20480,'max']], 'confirmed linear % (captures 10+11); display=(raw-204)/20276×100'],
     ['fx.phone', 1, 'GSM',      'linear', [[3072,'min'],[6712,26],[10352,51],[17408,'max']], 'confirmed linear % (captures 10+11); display=(raw-3072)/14336×100'],
     ['fx.phone', 2, 'BAUD',     'linear', [[1536,'min'],[5466,26],[9426,52],[16896,'max']], 'confirmed linear % (captures 10+11); display=(raw-1536)/15360×100'],
     ['fx.phone', 3, 'TELEMATIC','linear', [[0,0],[8441,26],[16876,52],[32767,'max']], 'confirmed linear % (captures 10+11); full 0–32767 range'],
 
-    // fx.punch
+    // fx.punch — indices 4–7 firmware-managed constants (8000)
     ['fx.punch', 0, 'FREQUENCY', 'linear',   [[1344,'min'],[12480,'max']], 'linear gauge display (pointer); hardware min=1344, max=12480 (oracle)'],
     ['fx.punch', 1, 'PUNCH',     'linear',   [[24512, 74]],          ''],
     ['fx.punch', 2, 'ROUNDS',    'discrete', [[3744, 3],[11904,11]], '1–24; non-linear raw mapping'],
     ['fx.punch', 3, 'POWER',     'linear',   [[29159,88],[31783,96]],''],
 
-    // fx.spring
+    // fx.spring — indices 4–7 firmware-managed constants (8000)
     ['fx.spring', 0, 'TONE',    'linear', [[16448, 50]],  ''],
     ['fx.spring', 1, 'TURNS',   'linear', [[14544, 44]],  ''],
     ['fx.spring', 2, 'DAMPING', 'linear', [[4096, 12]],   ''],
@@ -417,7 +417,6 @@
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
     // low — structural unknowns; possibly firmware-managed or non-standard encoding
-    { priority:'low', key:'fx.phone/punch/grid/spring 4-7',        reason:'fixed at 8000 in all captures; purpose unknown' },
     { priority:'low', key:'synth.drwave 4',                        reason:'hardware max=32000, non-zero at max; purpose unknown' },
     { priority:'low', key:'synth.cluster 3 UNITOR encoding',       reason:'non-standard selector (min=3, max=1638); intermediate values unknown' },
     { priority:'low', key:'synth.string 3 IMPULSE TYPE encoding',  reason:'non-standard selector encoding; not 1024-based' },

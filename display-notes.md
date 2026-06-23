@@ -61,7 +61,7 @@ parameter type.
 | 1 | PUNCH | `%` | 24512 → 74; hardware max=32767 |
 | 2 | ROUNDS | `discrete-24` | 1–24 inclusive; non-linear; hardware min=1536 (step 1), hardware max=25088 (step 24) |
 | 3 | POWER | `%` | 29159 → 88; hardware max=32767 |
-| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
+| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### fx.phone
 | Index | Name | Scale | Notes |
@@ -70,7 +70,7 @@ parameter type.
 | 1 | GSM | `%` | Confirmed linear %; display=(raw−3072)/14336×100; 6712→26, 10352→51 (oracle captures 10+11) |
 | 2 | BAUD | `%` | Confirmed linear %; display=(raw−1536)/15360×100; 5466→26, 9426→52 (oracle captures 10+11) |
 | 3 | TELEMATIC | `%` | Confirmed linear %; full 0–32767 range; 8441→26, 16876→52 (oracle captures 10+11) |
-| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
+| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### lfo.value
 | Index | Name | Scale | Notes |
@@ -211,7 +211,7 @@ parameter type.
 | 1 | Y SIZE | `discrete-99` | 0–99; non-linear; 6032 → 30; hardware min=1344, hardware max=16704 |
 | 2 | Z FEEDBACK | `discrete-99` | 0–99; ~linear; 23248 → 72; hardware max=32767 |
 | 3 | MIX | `%` | approximately linear; hardware max=32767 |
-| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
+| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### fx.spring
 | Index | Name | Scale | Notes |
@@ -220,7 +220,7 @@ parameter type.
 | 1 | TURNS | `%` | Hardware min=7744, hardware max=16448 |
 | 2 | DAMPING | `%` | 4096 → ~12%; hardware max=16384 |
 | 3 | MIX | `%` | Hardware max=32767 |
-| 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
+| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
