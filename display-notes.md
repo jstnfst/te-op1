@@ -88,7 +88,6 @@ parameter type.
 | 1 | FILTER | `discrete-98` | 0–98; hardware max=16379 (oracle); 11735 → 70, 16379 → 98 |
 | 2 | PHASE | `discrete-98` | 0–98; hardware max=16377 (oracle); 8199 → 49, 16377 → 98 |
 | 3 | CHORUS | `discrete-99` | 0–99; 100 steps; 0 → 0, 32767 → 99 |
-| 4 | (unknown) | — | hardware max=32000; non-zero at max position |
 
 ### fx.delay
 | Index | Name | Scale | Notes |
