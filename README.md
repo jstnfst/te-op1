@@ -119,12 +119,21 @@ Uses `drum_version: 2` instead of `synth_version`. No `adsr` field. Unique JSON 
 | Key | Type | Description |
 |-----|------|-------------|
 | `dbox_data` | `int[24][8]` | Per-pad parameter values (24 pads × 8 params each) |
-| `dyna_env`  | `int[8]`     | Dynamic envelope; oracle value `[-32768,0,-32768,0,0,0,0,0]` |
+| `dyna_env`  | `int[8]`     | Dynamic envelope (see below) |
 | `pan`       | `int[24]`    | Per-pad pan position (optional) |
 | `pan_ab`    | `bool[24]`   | Per-pad stereo A/B flag (optional) |
 | `attack`    | `int[24]`    | Per-pad attack (optional; 0 in oracle) |
 | `fademode`  | `null`       | Fade mode (optional) |
 | `stereo`    | `bool`       | Stereo flag (optional) |
+
+`dyna_env` — 4 active params (indices 4–7 unused):
+
+| Index | Name | Min | Max |
+|-------|------|-----|-----|
+| 0 | ATTACK  | -32768 | 32767 |
+| 1 | GAIN    | 0      | 8192  |
+| 2 | RELEASE | -32768 | 32767 |
+| 3 | SMOOTH  | 0      | 32767 |
 
 Knob parameters are identical to `dsynth`:  
 `0` ENVELOPE CROSSFADER · `1` WAVEFORM 1 · `2` ENVELOPE 1 · `3` CROSS MODULATION  

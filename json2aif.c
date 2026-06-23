@@ -390,6 +390,10 @@ static void get_slug(const char *name, char *out) {
     out[4] = '\0';
 }
 
+/* dyna_env: [0]=ATTACK [1]=GAIN [2]=RELEASE [3]=SMOOTH [4-7]=unused */
+static const int DBOX_DYNA_ENV_MIN[8] = {-32768,     0, -32768,     0, 0, 0, 0, 0};
+static const int DBOX_DYNA_ENV_MAX[8] = { 32767,  8192,  32767, 32767, 0, 0, 0, 0};
+
 /* 24 per-pad rows, all zeros — used for dbox explore patches */
 static const char DBOX_DATA_ZEROS[] =
     "[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
@@ -404,11 +408,12 @@ static const char DBOX_DATA_ZEROS[] =
 static int build_dbox_patch_json(const char *fx, const char *lfo,
                                   const char *name,
                                   const int fxp[8], const int lfop[8],
+                                  const int dyna_env[8],
                                   char *out, size_t outsz) {
     return snprintf(out, outsz,
         "{\"dbox_data\":%s,"
         "\"drum_version\":2,"
-        "\"dyna_env\":[-32768,0,-32768,0,0,0,0,0],"
+        "\"dyna_env\":[%d,%d,%d,%d,%d,%d,%d,%d],"
         "\"fx_active\":true,"
         "\"fx_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
         "\"fx_type\":\"%s\","
@@ -420,6 +425,8 @@ static int build_dbox_patch_json(const char *fx, const char *lfo,
         "\"octave\":0,"
         "\"type\":\"dbox\"}",
         DBOX_DATA_ZEROS,
+        dyna_env[0],dyna_env[1],dyna_env[2],dyna_env[3],
+        dyna_env[4],dyna_env[5],dyna_env[6],dyna_env[7],
         fxp[0],fxp[1],fxp[2],fxp[3],fxp[4],fxp[5],fxp[6],fxp[7], fx,
         lfop[0],lfop[1],lfop[2],lfop[3],lfop[4],lfop[5],lfop[6],lfop[7], lfo,
         (long)time(NULL), name);
@@ -551,6 +558,7 @@ static int run_explore(int vel_dest_raw, int vel_param) {
                     jlen = (strcmp(synth, "dbox") == 0)
                         ? build_dbox_patch_json(fx, lfo, slug,
                                                 fxp, lfop,
+                                                mi == 0 ? DBOX_DYNA_ENV_MIN : DBOX_DYNA_ENV_MAX,
                                                 json_buf, sizeof(json_buf))
                         : (strcmp(synth, "sampler") == 0)
                         ? build_sampler_patch_json(synth, fx, lfo, slug, ver,
