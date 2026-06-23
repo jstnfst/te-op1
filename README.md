@@ -1,21 +1,20 @@
 # OP-1 Field Patch File Format
 
-Notes and tools for reading and writing `.aif` synth patch files for the
-Teenage Engineering OP-1 Field (firmware 1.5.7).
+Tools for reading and writing `.aif` synth patch files for the
+Teenage Engineering OP-1 Field (firmware 1.7.3).
 
-See also: `index.html` (overview), `params.html` (parameter reference), `display.html` (scale analysis).
+Web pages: `index.html` (home), `params.html` (knob layout), `display.html` (value mappings).
 
 ---
 
-## Research Status
+## Coverage
 
-All 29 synth, FX, and LFO parameter types have been fully mapped and verified against hardware.
-See `op1-params.json` for the complete name database and `display-notes.md` for hardware display
-scale details per parameter.
+30 parameter types across 14 synth engines, 9 FX, 6 LFO, and global ADSR.
 
 **synth** — amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
 **fx** — cwo, delay, grid, mother, nitro, phone, punch, spring, terminal  
-**lfo** — element, midi, random, tremolo, value, velocity
+**lfo** — element, midi, random, tremolo, value, velocity  
+**adsr** — attack, decay, sustain, release, play mode, portamento, bend range, volume
 
 ---
 
@@ -61,7 +60,7 @@ When `summarize.exe` reports a type under **"Missing from op1-params.json"**:
 
 ```json
 {
-  "synth.cluster": ["WAVES", "WAVE ENV", "SPREAD", "UNITOR"],
+  "synth.cluster": ["WAVE NUMBER", "WAVE ENV", "SPREAD", "UNITOR"],
   "fx.mother":     ["DISTANCE", "GATE", "COLOR", "MIX"],
   "lfo.tremolo":   ["SPEED", "PITCH AMOUNT", "VOLUME LEVEL", "PITCH ENVELOPE", null, null, null, "LFO SHAPE"]
 }
@@ -150,18 +149,20 @@ Most numeric parameters are **16-bit integers in the range 0–32767**
 
 ### ADSR
 
-Always 8 values — two four-stage envelopes back to back:
+Always 8 values — global keyboard settings, shared across all patches:
 
-`0–3` Attack · Decay · Sustain · Release  
-`4–7` Attack 2 · Decay 2 · Sustain 2 · Release 2
+`0` ATTACK · `1` DECAY · `2` SUSTAIN · `3` RELEASE  
+`4` PLAY MODE · `5` PORTAMENTO · `6` BEND RANGE · `7` VOLUME
+
+PLAY MODE is a selector: poly (2048) / mono (6140) / legato (9209) / unison (14336).  
+BEND RANGE is a selector: 1 st (2048) / 2 st (5117) / 4 st (9209) / 7 st (13301) / oct (18432).  
+VOLUME is discrete 1–100; raw = `floor(N × 32767 / 100)`.
 
 ---
 
 ## Known Knob Mappings
 
-Full name database is in `op1-params.json`. Display scale details and
-observed raw↔display value mappings are in `display-notes.md`.
-`op1-params-ok.json` tracks which indices have been hardware-verified.
+Full name database is in `op1-params.json`. Raw-to-display value mappings are in `display.html`.
 
 Most types use 4 active params (indices 0–3). Exceptions: `synth.dsynth`
 and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
@@ -173,13 +174,13 @@ and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
 `0` VOLUME · `1` COMPRESSOR · `2` TONE · `3` DRIVE
 
 #### `cluster`
-`0` WAVES · `1` WAVE ENV · `2` SPREAD · `3` UNITOR
+`0` WAVE NUMBER · `1` WAVE ENV · `2` SPREAD · `3` UNITOR
 
 #### `digital`
 `0` WAVE SHAPER · `1` OCTAVE · `2` DETUNE+RINGMOD · `3` DIGITALNESS
 
 #### `dimension`
-`0` WAVEFORM · `1` STEREO · `2` FILTER FREQ · `3` RES
+`0` WAVEFORM · `1` STEREO · `2` FILTER CUTOFF FREQ · `3` RESONANCE
 
 #### `dna`
 `0` FILTER · `1` WAVE NUMBER · `2` WAVE MODIFIER · `3` NOISE
@@ -188,8 +189,8 @@ and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
 `0` WAVE TYPE AND LENGTH · `1` FILTER · `2` PHASE · `3` CHORUS
 
 #### `dsynth`
-`0` ENV CROSSFADER · `1` WAVEFORM · `2` ENVELOPE · `3` CROSS MODULATION  
-`4` FREQUENCY · `5` WAVEFORM · `6` ENVELOPE · `7` FILTER CUTOFF FREQUENCY
+`0` ENVELOPE CROSSFADER · `1` WAVEFORM 1 · `2` ENVELOPE 1 · `3` CROSS MODULATION  
+`4` FREQUENCY · `5` WAVEFORM 2 · `6` ENVELOPE 2 · `7` CUTOFF
 
 #### `fm`
 `0` FM AMOUNT · `1` FREQUENCY · `2` TOPOLOGY · `3` DETUNE
@@ -198,20 +199,20 @@ and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
 `0` PHASE SHIFT · `1` DISTORTION AMOUNT · `2` PHASE FILTER · `3` PHASE TILT
 
 #### `pulse`
-`0` FILTER · `1` AMPLITUDE · `2` SECOND PULSE · `3` MODULATION
+`0` FILTER · `1` AMPLITUDE · `2` PULSE TWO · `3` MODULATION
 
 #### `sampler`
 `0` START · `1` LOOP IN · `2` LOOP OUT · `3` END  
 `4` DIRECTION · `5` FINE TUNE · `6` LOOP FADE · `7` GAIN
 
 #### `string`
-`0` TENSION · `1` IMPULSE · `2` STEREO · `3` IMPULSE TYPE
+`0` TENSION · `1` DECAY · `2` DETUNE · `3` IMPULSE TYPE
 
 #### `vocoder`
 `0` WAVEFORM · `1` FORMANT · `2` BANDS · `3` MIX
 
 #### `voltage`
-`0` MODULATION · `1` GROUND NOISE · `2` PHASE FILTER · `3` DETUNE
+`0` AMPERE MODULATION · `1` GROUND NOISE · `2` PHASE FILTER · `3` VOLTAGE DETUNE
 
 ---
 
@@ -265,7 +266,14 @@ and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
 `0` SPEED · `1` AMOUNT · `2` DESTINATION · `3` PARAMETER · `4` LFO SHAPE
 
 #### `velocity`
-`0` DESTINATION AMOUNT · `1` VOLUME AMOUNT · `2` DESTINATION · `3` PARAMETER
+`0` AMP · `1` VOLUME AMOUNT · `2` DESTINATION · `3` PARAMETER
+
+---
+
+### ADSR (global)
+
+`0` ATTACK · `1` DECAY · `2` SUSTAIN · `3` RELEASE  
+`4` PLAY MODE · `5` PORTAMENTO · `6` BEND RANGE · `7` VOLUME
 
 ---
 
@@ -285,7 +293,7 @@ op1dump.exe epiphany.aif         → prints metadata, writes epiphany.json
 ```
 
 - Reads `op1-params.json` from the **current working directory** (not the file's directory)
-- Console output: container info, audio format, synth knobs, dual ADSR envelope, FX params, LFO params, raw JSON
+- Console output: container info, audio format, synth knobs, ADSR, FX params, LFO params, raw JSON
 - Each parameter printed as `name : raw_value  (normalized)` where normalized = raw / 32767
 - Non-zero unnamed slots printed as `knob N [unknown]` — add them to `op1-params.json` once identified
 - Always writes a `.json` sidecar at the same path as the input file
@@ -315,7 +323,7 @@ json2aif.exe mypatch.json out.aif        → writes out.aif
 json2aif.exe zero mypatch.json           → zeros knobs/fx_params/lfo_params
 json2aif.exe max  mypatch.json           → sets all three arrays to 32767
 json2aif.exe explore                     → generates all 3024 files in explore\
-json2aif.exe explore -dest fx            → min velocity patches with dest = FX (10144)
+json2aif.exe explore -dest fx            → min patches with dest = FX
 json2aif.exe explore -dest fx -param 5824
 ```
 
@@ -329,16 +337,13 @@ json2aif.exe explore -dest fx -param 5824
 
 - Deletes and recreates `explore\` at the start of each run
 - Output structure: `explore\aif\[mode]\[synth]\[lfo]\*.aif` and `explore\json\[mode]\[synth]\[lfo]\*.json`
-- **min** uses oracle-confirmed hardware minimums per parameter type:
-  - `%` scale → 0, `centered %` scale → -32767, `selector` → 1024
-  - Synth types with non-zero floors (cluster, digital, dna, fm, string) use oracle-verified values
-  - FX types with non-zero floors (delay, grid, nitro, phone, punch, spring) use oracle-verified values
-- **max** uses oracle-confirmed hardware maximums per type; types with ceilings below 32767 use explicit oracle entries (e.g. cluster WAVES max = 17408, delay RANGE max = 11264)
-- ADSR is fixed to oracle-verified hardware values for instant-attack / full-sustain so every combination produces audible output
+- **min** uses hardware minimums per parameter type; types with non-zero floors use explicit per-type values
+- **max** uses hardware maximums per type; types with ceilings below 32767 use explicit per-type values
+- ADSR is fixed to instant-attack / full-sustain values so every combination produces audible output
 
 ### `summarize.exe`
 
-Reads all parsed presets and produces a grouped discovery report.
+Reads all parsed presets and produces a grouped report.
 
 ```
 summarize.exe
@@ -346,10 +351,7 @@ summarize.exe
 
 - **Prerequisite:** run `dump-all.bat` first to generate the `.json` sidecars
 - Reads: `presets/*.json`, `op1-params.json`, `op1-params-ok.json`
-- Output sections: **Synth Engines**, **FX**, **LFO** — each type shows:
-  - Mapping status tag and per-knob min/max raw + normalized ranges + patch count
-  - How many patches have that engine/fx/lfo active
-- Color coding: green = all params named and verified · yellow = some unnamed or unverified · red = type not in `op1-params.json`
+- Output sections: **Synth Engines**, **FX**, **LFO** — each type shows per-knob min/max raw + normalized ranges and patch count
 - Trailing **"Missing from op1-params.json"** section prints exact stub lines to paste in
 
 ### `diff-patches.exe`
@@ -367,7 +369,7 @@ diff-patches.exe sandbox\epiphany.aif  presets\epiphany0005.aif
 
 - Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it — run `op1dump.exe` first if the sidecar is missing
 - Skips `name`, `mtime`, and `_file` automatically (they always differ between snapshots)
-- For array fields: lists each changed index with before → after and signed delta (`+N` / `-N`)
+- For array fields: lists each changed index with before and after values and signed delta (`+N` / `-N`)
 - Prints "No differences" if the patches are identical (excluding skipped fields)
 
 ### `test_aif.exe`
@@ -380,8 +382,6 @@ test_aif.exe <file.aif>
 
 Checks include: file size, chunk order and sizes (FVER/COMM/APPL/SSND), COMM spec (22050 Hz, 28896 frames, 16-bit `sowt`), APPL JSON (all required keys present, alphabetical key order, `mtime` presence and validity, no UTF-8 BOM), and SSND audio byte count. Exits 0 on pass, non-zero on any failure.
 
-Build with `build.bat`. Source: `test_aif.c`.
-
 ### `explore-aif.exe`
 
 Low-level binary inspector for `.aif` file internals. Multiple flags can be combined in one call.
@@ -393,12 +393,12 @@ explore-aif.exe <file.aif> [flags]
 | Flag | Description |
 |------|-------------|
 | `--read-bytes [N]` | Hex + ASCII dump of the first N bytes of the file (default: 128) |
-| `--parse-chunks` | Walk the IFF chunk tree — prints chunk ID, file offset, and size for every chunk; peeks COMM channel/frame/bit-depth and APPL signature |
-| `--dump-chunk <ID>` | Hex + ASCII dump of a specific chunk by its 4-char ID (e.g. `APPL`, `COMM`, `SSND`, `FVER`); also prints the chunk as text |
+| `--parse-chunks` | Walk the IFF chunk tree — prints chunk ID, file offset, and size for every chunk |
+| `--dump-chunk <ID>` | Hex + ASCII dump of a specific chunk by its 4-char ID (e.g. `APPL`, `COMM`, `SSND`, `FVER`) |
 | `--show-json` | Scan the file for `{...}` blocks and print each one found |
-| `--decode-fver` | Print the FVER version constant and confirm whether it matches the AIFC standard value `0xA2805140` |
-| `--decode-comm` | Full COMM decode: channels, frame count, bit depth, 80-bit extended sample rate in Hz, compression type and name; includes raw hex |
-| `--analyze-ssnd` | SSND audio stats: offset/blockSize header, audio byte count, sample count, min/max sample, zero-sample ratio (silence %), peak level in dBFS; shows first and last 32 bytes of audio |
+| `--decode-fver` | Print the FVER version constant and confirm whether it matches `0xA2805140` |
+| `--decode-comm` | Full COMM decode: channels, frame count, bit depth, 80-bit extended sample rate, compression type |
+| `--analyze-ssnd` | SSND audio stats: byte count, sample count, min/max sample, silence %, peak level in dBFS |
 
 ```
 explore-aif.exe epiphany.aif --parse-chunks
@@ -406,7 +406,6 @@ explore-aif.exe epiphany.aif --dump-chunk APPL
 explore-aif.exe epiphany.aif --decode-comm
 explore-aif.exe epiphany.aif --analyze-ssnd
 explore-aif.exe epiphany.aif --show-json
-explore-aif.exe epiphany.aif --read-bytes 256
 explore-aif.exe epiphany.aif --parse-chunks --decode-comm --show-json
 ```
 
@@ -420,27 +419,26 @@ te-op1/
   op1dump.exe        compiled dumper
   json2aif.c         source — JSON to AIF writer + explore generator
   json2aif.exe       compiled writer/generator
-  test_aif.c         source — 29-check AIF validator
+  test_aif.c         source — AIF validator
   test_aif.exe       compiled validator
   diff-patches.c     source — patch diff tool
   diff-patches.exe   compiled diff tool
   explore-aif.c      source — low-level AIF inspector
   explore-aif.exe    compiled inspector
-  summarize.c        source — preset discovery report
+  summarize.c        source — preset report tool
   summarize.exe      compiled report tool
   op1_aif.h          shared binary helpers (big-endian reads, hex dump, 80-bit float)
   cJSON.c            vendored JSON library (from github.com/DaveGamble/cJSON)
   cJSON.h            vendored JSON library header
   op1-params.json    knob/param name database (edit freely, no recompile)
-  op1-params-ok.json tracks hardware-verified param indices per type
-  display-notes.md   raw↔display value mappings and scale notes per param
+  op1-params-ok.json tracks which param indices have been mapped per type
   build.bat          recompile all tools (requires MSVC)
   dump-all.bat       batch-process presets/ folder
-  index.html         project overview website
-  params.html        complete parameter reference (all 29 types)
-  display.html       raw↔display scale analysis with oracle-confirmed samples
+  index.html         home — coverage overview and file format summary
+  params.html        knob layout — all 30 types with named knob diagrams
+  display.html       value mappings — raw-to-display mappings per parameter
   presets/           .aif patch files and their .json sidecars
-  oracle/            hardware-verified reference exports (tracked in git, never regenerated)
+  oracle/            reference exports from hardware (tracked in git, never regenerated)
   explore/           generated boundary patches — gitignored, recreate with: json2aif.exe explore
                      explore\aif\[min|max]\[synth]\[lfo]\*.aif
                      explore\json\[min|max]\[synth]\[lfo]\*.json
@@ -450,7 +448,7 @@ te-op1/
 
 ## Oracle Workflow
 
-`oracle/` stores hardware-verified reference exports — patch files saved directly from the
+`oracle/` stores reference exports — patch files saved directly from the
 OP-1 Field with known knob positions. These are the ground truth for parameter values.
 
 **Rules:**
@@ -459,19 +457,3 @@ OP-1 Field with known knob positions. These are the ground truth for parameter v
   run `op1dump.exe oracle\<file>.aif` → inspect the JSON sidecar for raw values.
 - Naming convention: `<synth>-<fx>-<lfo>-<tag>.aif` where tag is `0000` (all-min),
   `ffff` (all-max), or a short descriptor.
-
-**Currently verified oracles (53 files):**
-
-| Batch | Files | Purpose |
-|-------|-------|---------|
-| `amp-cwo-elem-0000` | 1 | All-min reference: amp + cwo + element, all knobs at leftmost position |
-| `min0` – `min4` | 5 | Synth-knob minimums: cluster, digital, dna, fm, string |
-| `synthmax (1)` – `synthmax (12)` | 12 | Synth-knob maximums: all 14 engine types (amp, cluster, digital, dimension, dna, drwave, fm, phase, pulse, vocoder, voltage, and 1 extra) |
-| `synthmax-string-0000`, `synthmax-string` | 2 | String synth max values |
-| `sampler-max-0000`, `sampler-max-0001` | 2 | Sampler knob max values (DIRECTION, GAIN) |
-| `fx0` – `fx5` | 6 | FX-params minimums: delay, grid, nitro, phone, punch, spring |
-| `fx-max (1)` – `fx-max (7)` | 7 | FX-params maximums: mother, nitro, delay, grid, punch, spring, phone |
-| `element-max-0000` | 1 | LFO element max values: SOURCE, DESTINATION, PARAMETER selectors |
-| `lfo-max (1)` – `lfo-max (3)` | 3 | LFO max values: tremolo SPEED, value SPEED+DESTINATION+LFO SHAPE, velocity |
-| `trem-min` | 1 | Tremolo LFO min values |
-| `captures-needed (1)` – `captures-needed (14)` | 14 | Mixed captures confirming specific bounded params (phone linear %, mother SPEED, amp/voltage scale data, dsynth, fm topology, cluster, string min/max bounds) |
