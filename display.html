@@ -25,7 +25,6 @@
       --c-inverse:   #14B8A6;
       --c-nonlinear: #EF4444;
       --c-decimal:   #06B6D4;
-      --c-unknown:   #6B7280;
     }
     body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
 
@@ -109,7 +108,7 @@
     .chip-inverse   { background: rgba(20,184,166,.1);  color: var(--c-inverse); }
     .chip-nonlinear { background: rgba(239,68,68,.1);   color: var(--c-nonlinear); }
     .chip-decimal   { background: rgba(6,182,212,.1);   color: var(--c-decimal); }
-    .chip-unknown   { background: rgba(107,114,128,.1); color: var(--c-unknown); }
+
 
     /* ── MINI BAR (inline % visualization for linear) ── */
     .mini-bar-wrap { display: flex; align-items: center; gap: 6px; }
@@ -206,7 +205,6 @@
     inverse:   { label: 'ms inverse',    desc: 'Lower raw = more time; delay range in ms',       color: '#14B8A6' },
     nonlinear: { label: 'non-linear',    desc: 'Non-linear mapping, shape uncharacterized',      color: '#EF4444' },
     decimal:   { label: 'decimal',       desc: 'Continuous decimal scale between two bounds',    color: '#06B6D4' },
-    unknown:   { label: 'unknown',       desc: 'Scale type not yet observed or documented',      color: '#6B7280' },
   };
 
   // ── PARAMETER DATA ──────────────────────────────────────
@@ -414,10 +412,7 @@
     ['adsr', 7, 'VOLUME',     'discrete', [[3276,10],[32767,100]], '1–100; raw ≈ floor(N × 32767 / 100)'],
   ];
 
-  // ── GAPS (priority items for further research) ──────────
-  const GAPS = [
-    // low — structural unknowns; possibly firmware-managed or non-standard encoding
-  ];
+  const GAPS = [];
 
   // ── RENDER: LEGEND ──────────────────────────────────────
   const legendEl = document.getElementById('legend');
@@ -462,7 +457,7 @@
   let activeFilter = 'all';
 
   function chipFor(type) {
-    const c = SCALE_META[type] || SCALE_META.unknown;
+    const c = SCALE_META[type] || { label: type, color: '#6B7280' };
     return `<span class="scale-chip chip-${type}">${c.label}</span>`;
   }
 
