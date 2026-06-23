@@ -141,22 +141,22 @@ parameter type.
 ### synth.cluster
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVES | `%` | Hardware min=3072, hardware max=17408 (does not span full 0–32767) |
-| 1 | WAVE ENV | `%` | Hardware min=0 |
-| 2 | SPREAD | `%` | Hardware min=512, hardware max=24064 |
-| 3 | UNITOR | `selector` | Hardware min=3, hardware max=1638 (distinct selector encoding, not 1024-based) |
+| 0 | WAVES | `%` | Hardware min=3072, max=17408 (oracle min0+synthmax(2)); does not span full 0–32767 |
+| 1 | WAVE ENV | `%` | Hardware min=0, max=32767 (oracle) |
+| 2 | SPREAD | `%` | Hardware min=512, max=24064 (oracle); does not span full 0–32767 |
+| 3 | UNITOR | `selector` | Hardware min=3, max=1638 (oracle); distinct selector encoding, not 1024-based |
 
 ### synth.fm
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | FM AMOUNT | `discrete-99` | 0–99; 31743 → 95 |
 | 1 | FREQUENCY | `discrete-99` | 0–99; 17352 → 52 |
-| 2 | TOPOLOGY | `selector` | Hardware min=1024, hardware max=17408; 13312 → 6 |
+| 2 | TOPOLOGY | `selector` | Hardware min=1024, max=17408 (oracle min3+synthmax(8)); 9 options; 13312 → 6 |
 | 3 | DETUNE | `discrete-99` | 0–99; 0 → 0 |
-| 4 | (unknown) | — | Fixed at 15000 in all observed presets; FM operator param |
-| 5 | (unknown) | — | Fixed at 0 in all observed presets |
-| 6 | (unknown) | — | Fixed at 100 in all observed presets; FM operator param |
-| 7 | (unknown) | — | Fixed at 1500 in all observed presets; FM operator param |
+| 4 | (unknown) | — | Fixed at 15000 in ALL oracle captures (min and max); FM operator param, firmware-managed |
+| 5 | (unknown) | — | Fixed at 0 in ALL oracle captures |
+| 6 | (unknown) | — | Fixed at 100 in ALL oracle captures; FM operator param |
+| 7 | (unknown) | — | Fixed at 1500 in ALL oracle captures; FM operator param |
 
 ### synth.string
 | Index | Name | Scale | Notes |
