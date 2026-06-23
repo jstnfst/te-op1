@@ -33,10 +33,10 @@ parameter type.
 ### synth.voltage
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | MODULATION | `%` | confirmed linear %; 16383 → 50, 26623 → 81 (oracle captures 13+14) |
+| 0 | AMPERE MODULATION | `%` | confirmed linear %; 16383 → 50, 26623 → 81 (oracle captures 13+14) |
 | 1 | GROUND NOISE | `%` | confirmed linear %; 14336 → 44, 26623 → 81 (oracle captures 13+14) |
 | 2 | PHASE FILTER | `%` | confirmed linear %; 20992 → 64, 29183 → 89 (oracle captures 13+14) |
-| 3 | DETUNE | `%` | confirmed linear %; 16384 → 50, 26112 → 80 (oracle captures 13+14) |
+| 3 | VOLTAGE DETUNE | `%` | confirmed linear %; 16384 → 50, 26112 → 80 (oracle captures 13+14) |
 
 ### synth.digital
 | Index | Name | Scale | Notes |
@@ -51,8 +51,8 @@ parameter type.
 |---|---|---|---|
 | 0 | WAVEFORM | `%` | |
 | 1 | STEREO | `%` | |
-| 2 | FILTER FREQ | `hz` | Displays in Hz; 13742 → 1320 Hz |
-| 3 | RES | `%` | |
+| 2 | FILTER CUTOFF FREQ | `hz` | Displays in Hz; 13742 → 1320 Hz |
+| 3 | RESONANCE | `%` | |
 
 ### fx.punch
 | Index | Name | Scale | Notes |
@@ -120,14 +120,40 @@ parameter type.
 | 0 | SOURCE | `selector-4` | 4 options in order: **gravity, microphone, envelope, sum**. raw 1024 → gravity (min), raw 7168 → sum (max). Note: element uses different selector raw values than lfo.midi. |
 | 1 | AMOUNT | `centered %` | Bipolar -100 to +100; raw -32767 → -100 (min), 32767 → +100 (max) |
 | 2 | DESTINATION | `selector-4` | 4 options in order: **synth, envelope, fx, mix**. raw 1024 → synth (min), raw 7168 → mix (max). Changing this changes what PARAMETER (index 3) can select. |
-| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION. raw 1024 → first knob (min), raw 15360 → last option (max). When dest=synth: options are the active synth engine's knob names. Examples: "tilt" (phase+synth, raw 15360) |
+| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION. raw 1024 → first knob (min), raw 15360 → last option (max). When dest=synth: options are the active synth engine's knob names. See table below. |
+
+#### lfo.element PARAMETER — dest=synth mapping
+
+4-param synths use raw values: **1024, 4864, 8704, 15360** (confirmed via oracle: cluster; predicted for others).
+
+| Synth | raw 1024 | raw 4864 | raw 8704 | raw 15360 |
+|-------|----------|----------|----------|-----------|
+| amp | VOLUME | COMPRESSOR | TONE | DRIVE |
+| cluster | WAVE NUMBER | WAVE ENV | SPREAD | UNITOR |
+| digital | WAVE SHAPER | OCTAVE | DETUNE+RINGMOD | DIGITALNESS |
+| dimension | WAVEFORM | STEREO | FILTER CUTOFF FREQ | RESONANCE |
+| dna | FILTER | WAVE NUMBER | WAVE MODIFIER | NOISE |
+| drwave | WAVE TYPE AND LENGTH | FILTER | PHASE | CHORUS |
+| fm | FM AMOUNT | FREQUENCY | TOPOLOGY | DETUNE |
+| phase | PHASE SHIFT | DISTORTION AMOUNT | PHASE FILTER | PHASE TILT |
+| pulse | FILTER | AMPLITUDE | PULSE TWO | MODULATION |
+| string | TENSION | DECAY | DETUNE | IMPULSE TYPE |
+| vocoder | WAVEFORM | FORMANT | BANDS | MIX |
+| voltage | AMPERE MODULATION | GROUND NOISE | PHASE FILTER | VOLTAGE DETUNE |
+
+8-param synths use raw values: **1024, 2944, 4384, 6304, 8224, 10624, 13024, 15360** (confirmed via oracle: dsynth; predicted for sampler).
+
+| Synth | 1024 | 2944 | 4384 | 6304 | 8224 | 10624 | 13024 | 15360 |
+|-------|------|------|------|------|------|-------|-------|-------|
+| dsynth | ENVELOPE CROSSFADER | WAVEFORM 1 | ENVELOPE 1 | CROSS MODULATION | FREQUENCY | WAVEFORM 2 | ENVELOPE 2 | CUTOFF |
+| sampler | START | LOOP IN | LOOP OUT | END | DIRECTION | FINE TUNE | LOOP FADE | GAIN |
 
 ### synth.pulse
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | FILTER | `%` | 18848 → ~57%; hardware max=23168 |
 | 1 | AMPLITUDE | `%` | 3984 → ~12%; hardware max=16384 |
-| 2 | SECOND PULSE | `%` | 10752 → ~33%; hardware max=16384 |
+| 2 | PULSE TWO | `%` | 10752 → ~33%; hardware max=16384 |
 | 3 | MODULATION | `centered %` | Bipolar; -6144 → negative; hardware max=16384 (positive side) |
 
 ### synth.phase
@@ -141,7 +167,7 @@ parameter type.
 ### synth.cluster
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVES | `%` | Hardware min=3072, max=17408 (oracle min0+synthmax(2)); does not span full 0–32767 |
+| 0 | WAVE NUMBER | `%` | Hardware min=3072, max=17408 (oracle min0+synthmax(2)); does not span full 0–32767 |
 | 1 | WAVE ENV | `%` | Hardware min=0, max=32767 (oracle) |
 | 2 | SPREAD | `%` | Hardware min=512, max=24064 (oracle); does not span full 0–32767 |
 | 3 | UNITOR | `selector` | Hardware min=3, max=1638 (oracle); distinct selector encoding, not 1024-based |
@@ -149,14 +175,14 @@ parameter type.
 ### synth.dsynth
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | ENV CROSSFADER | `%` | Linear knob; range 0–32767 (oracle captures 1+synthmax(7)) |
-| 1 | WAVEFORM | `%` | Linear knob; range 0–32767 |
-| 2 | ENVELOPE | `%` | Linear knob; range 0–32767 |
+| 0 | ENVELOPE CROSSFADER | `%` | Linear knob; range 0–32767 (oracle captures 1+synthmax(7)) |
+| 1 | WAVEFORM 1 | `%` | Linear knob; range 0–32767 |
+| 2 | ENVELOPE 1 | `%` | Linear knob; range 0–32767 |
 | 3 | CROSS MODULATION | `%` | Linear knob; range 0–32767 |
 | 4 | FREQUENCY | `%` | Linear knob; range 0–32767 |
-| 5 | WAVEFORM | `%` | Linear knob; range 0–32767 |
-| 6 | ENVELOPE | `%` | Linear knob; range 0–32767 |
-| 7 | FILTER CUTOFF FREQUENCY | `%` | Linear knob; range 0–32767 |
+| 5 | WAVEFORM 2 | `%` | Linear knob; range 0–32767 |
+| 6 | ENVELOPE 2 | `%` | Linear knob; range 0–32767 |
+| 7 | CUTOFF | `%` | Linear knob; range 0–32767 |
 
 ### synth.fm
 | Index | Name | Scale | Notes |
@@ -174,8 +200,8 @@ parameter type.
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | TENSION | `%` | Hardware min=64, hardware max=8256 (narrow raw range) |
-| 1 | IMPULSE | `max~24064` | Hardware min=512, hardware max=24064 (not 32767); similar to drwave |
-| 2 | STEREO | `%` | Hardware max=16384; 16384 → 100% display |
+| 1 | DECAY | `max~24064` | Hardware min=512, hardware max=24064 (not 32767); similar to drwave |
+| 2 | DETUNE | `%` | Hardware max=16384; 16384 → 100% display |
 | 3 | IMPULSE TYPE | `selector` | Hardware min=8256, hardware max=16448 |
 
 ### fx.grid

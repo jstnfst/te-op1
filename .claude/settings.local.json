@@ -6,7 +6,9 @@
       "Bash(build.bat)",
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "PowerShell(& \"C:\\\\Users\\\\jstnf\\\\hack\\\\te-op1\\\\build.bat\" 2>&1)",
+      "Bash(./op1dump.exe \"explore/aif/min/amp/element/ampcwo_elem.aif\")"
     ]
   }
 }

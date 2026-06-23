@@ -420,11 +420,6 @@
 
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
-    { priority: 'medium', key: 'lfo.element PARAM', reason: 'Selector options are context-dependent on both DESTINATION and the loaded synth type. Need a matrix of (destination × synth type) to enumerate.' },
-    { priority: 'medium', key: 'synth.drwave [0]',  reason: 'WAVE TYPE AND LENGTH max is 24568 (not 32767). The encoding packs wave type + length together — how the bits are split is unknown.' },
-    { priority: 'low',    key: 'synth.cluster',     reason: 'Oracle min+max confirmed for all 4 params. WAVES/WAVE ENV/SPREAD assumed linear %, UNITOR is selector-like. No deliberate calibration snapshot taken.' },
-    { priority: 'low',    key: 'synth.fm [4–7]',   reason: 'Four indices fixed at 15000/0/100/1500 in ALL oracle captures (both min and max). Meaning (FM operator levels/envelope?) is unknown.' },
-    { priority: 'low',    key: 'fx.mother',         reason: 'GATE=0 confirmed. DISTANCE/COLOR/MIX inferred from capture 12 preset position (linear % assumed). No deliberate calibration snapshot taken.' },
   ];
 
   // ── RENDER: LEGEND ──────────────────────────────────────
@@ -462,6 +457,9 @@
       <span class="gap-reason">${g.reason}</span>
     </div>`;
   });
+  if (GAPS.length === 0) {
+    document.querySelector('.gaps-section').style.display = 'none';
+  }
 
   // ── RENDER: TABLE ───────────────────────────────────────
   let activeFilter = 'all';
