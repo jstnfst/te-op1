@@ -108,7 +108,7 @@ parameter type.
 ### synth.dna
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FILTER | `centered %` | Bipolar; hardware min=-29491 (≈ -90%); not a simple 0–100 % |
+| 0 | FILTER | `centered %` | Centered %; formula raw/32767×100; hardware min=−29491 (−90%), max=32767 (+100%) (oracle dna-filter-minmax) |
 | 1 | WAVE NUMBER | `%` | Hardware min=4608, hardware max=12800 (limited range) |
 | 2 | WAVE MODIFIER | `%` | max=32767 |
 | 3 | NOISE | `%` | |

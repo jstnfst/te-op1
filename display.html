@@ -239,7 +239,7 @@
     ['synth.dimension', 3, 'RESONANCE',          'linear', [[0,'min'],[32767,'max']], 'hardware min=0, max=32767 (oracle)'],
 
     // synth.dna — oracle min (min2.aif) + max (synthmax(5).aif) confirmed
-    ['synth.dna', 0, 'FILTER',        'centered', [[-29491,'~-90%']], 'bipolar; hardware min=-29491 (not 0)'],
+    ['synth.dna', 0, 'FILTER',        'centered', [[-29491,-90],[32767,100]], 'centered %; formula raw/32767×100; hardware min=−29491 (−90%), max=32767 (+100%) (oracle dna-filter-minmax)'],
     ['synth.dna', 1, 'WAVE NUMBER',   'linear',   [[4608,'min'],[12800,'max']], 'hardware min=4608, max=12800 (oracle synthmax(5)); limited range'],
     ['synth.dna', 2, 'WAVE MODIFIER', 'linear',   [[32767,'max']], 'hardware max=32767 (notes)'],
     ['synth.dna', 3, 'NOISE',         'linear',   [[0,'min'],[32767,'max']], 'hardware min=0, max=32767 (oracle)'],
@@ -417,7 +417,6 @@
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
     // low — structural unknowns; possibly firmware-managed or non-standard encoding
-    { priority:'low', key:'synth.dna 0 FILTER formula',            reason:'bipolar; hardware min=−29491 (~−90%); exact formula undetermined' },
   ];
 
   // ── RENDER: LEGEND ──────────────────────────────────────
