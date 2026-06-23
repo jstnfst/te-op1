@@ -276,7 +276,7 @@
     ['synth.pulse', 0, 'FILTER',       'linear',   [[18848, 57]],  'hardware max=23168 (oracle synthmax(10))'],
     ['synth.pulse', 1, 'AMPLITUDE',    'linear',   [[3984, 12]],   'hardware max=16384 (oracle)'],
     ['synth.pulse', 2, 'PULSE TWO',    'linear',   [[10752, 33]],  'hardware max=16384 (oracle)'],
-    ['synth.pulse', 3, 'MODULATION',   'centered', [[-6144, '?']], 'bipolar; hardware max=16384 positive side (oracle)'],
+    ['synth.pulse', 3, 'MODULATION',   'centered', [[-16384,-100],[-6144,-38],[16384,100]], 'centered %; symmetric range −16384–+16384 (oracle pulse-modulation-minmax)'],
 
     // synth.sampler
     ['synth.sampler', 0, 'START',     'linear',   [[0,'min'],[32766,'max']],              'linear %; hardware min=0, max=32766 (notes)'],
@@ -417,7 +417,6 @@
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
     // low — structural unknowns; possibly firmware-managed or non-standard encoding
-    { priority:'low', key:'synth.pulse 3 MODULATION negative',     reason:'negative-side display value unknown; sample shows [[-6144, "?"]]' },
     { priority:'low', key:'synth.dna 0 FILTER formula',            reason:'bipolar; hardware min=−29491 (~−90%); exact formula undetermined' },
   ];
 

@@ -1,0 +1,50 @@
+File      : oracle/pulse-modulation-minmax (2).aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-174#02
+  Type          : pulse
+  Synth version : 3
+  Octave        : 1
+  mtime         : 1782227500
+
+  Synth knobs (pulse):
+    FILTER           :  23168  (0.707)
+    AMPLITUDE        :  16384  (0.500)
+    PULSE TWO        :   8704  (0.266)
+    MODULATION       :  16384  (0.500)
+
+  Envelope (ADSR):
+    adsr[0]          :   7232  (0.221)
+    adsr[1]          :   9664  (0.295)
+    adsr[2]          :  32767  (1.000)
+    adsr[3]          :   8640  (0.264)
+    adsr[4]          :   7167  (0.219)
+    adsr[5]          :   4000  (0.122)
+    adsr[6]          :  18432  (0.563)
+    adsr[7]          :  15103  (0.461)
+
+  FX (delay)  active: yes
+  FX params (delay):
+    RANGE            :   8000  (0.244)
+    SPEED            :  14368  (0.438)
+    FEEDBACK         :   9438  (0.288)
+    LEVEL            :  20044  (0.612)
+
+  LFO (tremolo)  active: yes
+  LFO params (tremolo):
+    SPEED            :  24158  (0.737)
+    PITCH AMOUNT     :   1420  (0.043)
+    VOLUME LEVEL     :   4991  (0.152)
+    PITCH ENVELOPE   :   4815  (0.147)
+    LFO SHAPE        :      0  (0.000)
+
+--- raw JSON ---
+{"adsr":[7232,9664,32767,8640,7167,4000,18432,15103],"fx_active":true,"fx_params":[8000,14368,9438,20044,0,0,0,0],"fx_type":"delay","knobs":[23168,16384,8704,16384,0,0,0,0],"lfo_active":true,"lfo_params":[24158,1420,4991,4815,0,0,0,0],"lfo_type":"tremolo","mtime":1782227500.0,"name":"2026-174#02","octave":1,"synth_version":3,"type":"pulse"}
+
+Wrote oracle/pulse-modulation-minmax (2).json

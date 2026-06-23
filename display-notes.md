@@ -153,7 +153,7 @@ parameter type.
 | 0 | FILTER | `%` | 18848 → ~57%; hardware max=23168 |
 | 1 | AMPLITUDE | `%` | 3984 → ~12%; hardware max=16384 |
 | 2 | PULSE TWO | `%` | 10752 → ~33%; hardware max=16384 |
-| 3 | MODULATION | `centered %` | Bipolar; -6144 → negative; hardware max=16384 (positive side) |
+| 3 | MODULATION | `centered %` | Symmetric range −16384–+16384; −16384 → −100%, 16384 → 100% (oracle pulse-modulation-minmax) |
 
 ### synth.phase
 | Index | Name | Scale | Notes |
