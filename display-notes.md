@@ -169,7 +169,7 @@ parameter type.
 | 0 | WAVE NUMBER | `%` | Hardware min=3072, max=17408 (oracle min0+synthmax(2)); does not span full 0–32767 |
 | 1 | WAVE ENV | `%` | Hardware min=0, max=32767 (oracle) |
 | 2 | SPREAD | `%` | Hardware min=512, max=24064 (oracle); does not span full 0–32767 |
-| 3 | UNITOR | `selector` | Hardware min=3, max=1638 (oracle); distinct selector encoding, not 1024-based |
+| 3 | UNITOR | `%` | linear %; hardware min=3, max=1638 (oracle) |
 
 ### synth.dsynth
 | Index | Name | Scale | Notes |

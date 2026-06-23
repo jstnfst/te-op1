@@ -224,7 +224,7 @@
     ['synth.cluster', 0, 'WAVE NUMBER', 'linear',   [[3072,'min'],[17408,'max']], 'hardware min=3072, max=17408 (oracle); does not span full 0–32767'],
     ['synth.cluster', 1, 'WAVE ENV', 'linear',   [[0,'min'],[32767,'max']], 'hardware min=0, max=32767 (oracle)'],
     ['synth.cluster', 2, 'SPREAD',   'linear',   [[512,'min'],[24064,'max']], 'hardware min=512, max=24064 (oracle); does not span full 0–32767'],
-    ['synth.cluster', 3, 'UNITOR',   'selector', [[3,'min'],[1638,'max']], 'hardware min=3, max=1638 (oracle); selector-like encoding (not 0 or 1024)'],
+    ['synth.cluster', 3, 'UNITOR',   '%',        [[3,0],[1638,100]], 'linear %; hardware min=3, max=1638 (oracle)'],
 
     // synth.digital — oracle min (min1.aif) + max (synthmax(3).aif) confirmed
     ['synth.digital', 0, 'WAVE SHAPER',    'linear',   [[0,'min'],[32767,'max']], 'hardware min=0, max=32767 (oracle); display unit unknown'],
@@ -417,7 +417,6 @@
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
     // low — structural unknowns; possibly firmware-managed or non-standard encoding
-    { priority:'low', key:'synth.cluster 3 UNITOR encoding',       reason:'non-standard selector (min=3, max=1638); intermediate values unknown' },
     { priority:'low', key:'synth.string 3 IMPULSE TYPE encoding',  reason:'non-standard selector encoding; not 1024-based' },
     { priority:'low', key:'synth.pulse 3 MODULATION negative',     reason:'negative-side display value unknown; sample shows [[-6144, "?"]]' },
     { priority:'low', key:'synth.dna 0 FILTER formula',            reason:'bipolar; hardware min=−29491 (~−90%); exact formula undetermined' },
