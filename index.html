@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Tools for reading and writing OP-1 Field patch files. 30 parameter types across 14 synth engines, 9 FX, 6 LFO, and global ADSR.">
+  <meta name="description" content="Tools for reading and writing OP-1 Field patch files. 31 parameter types across 15 synth engines, 9 FX, 6 LFO, and global ADSR.">
   <title>OP-1 Field — Patch Format</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -116,7 +116,7 @@
     <h1 class="hero-title">OP-1 Field<br>Patch File Format</h1>
     <p class="hero-body">
       Tools for reading and writing <code>.aif</code> synth patch files for the
-      Teenage Engineering OP-1 Field. Covers 30 parameter types across 14 synth engines,
+      Teenage Engineering OP-1 Field. Covers 31 parameter types across 15 synth engines,
       9 FX, 6 LFO, and global ADSR. See the pages below for the parameter name database
       and raw-to-display value mappings.
     </p>
@@ -124,10 +124,10 @@
 
   <!-- STATS -->
   <div class="stats" id="stats">
-    <div class="stat"><div class="stat-num orange">14</div><div class="stat-label">SYNTH ENGINES</div></div>
+    <div class="stat"><div class="stat-num orange">15</div><div class="stat-label">SYNTH ENGINES</div></div>
     <div class="stat"><div class="stat-num blue">9</div><div class="stat-label">FX TYPES</div></div>
     <div class="stat"><div class="stat-num purple">6</div><div class="stat-label">LFO TYPES</div></div>
-    <div class="stat"><div class="stat-num green">30</div><div class="stat-label">PARAM TYPES</div></div>
+    <div class="stat"><div class="stat-num green">31</div><div class="stat-label">PARAM TYPES</div></div>
     <div class="stat"><div class="stat-num" id="stat-fw" style="color:var(--muted)"></div><div class="stat-label">FIRMWARE</div></div>
   </div>
 
@@ -137,7 +137,7 @@
       <div class="page-card-eyebrow">LAYOUT</div>
       <div class="page-card-title">Knob Layout</div>
       <div class="page-card-desc">
-        All 29 engine types with named knob mappings. Each type shows an
+        All 30 engine types with named knob mappings. Each type shows an
         8-knob diagram of active vs unused slots, filterable by synth, FX, or LFO.
       </div>
       <span class="page-card-arrow">&rarr;</span>
@@ -147,7 +147,7 @@
       <div class="page-card-title">Value Mappings</div>
       <div class="page-card-desc">
         Raw-to-display value mappings per parameter. Scale type taxonomy
-        and sample points for all 30 param types.
+        and sample points for all 31 param types.
       </div>
       <span class="page-card-arrow">&rarr;</span>
     </a>
@@ -164,8 +164,8 @@
     </thead>
     <tbody>
       <tr>
-        <td>Synth (14)</td>
-        <td class="types-list">amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage</td>
+        <td>Synth (15)</td>
+        <td class="types-list">amp, cluster, dbox, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage</td>
       </tr>
       <tr>
         <td>FX (9)</td>

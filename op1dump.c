@@ -283,6 +283,7 @@ int main(int argc, char *argv[]) {
     if (json_get_string(json_str, "name",          sval, sizeof(sval))) printf("  Name          : %s\n", sval);
     printf(                                                               "  Type          : %s\n", synth_type);
     if (json_get_int   (json_str, "synth_version", &ival))               printf("  Synth version : %d\n", ival);
+    else if (json_get_int(json_str, "drum_version", &ival))              printf("  Drum version  : %d\n", ival);
     if (json_get_int   (json_str, "octave",        &ival))               printf("  Octave        : %d\n", ival);
     if (json_get_double(json_str, "mtime",         &dval))               printf("  mtime         : %.0f\n", dval);
 

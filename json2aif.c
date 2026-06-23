@@ -6,7 +6,7 @@
  *   json2aif zero <patch.json> [output.aif]      — zero knobs/fx_params/lfo_params
  *   json2aif max  <patch.json> [output.aif]      — set all three arrays to 32767
  *   json2aif explore [-dest <synth|envelope|fx|mix>] [-param <N>]
- *                                                — generate all 756x2 boundary patches
+ *                                                — generate all 810x2 boundary patches
  *
  * Build: cl json2aif.c /Fe:json2aif.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  */
@@ -243,7 +243,7 @@ static int write_aif(const char *json_str, int json_len,
  * ========================================================================= */
 
 static const char *SYNTH_TYPES[] = {
-    "amp","cluster","digital","dimension","dna","drwave",
+    "amp","cluster","dbox","digital","dimension","dna","drwave",
     "dsynth","fm","phase","pulse","sampler","string","vocoder","voltage", NULL
 };
 static const char *FX_TYPES[] = {
@@ -277,9 +277,10 @@ static const int *param_lookup(const ParamRow *tbl, const char *type, const int 
     return def;
 }
 
-static const int SYNTH_ADSR[14][8] = {
+static const int SYNTH_ADSR[15][8] = {
     {  576,  4160, 17408, 15808, 14336,  7872, 18432,  3276 }, /* amp       */
     {  576,  6592,     0, 14912, 14336,    64, 18432, 16384 }, /* cluster   */
+    {    0,     0,     0,     0,     0,     0,     0,     0 }, /* dbox (no adsr) */
     {   64, 12352, 10239,  3008,  2048,    64, 18432, 16229 }, /* digital   */
     { 2624,  8640,  7168,  6720,  2048,   192, 18432, 21093 }, /* dimension */
     {   64, 16320, 32767, 11712,  2048,  6432, 18432,  9829 }, /* dna       */
@@ -389,6 +390,41 @@ static void get_slug(const char *name, char *out) {
     out[4] = '\0';
 }
 
+/* 24 per-pad rows, all zeros — used for dbox explore patches */
+static const char DBOX_DATA_ZEROS[] =
+    "[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]";
+
+static int build_dbox_patch_json(const char *fx, const char *lfo,
+                                  const char *name,
+                                  const int fxp[8], const int lfop[8],
+                                  char *out, size_t outsz) {
+    return snprintf(out, outsz,
+        "{\"dbox_data\":%s,"
+        "\"drum_version\":2,"
+        "\"dyna_env\":[-32768,0,-32768,0,0,0,0,0],"
+        "\"fx_active\":true,"
+        "\"fx_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"fx_type\":\"%s\","
+        "\"lfo_active\":true,"
+        "\"lfo_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"lfo_type\":\"%s\","
+        "\"mtime\":%ld.0,"
+        "\"name\":\"%s\","
+        "\"octave\":0,"
+        "\"type\":\"dbox\"}",
+        DBOX_DATA_ZEROS,
+        fxp[0],fxp[1],fxp[2],fxp[3],fxp[4],fxp[5],fxp[6],fxp[7], fx,
+        lfop[0],lfop[1],lfop[2],lfop[3],lfop[4],lfop[5],lfop[6],lfop[7], lfo,
+        (long)time(NULL), name);
+}
+
 static int build_patch_json(const char *synth, const char *fx, const char *lfo,
                              const char *name, int ver,
                              const int knobs[8], const int fxp[8], const int lfop[8],
@@ -464,7 +500,7 @@ static int run_explore(int vel_dest_raw, int vel_param) {
 
     printf("\nGenerating %d combinations x 2 (min + max) = %d pairs ...\n",
            total, total * 2);
-    printf("Each pair = 1 JSON + 1 AIF  ->  %d files total\n\n", total * 4);
+    printf("Each combo = 1 JSON + 1 AIF  ->  %d files total\n\n", total * 4);
 
     static const char *MODES[2] = {"min", "max"};
 
@@ -512,7 +548,11 @@ static int run_explore(int vel_dest_raw, int vel_param) {
                         lfop  = param_lookup(LFO_MAX_PARAMS,  lfo,   MAXS);
                     }
 
-                    jlen = (strcmp(synth, "sampler") == 0)
+                    jlen = (strcmp(synth, "dbox") == 0)
+                        ? build_dbox_patch_json(fx, lfo, slug,
+                                                fxp, lfop,
+                                                json_buf, sizeof(json_buf))
+                        : (strcmp(synth, "sampler") == 0)
                         ? build_sampler_patch_json(synth, fx, lfo, slug, ver,
                                                    knobs, fxp, lfop, adsr,
                                                    json_buf, sizeof(json_buf))

@@ -9,9 +9,9 @@ Web pages: `index.html` (home), `params.html` (knob layout), `display.html` (val
 
 ## Coverage
 
-30 parameter types across 14 synth engines, 9 FX, 6 LFO, and global ADSR.
+31 parameter types across 15 synth engines, 9 FX, 6 LFO, and global ADSR.
 
-**synth** — amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
+**synth** — amp, cluster, dbox, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
 **fx** — cwo, delay, grid, mother, nitro, phone, punch, spring, terminal  
 **lfo** — element, midi, random, tremolo, value, velocity  
 **adsr** — attack, decay, sustain, release, play mode, portamento, bend range, volume
@@ -112,6 +112,24 @@ and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
 
 #### `cluster`
 `0` WAVE NUMBER · `1` WAVE ENV · `2` SPREAD · `3` UNITOR
+
+#### `dbox` (drum box)
+Uses `drum_version: 2` instead of `synth_version`. No `adsr` field. Unique JSON keys:
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `dbox_data` | `int[24][8]` | Per-pad parameter values (24 pads × 8 params each) |
+| `dyna_env`  | `int[8]`     | Dynamic envelope; oracle value `[-32768,0,-32768,0,0,0,0,0]` |
+| `pan`       | `int[24]`    | Per-pad pan position (optional) |
+| `pan_ab`    | `bool[24]`   | Per-pad stereo A/B flag (optional) |
+| `attack`    | `int[24]`    | Per-pad attack (optional; 0 in oracle) |
+| `fademode`  | `null`       | Fade mode (optional) |
+| `stereo`    | `bool`       | Stereo flag (optional) |
+
+Knob names not yet identified (indices 2, 3, 4, 6, 7 have non-zero values in oracle captures).
+
+lfo.element PARAMETER selector for dbox differs from other 8-param synths:
+`knob 0: 1024 · knob 1: 2464 · knob 2: 4384 · knob 3: 6304 · knob 4: 8224 · knob 5: 10624 · knob 6: 12544 · knob 7: 14464`
 
 #### `digital`
 `0` WAVE SHAPER · `1` OCTAVE · `2` DETUNE+RINGMOD · `3` DIGITALNESS
@@ -270,7 +288,7 @@ json2aif.exe explore -dest fx -param 5824
 - Refuses to overwrite an existing output file (single-file modes only)
 - Strips UTF-8 BOM from input JSON if present
 
-**`explore` subcommand** — generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO combinations (3024 files total):
+**`explore` subcommand** — generates min and max boundary patches for all 15 × 9 × 6 = 810 synth/FX/LFO combinations (3240 files total):
 
 - Deletes and recreates `explore\` at the start of each run
 - Output structure: `explore\aif\[mode]\[synth]\[lfo]\*.aif` and `explore\json\[mode]\[synth]\[lfo]\*.json`
@@ -372,7 +390,7 @@ te-op1/
   build.bat          recompile all tools (requires MSVC)
   dump-all.bat       batch-process presets/ folder
   index.html         home — coverage overview and file format summary
-  params.html        knob layout — all 30 types with named knob diagrams
+  params.html        knob layout — all 31 types with named knob diagrams
   display.html       value mappings — raw-to-display mappings per parameter
   presets/           .aif patch files and their .json sidecars
   oracle/            reference exports from hardware (tracked in git, never regenerated)
