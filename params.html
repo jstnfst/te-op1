@@ -53,6 +53,7 @@
     .g-badge.synth { background: rgba(255,72,0,.1);    color: var(--orange); }
     .g-badge.fx    { background: rgba(14,143,232,.1);  color: var(--blue);   }
     .g-badge.lfo   { background: rgba(139,92,246,.1);  color: var(--purple); }
+    .g-badge.adsr  { background: rgba(34,197,94,.1);   color: var(--green);  }
     .v-badge { margin-left: auto; font-size: 8px; font-weight: 400; letter-spacing: .1em; color: var(--green); opacity: .85; }
     .card-type { font-size: 18px; font-weight: 700; letter-spacing: .01em; margin-bottom: 12px; }
     .knob-strip { margin-bottom: 12px; }
@@ -95,10 +96,11 @@
     <a href="display.html" class="nav-btn">DISPLAY NOTES</a>
   </nav>
   <div class="filter-nav" aria-label="Filter by group">
-    <button class="f-btn active" data-g="all">ALL<span class="n" id="count-all">29</span></button>
+    <button class="f-btn active" data-g="all">ALL<span class="n" id="count-all">30</span></button>
     <button class="f-btn" data-g="synth">SYNTH<span class="n">14</span></button>
     <button class="f-btn" data-g="fx">FX<span class="n">9</span></button>
     <button class="f-btn" data-g="lfo">LFO<span class="n">6</span></button>
+    <button class="f-btn" data-g="adsr">ADSR<span class="n">1</span></button>
   </div>
 </header>
 
@@ -106,7 +108,7 @@
   <section class="intro">
     <p>
       Each OP-1 Field patch embeds a 1028-byte JSON blob in an AIFF-C container.
-      The blob holds the synth engine, dual ADSR envelopes, one FX chain, and one LFO —
+      The blob holds the synth engine, one ADSR envelope, one FX chain, and one LFO —
       all as 16-bit integers (0&ndash;32767) in fixed 8-element arrays.
       This page maps every known array index to a named parameter.
       See <a href="display.html">Display Notes</a> for raw&harr;display value mappings
@@ -158,7 +160,8 @@
     "lfo.random":      ["SPEED","AMOUNT","DESTINATION","ENVELOPE","PARAMETER"],
     "lfo.tremolo":     ["SPEED","PITCH AMOUNT","VOLUME LEVEL","PITCH ENVELOPE",null,null,null,"LFO SHAPE"],
     "lfo.value":       ["SPEED","AMOUNT","DESTINATION","PARAMETER","LFO SHAPE"],
-    "lfo.velocity":    ["AMP","VOLUME AMOUNT","DESTINATION","PARAMETER"]
+    "lfo.velocity":    ["AMP","VOLUME AMOUNT","DESTINATION","PARAMETER"],
+    "adsr":            ["ATTACK","DECAY","SUSTAIN","RELEASE","PLAY MODE","PORTAMENTO","BEND RANGE","VOLUME"]
   };
 
   const VERIFIED = new Set([
@@ -167,7 +170,8 @@
     "synth.sampler","synth.string","synth.vocoder","synth.voltage",
     "fx.cwo","fx.delay","fx.grid","fx.mother","fx.nitro",
     "fx.phone","fx.punch","fx.spring","fx.terminal",
-    "lfo.element","lfo.midi","lfo.random","lfo.tremolo","lfo.value","lfo.velocity"
+    "lfo.element","lfo.midi","lfo.random","lfo.tremolo","lfo.value","lfo.velocity",
+    "adsr"
   ]);
 
   function knobSVG(slots) {
@@ -187,7 +191,8 @@
     const grid = document.getElementById('grid');
     grid.innerHTML = '';
     Object.entries(PARAMS).forEach(([key, rawParams]) => {
-      const [group, type] = key.split('.');
+      const parts = key.split('.');
+      const [group, type] = parts.length > 1 ? parts : [parts[0], parts[0].toUpperCase()];
       if (filter !== 'all' && group !== filter) return;
       const slots = [...rawParams];
       while (slots.length < 8) slots.push(null);

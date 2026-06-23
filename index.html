@@ -119,9 +119,9 @@
     <h1 class="hero-title">OP-1 Field<br>Patch File Format</h1>
     <p class="hero-body">
       Notes and tools for reading and writing <code>.aif</code> synth patch files for the
-      Teenage Engineering OP-1 Field. All 29 synth, FX, and LFO parameter types have been
-      mapped and verified against hardware. See the pages below for the parameter name
-      database and raw&harr;display value mappings.
+      Teenage Engineering OP-1 Field. All 30 parameter types — 14 synth, 9 FX, 6 LFO, and
+      global ADSR — have been mapped and verified against hardware. See the pages below for
+      the parameter name database and raw&harr;display value mappings.
     </p>
   </section>
 
@@ -130,7 +130,7 @@
     <div class="stat"><div class="stat-num orange">14</div><div class="stat-label">SYNTH ENGINES</div></div>
     <div class="stat"><div class="stat-num blue">9</div><div class="stat-label">FX TYPES</div></div>
     <div class="stat"><div class="stat-num purple">6</div><div class="stat-label">LFO TYPES</div></div>
-    <div class="stat"><div class="stat-num green" id="stat-verified">29</div><div class="stat-label">TYPES VERIFIED</div></div>
+    <div class="stat"><div class="stat-num green" id="stat-verified">30</div><div class="stat-label">TYPES VERIFIED</div></div>
     <div class="stat"><div class="stat-num" id="stat-fw" style="color:var(--muted)"></div><div class="stat-label">FIRMWARE</div></div>
   </div>
 
@@ -182,6 +182,11 @@
         <td>LFO</td>
         <td><span class="dot dot-green"></span>All 6 verified</td>
         <td class="types-list">element, midi, random, tremolo, value, velocity</td>
+      </tr>
+      <tr>
+        <td>ADSR</td>
+        <td><span class="dot dot-green"></span>Verified (global)</td>
+        <td class="types-list">attack, decay, sustain, release, play mode, portamento, bend range, volume</td>
       </tr>
     </tbody>
   </table>
