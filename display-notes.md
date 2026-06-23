@@ -16,7 +16,7 @@ parameter type.
 | `hz` | Frequency in Hz | FILTER FREQ in dimension |
 | `tempo-dial` | Non-linear BPM/tempo dial | SPEED in lfo.value |
 | `selector` | Named discrete options | DESTINATION, PARAMETER (context-dependent) |
-| `non-linear` | Appears near max at ~34% linear | FREQUENCY in fx.punch |
+| `non-linear` | Appears near max at ~34% linear | IMPULSE in synth.string |
 
 ---
 
@@ -57,7 +57,7 @@ parameter type.
 ### fx.punch
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FREQUENCY | `hz` | Log Hz scale; 8952 → above halfway; not linear %; hardware min=1344, hardware max=12480 |
+| 0 | FREQUENCY | `%` | Linear gauge with pointer display; hardware min=1344, max=12480 (oracle fx4+fx-max(4)) |
 | 1 | PUNCH | `%` | 24512 → 74; hardware max=32767 |
 | 2 | ROUNDS | `discrete-24` | 1–24 inclusive; non-linear; hardware min=1536 (step 1), hardware max=25088 (step 24) |
 | 3 | POWER | `%` | 29159 → 88; hardware max=32767 |
@@ -75,7 +75,7 @@ parameter type.
 ### lfo.value
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear BPM dial; hardware min=0, max=16384 (oracle); differs from tremolo's max (32440); no raw→BPM pairs captured |
+| 0 | SPEED | `tempo-dial` | Non-linear tempo dial; hardware min=0, max=16384 (oracle); differs from tremolo max (32440) |
 | 1 | AMOUNT | `centered %` | Bipolar -100 to +100; 23255 → ~71% |
 | 2 | DESTINATION | `selector` | Selects which synth parameter to modulate; for amp synth: hardware max=11264 (oracle lfo-max(2)) |
 | 3 | PARAMETER | `selector` | Discrete, options depend on DESTINATION value; hardware max=15360 |
@@ -146,6 +146,18 @@ parameter type.
 | 2 | SPREAD | `%` | Hardware min=512, max=24064 (oracle); does not span full 0–32767 |
 | 3 | UNITOR | `selector` | Hardware min=3, max=1638 (oracle); distinct selector encoding, not 1024-based |
 
+### synth.dsynth
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | ENV CROSSFADER | `%` | Linear knob; range 0–32767 (oracle captures 1+synthmax(7)) |
+| 1 | WAVEFORM | `%` | Linear knob; range 0–32767 |
+| 2 | ENVELOPE | `%` | Linear knob; range 0–32767 |
+| 3 | CROSS MODULATION | `%` | Linear knob; range 0–32767 |
+| 4 | FREQUENCY | `%` | Linear knob; range 0–32767 |
+| 5 | WAVEFORM | `%` | Linear knob; range 0–32767 |
+| 6 | ENVELOPE | `%` | Linear knob; range 0–32767 |
+| 7 | FILTER CUTOFF FREQUENCY | `%` | Linear knob; range 0–32767 |
+
 ### synth.fm
 | Index | Name | Scale | Notes |
 |---|---|---|---|
@@ -187,7 +199,7 @@ parameter type.
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial; hardware min=0, max=32440 (oracle); 8-position raw sweep captured: 0, 2943, 4576, 12751, 16348, 22228, 29422, 32440 — BPM display values not recorded |
+| 0 | SPEED | `tempo-dial` | Non-linear tempo dial; hardware min=0, max=32440 (oracle); raw sweep: 0, 2943, 4576, 12751, 16348, 22228, 29422, 32440 |
 | 1 | PITCH AMOUNT | `centered %` | Bipolar -100 to +100; 985 → ~3%, 2264 → ~7% |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
