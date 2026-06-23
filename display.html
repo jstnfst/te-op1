@@ -214,11 +214,11 @@
   // samples: [[raw, display], ...]  — display can be number or string
   // warn: optional warning string
   const DATA = [
-    // synth.amp — no display notes; assumed linear
-    ['synth.amp', 0, 'VOLUME',     'linear',   [], 'no display notes; assumed linear'],
-    ['synth.amp', 1, 'COMPRESSOR', 'linear',   [], 'no display notes; assumed linear'],
-    ['synth.amp', 2, 'TONE',       'linear',   [], 'no display notes; assumed linear'],
-    ['synth.amp', 3, 'DRIVE',      'linear',   [], 'no display notes; assumed linear'],
+    // synth.amp — confirmed linear % (oracle capture 12)
+    ['synth.amp', 0, 'VOLUME',     'linear',   [[16415, 50]], 'confirmed linear % (oracle capture 12)'],
+    ['synth.amp', 1, 'COMPRESSOR', 'linear',   [[16416, 50]], 'confirmed linear % (oracle capture 12)'],
+    ['synth.amp', 2, 'TONE',       'linear',   [[16704, 51]], 'confirmed linear % (oracle capture 12)'],
+    ['synth.amp', 3, 'DRIVE',      'linear',   [[16384, 50]], 'confirmed linear % (oracle capture 12)'],
 
     // synth.cluster — oracle min confirmed (min0.aif); scale types partially inferred
     ['synth.cluster', 0, 'WAVES',    'linear',   [], 'hardware min=3072 (knob does not reach 0)'],
@@ -250,15 +250,15 @@
     ['synth.drwave', 2, 'PHASE',                'discrete', [[8199, 49],[16377, 98]],  '0–98; hardware max=16377 (oracle)'],
     ['synth.drwave', 3, 'CHORUS',               'discrete', [[0, 0],[32767, 99]],      '0–99 (100 steps)'],
 
-    // synth.dsynth — no display notes at all
-    ['synth.dsynth', 0, 'ENV CROSSFADER',          'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 1, 'WAVEFORM',                'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 2, 'ENVELOPE',                'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 3, 'CROSS MODULATION',        'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 4, 'FREQUENCY',               'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 5, 'WAVEFORM',                'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 6, 'ENVELOPE',                'unknown', [], '', 'no display notes — needs characterization'],
-    ['synth.dsynth', 7, 'FILTER CUTOFF FREQUENCY', 'unknown', [], '', 'no display notes — needs characterization'],
+    // synth.dsynth — hardware min=0 confirmed (oracle capture 1); scale types still unknown
+    ['synth.dsynth', 0, 'ENV CROSSFADER',          'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown — no display readings'],
+    ['synth.dsynth', 1, 'WAVEFORM',                'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown'],
+    ['synth.dsynth', 2, 'ENVELOPE',                'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown'],
+    ['synth.dsynth', 3, 'CROSS MODULATION',        'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown'],
+    ['synth.dsynth', 4, 'FREQUENCY',               'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown'],
+    ['synth.dsynth', 5, 'WAVEFORM',                'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown'],
+    ['synth.dsynth', 6, 'ENVELOPE',                'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown'],
+    ['synth.dsynth', 7, 'FILTER CUTOFF FREQUENCY', 'unknown', [[0,'min']], 'hardware min=0 (oracle); scale type unknown — no display readings'],
 
     // synth.fm — oracle min confirmed (min3.aif); indices 4-7 are unknown FM operator params
     ['synth.fm', 0, 'FM AMOUNT',  'discrete', [[31743, 95]],          '0–99'],
@@ -304,11 +304,11 @@
     ['synth.vocoder', 2, 'BANDS',    'discrete', [[0, 0]],    '0–7 (8 steps)'],
     ['synth.vocoder', 3, 'MIX',      'linear',   [[0, 0]],    ''],
 
-    // synth.voltage — no display notes
-    ['synth.voltage', 0, 'MODULATION',   'linear', [], 'no display notes; assumed linear'],
-    ['synth.voltage', 1, 'GROUND NOISE', 'linear', [], 'no display notes; assumed linear'],
-    ['synth.voltage', 2, 'PHASE FILTER', 'linear', [], 'no display notes; assumed linear'],
-    ['synth.voltage', 3, 'DETUNE',       'linear', [], 'no display notes; assumed linear'],
+    // synth.voltage — confirmed linear % (oracle captures 13+14)
+    ['synth.voltage', 0, 'MODULATION',   'linear', [[16383, 50],[26623, 81]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 1, 'GROUND NOISE', 'linear', [[14336, 44],[26623, 81]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 2, 'PHASE FILTER', 'linear', [[20992, 64],[29183, 89]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 3, 'DETUNE',       'linear', [[16384, 50],[26112, 80]], 'confirmed linear % (oracle captures 13+14)'],
 
     // fx.cwo
     ['fx.cwo', 0, 'FREQUENCY', 'linear', [[16366, 50]], '~linear; raw 16366→50%'],
@@ -388,14 +388,14 @@
     ['lfo.random', 4, 'PARAMETER',   'selector', [[0,'freq']],   'context-dep on DESTINATION; raw 0="freq" when dest=fx'],
 
     // lfo.tremolo
-    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [],                        ''],
+    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [[0,'min'],[32440,'max']], 'hardware min=0, max=32440 (oracle); display unit unknown — no raw→BPM pairs captured'],
     ['lfo.tremolo', 1, 'PITCH AMOUNT',   'centered', [[985,'~3%'],[2264,'~7%']],'bipolar -100 to +100'],
     ['lfo.tremolo', 2, 'VOLUME LEVEL',   'centered', [[-12759,-38]],            '-100 to +100'],
     ['lfo.tremolo', 3, 'PITCH ENVELOPE', 'linear',   [[4592,14],[12136,37]],    ''],
     ['lfo.tremolo', 7, 'LFO SHAPE',      'selector', [[0,'default'],[19456,'exponential'],[32767,'max']], 'active at index 7; indices 4–6 are null; oracle max=32767'],
 
     // lfo.value
-    ['lfo.value', 0, 'SPEED',       'tempo',    [],                   ''],
+    ['lfo.value', 0, 'SPEED',       'tempo',    [[0,'min'],[16384,'max']], 'hardware min=0, max=16384 (oracle); display unit unknown'],
     ['lfo.value', 1, 'AMOUNT',      'centered', [[23255,'~71%']],     'bipolar -100 to +100'],
     ['lfo.value', 2, 'DESTINATION', 'selector', [],                   'seen: waveform'],
     ['lfo.value', 3, 'PARAMETER',   'selector', [],                   'context-dep on DESTINATION'],
@@ -410,16 +410,14 @@
 
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
-    { priority: 'high',   key: 'synth.dsynth',    reason: '8 param names verified but zero display notes. Scale types for all 8 knobs unknown — needs systematic snapshot measurements.' },
+    { priority: 'high',   key: 'synth.dsynth',    reason: 'Hardware min=0 confirmed for all 8 params. Scale type for all 8 knobs still unknown — no display readings. Likely: WAVEFORM=selector, FREQUENCY/FILTER=hz, others=linear or discrete.' },
     { priority: 'medium', key: 'fx.phone scale',  reason: 'Param names and hardware min/max confirmed by oracle. Display scale type assumed linear (%) but not formally verified — a raw→% snapshot would confirm.' },
     { priority: 'medium', key: 'fx.punch FREQ',   reason: 'Scale type is log Hz but no calibration samples recorded. Need at least 3 raw→Hz pairs to characterize the curve.' },
-    { priority: 'medium', key: 'lfo.*.SPEED',     reason: 'Oracle max confirmed for tremolo (32440) and value (16384). Display values (BPM or clock division) still uncharacterized — no raw→display pairs recorded.' },
+    { priority: 'medium', key: 'lfo.*.SPEED',     reason: 'Raw range confirmed: tremolo 0–32440, value 0–16384. Display unit (BPM or clock division) still uncharacterized — no raw→display pairs recorded.' },
     { priority: 'medium', key: 'lfo.element PARAM','reason': 'Selector options are context-dependent on both DESTINATION and the loaded synth type. Need a matrix of (destination × synth type) to enumerate.' },
     { priority: 'medium', key: 'synth.drwave [0]', reason: 'WAVE TYPE AND LENGTH internal max is ~24400 (not 32767). The encoding packs wave type + length together — how the bits are split is unknown.' },
-    { priority: 'low',    key: 'synth.amp',        reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
     { priority: 'low',    key: 'synth.cluster',    reason: 'Oracle min confirmed (WAVES=3072, SPREAD=512, UNITOR=3). Scale types partially inferred — UNITOR appears selector-like. Full scale characterization still needed.' },
     { priority: 'low',    key: 'synth.fm [4–7]',  reason: 'Four extra knob indices (4–7) with fixed values (15000, 0, 100, 1500) observed in all presets. Their meaning (FM operator levels/envelope?) is unknown.' },
-    { priority: 'low',    key: 'synth.voltage',    reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
     { priority: 'low',    key: 'fx.mother',        reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
   ];
 

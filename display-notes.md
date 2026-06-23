@@ -25,10 +25,18 @@ parameter type.
 ### synth.amp
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | VOLUME | `%` | raw 0 → 0% (confirmed min) |
-| 1 | COMPRESSOR | `%` | raw 0 → 0% (confirmed min) |
-| 2 | TONE | `%` | raw 0 → 0% (confirmed min) |
-| 3 | DRIVE | `%` | raw 0 → 0% (confirmed min) |
+| 0 | VOLUME | `%` | confirmed linear %; 16415 → 50 (oracle capture 12) |
+| 1 | COMPRESSOR | `%` | confirmed linear %; 16416 → 50 (oracle capture 12) |
+| 2 | TONE | `%` | confirmed linear %; 16704 → 51 (oracle capture 12) |
+| 3 | DRIVE | `%` | confirmed linear %; 16384 → 50 (oracle capture 12) |
+
+### synth.voltage
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | MODULATION | `%` | confirmed linear %; 16383 → 50, 26623 → 81 (oracle captures 13+14) |
+| 1 | GROUND NOISE | `%` | confirmed linear %; 14336 → 44, 26623 → 81 (oracle captures 13+14) |
+| 2 | PHASE FILTER | `%` | confirmed linear %; 20992 → 64, 29183 → 89 (oracle captures 13+14) |
+| 3 | DETUNE | `%` | confirmed linear %; 16384 → 50, 26112 → 80 (oracle captures 13+14) |
 
 ### synth.digital
 | Index | Name | Scale | Notes |
@@ -67,7 +75,7 @@ parameter type.
 ### lfo.value
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear BPM dial; hardware max=16384 (oracle lfo-max(2)); differs from tremolo's max (32440) |
+| 0 | SPEED | `tempo-dial` | Non-linear BPM dial; hardware min=0, max=16384 (oracle); differs from tremolo's max (32440); no raw→BPM pairs captured |
 | 1 | AMOUNT | `centered %` | Bipolar -100 to +100; 23255 → ~71% |
 | 2 | DESTINATION | `selector` | Selects which synth parameter to modulate; for amp synth: hardware max=11264 (oracle lfo-max(2)) |
 | 3 | PARAMETER | `selector` | Discrete, options depend on DESTINATION value; hardware max=15360 |
@@ -179,7 +187,7 @@ parameter type.
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial; hardware max=32440 (oracle lfo-max(1)) |
+| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial; hardware min=0, max=32440 (oracle); no raw→BPM pairs captured |
 | 1 | PITCH AMOUNT | `centered %` | Bipolar -100 to +100; 985 → ~3%, 2264 → ~7% |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
