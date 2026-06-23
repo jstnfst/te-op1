@@ -287,7 +287,7 @@ settings, not synth-type-specific. Baseline `[64, 64, 0, 64, 2048, 64, 2048, 327
 | 3 | RELEASE | continuous | hardware min=64, probe max=16320 |
 | 4 | PLAY MODE | `selector-4` | 2048=poly, 6140=mono, 9209=legato, 14336=unison |
 | 5 | PORTAMENTO | continuous | hardware min=64, probe max=16448 |
-| 6 | BEND RANGE | `selector-5` | 1 semitone/2/4/7/octave; raw values TBD (need oracle probes) |
+| 6 | BEND RANGE | `selector-5` | 2048=1 semitone, 5117=2 semitones, 9209=4 semitones, 13301=7 semitones, 18432=octave |
 | 7 | VOLUME | `discrete-100` | 1–100; formula: raw ≈ floor(N × 32767 / 100); 3276→10, 32767→100 |
 
 ---
