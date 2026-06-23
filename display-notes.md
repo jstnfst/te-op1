@@ -67,11 +67,11 @@ parameter type.
 ### lfo.value
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear BPM dial; no simple numeric reading |
+| 0 | SPEED | `tempo-dial` | Non-linear BPM dial; hardware max=16384 (oracle lfo-max(2)); differs from tremolo's max (32440) |
 | 1 | AMOUNT | `centered %` | Bipolar -100 to +100; 23255 → ~71% |
-| 2 | DESTINATION | `selector` | Discrete named options (e.g. "waveform") |
-| 3 | PARAMETER | `selector` | Discrete, options depend on DESTINATION value |
-| 4 | LFO SHAPE | `selector` | Wave shape control; always 0 in observed presets (defaults to sine); unverified index — may be at index 7 instead (consistent with lfo.tremolo where shape is at index 7). Need a preset with non-zero shape to confirm. |
+| 2 | DESTINATION | `selector` | Selects which synth parameter to modulate; for amp synth: hardware max=11264 (oracle lfo-max(2)) |
+| 3 | PARAMETER | `selector` | Discrete, options depend on DESTINATION value; hardware max=15360 |
+| 4 | LFO SHAPE | `selector` | Confirmed at index 4 (oracle lfo-max(2)); hardware max=28086; differs from lfo.tremolo (index 7, max=32767) |
 
 ### synth.drwave
 | Index | Name | Scale | Notes |
@@ -179,11 +179,11 @@ parameter type.
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial |
+| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial; hardware max=32440 (oracle lfo-max(1)) |
 | 1 | PITCH AMOUNT | `centered %` | Bipolar -100 to +100; 985 → ~3%, 2264 → ~7% |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
-| 7 | LFO SHAPE | `selector` | Confirmed at index 7; 0 → default, 19456 → "exponential"; indices 4–6 are null |
+| 7 | LFO SHAPE | `selector` | Confirmed at index 7; 0 → default, 19456 → "exponential", 32767 → max; indices 4–6 are null |
 
 ### fx.terminal
 | Index | Name | Scale | Notes |
@@ -240,10 +240,10 @@ correctly for this reason regardless of knob values.
 ### lfo.velocity
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | AMP | `%` | Hardware label "AMP"; destination volume level; 16381 → ~50% |
-| 1 | VOLUME AMOUNT | `centered %` | Bipolar -100 to +100; 16694 → ~51% (positive side) |
-| 2 | DESTINATION | `selector-4` | synth=1024 (inferred), envelope≈5824 [inferred], fx≈10144 [inferred], mix≈15360 [inferred] — values based on lfo.midi selector-4 pattern |
-| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION and synth type. For synth=amp (dest=synth): volume→1024, comp≈5824, tone≈10144, drive≈15360 [inferred]. 15360 → "telematic" when dest=fx/phone |
+| 0 | AMP | `%` | Hardware label "AMP"; destination volume level; 16381 → ~50%; hardware max=32767 (oracle lfo-max(3)) |
+| 1 | VOLUME AMOUNT | `centered %` | Bipolar -100 to +100; 16694 → ~51% (positive side); hardware max=32767 (oracle lfo-max(3)) |
+| 2 | DESTINATION | `selector-4` | Options: synth/envelope/fx/mix; 1024 → synth (confirmed), max=7168 → mix (oracle lfo-max(3)); same encoding as lfo.element DESTINATION |
+| 3 | PARAMETER | `selector` | Context-dependent on DESTINATION and synth type; hardware max=15360 (oracle lfo-max(3)) |
 
 ### lfo.random
 | Index | Name | Scale | Notes |

@@ -340,11 +340,11 @@
     ['fx.nitro', 2, 'FEEDBACK',        'linear',   [[0, 0]],     ''],
     ['fx.nitro', 3, 'FREQUENCY HIGHS', 'linear',   [],           'internal max ~18688 (not 32767)'],
 
-    // fx.phone — unverified param names AND no scale info
-    ['fx.phone', 0, 'TONE',     'unknown', [], '', '⚠ param names unverified; scale unknown'],
-    ['fx.phone', 1, 'GSM',      'unknown', [], '', '⚠ param names unverified; scale unknown'],
-    ['fx.phone', 2, 'BAUD',     'unknown', [], '', '⚠ param names unverified; scale unknown'],
-    ['fx.phone', 3, 'TELEMATIC','unknown', [], '', '⚠ param names unverified; scale unknown'],
+    // fx.phone — oracle fx-max(7) confirmed names and hardware bounds
+    ['fx.phone', 0, 'TONE',     'linear', [[20480,'max']], 'hardware min=204, hardware max=20480'],
+    ['fx.phone', 1, 'GSM',      'linear', [[17408,'max']], 'hardware min=3072, hardware max=17408'],
+    ['fx.phone', 2, 'BAUD',     'linear', [[16896,'max']], 'hardware min=1536, hardware max=16896'],
+    ['fx.phone', 3, 'TELEMATIC','linear', [[32767,'max']], 'full 0–32767 range'],
 
     // fx.punch
     ['fx.punch', 0, 'FREQUENCY', 'hz',       [],                     'log Hz scale; non-linear — need calibration data'],
@@ -392,29 +392,28 @@
     ['lfo.tremolo', 1, 'PITCH AMOUNT',   'centered', [[985,'~3%'],[2264,'~7%']],'bipolar -100 to +100'],
     ['lfo.tremolo', 2, 'VOLUME LEVEL',   'centered', [[-12759,-38]],            '-100 to +100'],
     ['lfo.tremolo', 3, 'PITCH ENVELOPE', 'linear',   [[4592,14],[12136,37]],    ''],
-    ['lfo.tremolo', 7, 'LFO SHAPE',      'selector', [[0,'default'],[19456,'exponential']], 'active at index 7; indices 4–6 are null'],
+    ['lfo.tremolo', 7, 'LFO SHAPE',      'selector', [[0,'default'],[19456,'exponential'],[32767,'max']], 'active at index 7; indices 4–6 are null; oracle max=32767'],
 
     // lfo.value
     ['lfo.value', 0, 'SPEED',       'tempo',    [],                   ''],
     ['lfo.value', 1, 'AMOUNT',      'centered', [[23255,'~71%']],     'bipolar -100 to +100'],
     ['lfo.value', 2, 'DESTINATION', 'selector', [],                   'seen: waveform'],
     ['lfo.value', 3, 'PARAMETER',   'selector', [],                   'context-dep on DESTINATION'],
-    ['lfo.value', 4, 'LFO SHAPE',   'selector', [[0,'default']], '⚠ index unverified — may be at index 7 (consistent with lfo.tremolo)', '⚠ index uncertain'],
+    ['lfo.value', 4, 'LFO SHAPE',   'selector', [[0,'default'],[28086,'max']], 'confirmed at index 4 by oracle lfo-max(2); max=28086 (differs from tremolo which uses index 7, max=32767)'],
 
     // lfo.velocity
     ['lfo.velocity', 0, 'AMP',          'linear',   [[16381, 50]],                                  'hardware label "AMP"; destination volume level'],
     ['lfo.velocity', 1, 'VOLUME AMOUNT','centered', [[16694,'~51%']],                               'bipolar -100 to +100'],
-    ['lfo.velocity', 2, 'DESTINATION',  'selector', [[1024,'synth'],[5824,'envelope'],[10144,'fx'],[15360,'mix']], 'options: synth/envelope/fx/mix; 1024=synth [inferred]'],
+    ['lfo.velocity', 2, 'DESTINATION',  'selector', [[1024,'synth'],[7168,'mix']], 'options: synth/envelope/fx/mix; 1024=synth (confirmed), max=7168 (oracle lfo-max(3)); same selector encoding as lfo.element DESTINATION'],
     ['lfo.velocity', 3, 'PARAMETER',    'selector', [[15360,'telematic']],                          'context-dep on DESTINATION+synth; "telematic" when dest=fx/phone'],
   ];
 
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
-    { priority: 'high',   key: 'fx.phone',        reason: 'Param names unverified + no scale notes for any of 4 params. Need hardware snapshots to confirm names and measure raw→display.' },
-    { priority: 'high',   key: 'lfo.value [4]',   reason: 'LFO SHAPE index uncertain: data says idx 4, but lfo.tremolo puts its shape at idx 7. Need a preset with non-default shape to confirm.' },
     { priority: 'high',   key: 'synth.dsynth',    reason: '8 param names verified but zero display notes. Scale types for all 8 knobs unknown — needs systematic snapshot measurements.' },
+    { priority: 'medium', key: 'fx.phone scale',  reason: 'Param names and hardware min/max confirmed by oracle. Display scale type assumed linear (%) but not formally verified — a raw→% snapshot would confirm.' },
     { priority: 'medium', key: 'fx.punch FREQ',   reason: 'Scale type is log Hz but no calibration samples recorded. Need at least 3 raw→Hz pairs to characterize the curve.' },
-    { priority: 'medium', key: 'lfo.*.SPEED',     reason: 'Tempo dial on lfo.tremolo, lfo.value, lfo.random is non-linear but no sample points recorded. Clock-sync experiments could help.' },
+    { priority: 'medium', key: 'lfo.*.SPEED',     reason: 'Oracle max confirmed for tremolo (32440) and value (16384). Display values (BPM or clock division) still uncharacterized — no raw→display pairs recorded.' },
     { priority: 'medium', key: 'lfo.element PARAM','reason': 'Selector options are context-dependent on both DESTINATION and the loaded synth type. Need a matrix of (destination × synth type) to enumerate.' },
     { priority: 'medium', key: 'synth.drwave [0]', reason: 'WAVE TYPE AND LENGTH internal max is ~24400 (not 32767). The encoding packs wave type + length together — how the bits are split is unknown.' },
     { priority: 'low',    key: 'synth.amp',        reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
