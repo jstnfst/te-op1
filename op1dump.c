@@ -300,14 +300,12 @@ int main(int argc, char *argv[]) {
     int nadsr = json_get_int_array(json_str, "adsr", adsr, MAX_PARAMS);
     printf("\n");
     if (nadsr > 0) {
-        static const char *adsr_labels[] = {
-            "Attack", "Decay", "Sustain", "Release",
-            "Attack2", "Decay2", "Sustain2", "Release2"
-        };
-        printf("  Envelope:\n");
-        for (int i = 0; i < nadsr; i++)
-            printf("    %-16s : %6d  (%.3f)\n",
-                   adsr_labels[i], adsr[i], op1_norm(adsr[i]));
+        printf("  Envelope (ADSR):\n");
+        for (int i = 0; i < nadsr; i++) {
+            char lbuf[16];
+            snprintf(lbuf, sizeof(lbuf), "adsr[%d]", i);
+            printf("    %-16s : %6d  (%.3f)\n", lbuf, adsr[i], op1_norm(adsr[i]));
+        }
     }
 
     /* fx */

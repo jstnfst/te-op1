@@ -50,6 +50,7 @@ typedef struct {
     int  knobs[MAX_PARAMS];
     int  fx_params[MAX_PARAMS];
     int  lfo_params[MAX_PARAMS];
+    int  adsr[MAX_PARAMS];
 } Patch;
 
 static Patch g_patches[MAX_PATCHES];
@@ -116,6 +117,23 @@ static int is_verified(const char *group, const char *type, int idx) {
     cJSON_ArrayForEach(el, arr)
         if (cJSON_IsNumber(el) && (int)el->valuedouble == idx) return 1;
     return 0;
+}
+
+static int get_adsr_labels(char out[][MAX_LABEL]) {
+    int n = 0;
+    cJSON *arr, *el;
+    if (!g_params) return 0;
+    arr = cJSON_GetObjectItemCaseSensitive(g_params, "adsr");
+    if (!arr) return 0;
+    cJSON_ArrayForEach(el, arr) {
+        if (n >= MAX_PARAMS) break;
+        if (cJSON_IsString(el) && el->valuestring)
+            strncpy(out[n], el->valuestring, MAX_LABEL - 1);
+        else
+            out[n][0] = '\0';
+        n++;
+    }
+    return n;
 }
 
 static int count_verified(const char *group, const char *type) {
@@ -248,6 +266,37 @@ static void show_type_block(const char *header, const char *type,
         printf("    (active in %d / %d patches)\n", active_count, n);
 }
 
+/* ---- ADSR display ---- */
+
+static void show_adsr_block(const char *stype,
+                             const int **arrs, int n,
+                             char labels[][MAX_LABEL], int n_labels) {
+    int uniform = 1, k, i;
+    if (n > 1)
+        for (k = 0; k < MAX_PARAMS && uniform; k++)
+            for (i = 1; i < n && uniform; i++)
+                if (arrs[i][k] != arrs[0][k]) uniform = 0;
+
+    const char *col = uniform ? COL_GRN : COL_YEL;
+    printf("%s  ADSR (%s)  [%d patch%s, %s]%s\n",
+           col, stype, n, n == 1 ? "" : "es",
+           uniform ? "uniform" : "varies", COL_RST);
+
+    for (k = 0; k < MAX_PARAMS; k++) {
+        int mn = arrs[0][k], mx = arrs[0][k];
+        for (i = 1; i < n; i++) {
+            if (arrs[i][k] < mn) mn = arrs[i][k];
+            if (arrs[i][k] > mx) mx = arrs[i][k];
+        }
+        const char *label;
+        char lbuf[32];
+        if (k < n_labels && labels[k][0]) label = labels[k];
+        else { snprintf(lbuf, sizeof(lbuf), "adsr[%d]", k); label = lbuf; }
+        printf("     %-22s %6d - %6d  (%.3f - %.3f)\n",
+               label, mn, mx, mn / 32767.0, mx / 32767.0);
+    }
+}
+
 /* ---- main ---- */
 
 int main(void) {
@@ -316,6 +365,12 @@ int main(void) {
                 cJSON_ArrayForEach(el, item)
                     if (k < MAX_PARAMS) p->lfo_params[k++] = cJSON_IsNumber(el) ? (int)el->valuedouble : 0;
             }
+            item = cJSON_GetObjectItemCaseSensitive(j, "adsr");
+            if (item && cJSON_IsArray(item)) {
+                cJSON *el; int k = 0;
+                cJSON_ArrayForEach(el, item)
+                    if (k < MAX_PARAMS) p->adsr[k++] = cJSON_IsNumber(el) ? (int)el->valuedouble : 0;
+            }
 
             cJSON_Delete(j);
             g_n++;
@@ -363,6 +418,23 @@ int main(void) {
             }
         show_type_block("LFO", ltypes[i], "lfo", arrs, cnt, active);
         printf("\n");
+    }
+
+    /* ADSR */
+    {
+        char adsr_labels[MAX_PARAMS][MAX_LABEL] = {{0}};
+        int n_adsr_labels = get_adsr_labels(adsr_labels);
+        printf(COL_CYN "=== ADSR (per synth engine) ===" COL_RST "\n");
+        for (i = 0; i < ns; i++) {
+            int cnt = 0;
+            for (j = 0; j < g_n; j++)
+                if (strcmp(g_patches[j].type, stypes[i]) == 0)
+                    arrs[cnt++] = g_patches[j].adsr;
+            if (cnt > 0) {
+                show_adsr_block(stypes[i], arrs, cnt, adsr_labels, n_adsr_labels);
+                printf("\n");
+            }
+        }
     }
 
     /* Missing from op1-params.json */

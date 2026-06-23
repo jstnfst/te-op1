@@ -277,6 +277,23 @@ static const int *param_lookup(const ParamRow *tbl, const char *type, const int 
     return def;
 }
 
+static const int SYNTH_ADSR[14][8] = {
+    {  576,  4160, 17408, 15808, 14336,  7872, 18432,  3276 }, /* amp       */
+    {  576,  6592,     0, 14912, 14336,    64, 18432, 16384 }, /* cluster   */
+    {   64, 12352, 10239,  3008,  2048,    64, 18432, 16229 }, /* digital   */
+    { 2624,  8640,  7168,  6720,  2048,   192, 18432, 21093 }, /* dimension */
+    {   64, 16320, 32767, 11712,  2048,  6432, 18432,  9829 }, /* dna       */
+    {   64,  5696, 12800, 12736,  6140,    64, 18432, 26981 }, /* drwave    */
+    {   64,  7162, 32767, 15808,  5120,  6464,  4000,  4000 }, /* dsynth    */
+    {   64,  7162, 32767, 15808,  5120,  6464,  4000,  4000 }, /* fm        */
+    {   64,  7162, 32767, 15808,  5120,  6464,  4000,  4000 }, /* phase     */
+    {   64,  7162, 32767, 15808,  5120,  6464,  4000,  4000 }, /* pulse     */
+    {   64, 10746, 32767, 10000,  4000,    64,  4000, 18021 }, /* sampler   */
+    { 1088,  3066, 21504, 13376,  2048,  4000, 18432, 18021 }, /* string    */
+    {   64,  7162, 32767, 15808,  5120,  6464,  4000,  4000 }, /* vocoder   */
+    {   64,  2624, 29695, 14784,  9216,  4000, 18432, 28005 }, /* voltage   */
+};
+
 static const ParamRow SYNTH_KNOBS_MIN[] = {
     {"cluster", {3072,0,512,3,0,0,0,0}},
     {"digital", {0,2048,-32768,0,0,0,0,0}},
@@ -375,9 +392,10 @@ static void get_slug(const char *name, char *out) {
 static int build_patch_json(const char *synth, const char *fx, const char *lfo,
                              const char *name, int ver,
                              const int knobs[8], const int fxp[8], const int lfop[8],
+                             const int adsr[8],
                              char *out, size_t outsz) {
     return snprintf(out, outsz,
-        "{\"adsr\":[576,4160,17408,15808,14336,7872,18432,3276],"
+        "{\"adsr\":[%d,%d,%d,%d,%d,%d,%d,%d],"
         "\"fx_active\":true,"
         "\"fx_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
         "\"fx_type\":\"%s\","
@@ -390,6 +408,7 @@ static int build_patch_json(const char *synth, const char *fx, const char *lfo,
         "\"octave\":0,"
         "\"synth_version\":%d,"
         "\"type\":\"%s\"}",
+        adsr[0],adsr[1],adsr[2],adsr[3],adsr[4],adsr[5],adsr[6],adsr[7],
         fxp[0],fxp[1],fxp[2],fxp[3],fxp[4],fxp[5],fxp[6],fxp[7], fx,
         knobs[0],knobs[1],knobs[2],knobs[3],knobs[4],knobs[5],knobs[6],knobs[7],
         lfop[0],lfop[1],lfop[2],lfop[3],lfop[4],lfop[5],lfop[6],lfop[7], lfo,
@@ -423,6 +442,8 @@ static int run_explore(int vel_dest_raw, int vel_param) {
     for (si = 0; SYNTH_TYPES[si]; si++) {
         const char *synth = SYNTH_TYPES[si];
         int ver = synth_version(synth);
+
+        const int *adsr = SYNTH_ADSR[si];
 
         for (li = 0; LFO_TYPES[li]; li++) {
             const char *lfo = LFO_TYPES[li];
@@ -463,7 +484,7 @@ static int run_explore(int vel_dest_raw, int vel_param) {
                     }
 
                     jlen = build_patch_json(synth, fx, lfo, slug, ver,
-                                            knobs, fxp, lfop,
+                                            knobs, fxp, lfop, adsr,
                                             json_buf, sizeof(json_buf));
                     if (jlen <= 0 || jlen >= APPL_JSON_MAX) {
                         fprintf(stderr, "JSON build failed for %s/%s/%s\n", synth, fx, lfo);
