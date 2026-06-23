@@ -406,6 +406,16 @@
     ['lfo.velocity', 1, 'VOLUME AMOUNT','centered', [[16694,'~51%']],                               'bipolar -100 to +100'],
     ['lfo.velocity', 2, 'DESTINATION',  'selector', [[1024,'synth'],[7168,'mix']], 'options: synth/envelope/fx/mix; 1024=synth (confirmed), max=7168 (oracle lfo-max(3)); same selector encoding as lfo.element DESTINATION'],
     ['lfo.velocity', 3, 'PARAMETER',    'selector', [[15360,'telematic']],                          'context-dep on DESTINATION+synth; "telematic" when dest=fx/phone'],
+
+    // adsr — global keyboard settings (oracle probes adsr01–adsr11, bendrange 1–3, 2026-06-23)
+    ['adsr', 0, 'ATTACK',     'linear',   [[64,'min'],[16320,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16320'],
+    ['adsr', 1, 'DECAY',      'linear',   [[64,'min'],[16320,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16320'],
+    ['adsr', 2, 'SUSTAIN',    'linear',   [[0,'min'],[32767,'max']], 'continuous; hardware min=0, max=32767'],
+    ['adsr', 3, 'RELEASE',    'linear',   [[64,'min'],[16320,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16320'],
+    ['adsr', 4, 'PLAY MODE',  'selector', [[2048,'poly'],[6140,'mono'],[9209,'legato'],[14336,'unison']], 'selector-4: poly / mono / legato / unison'],
+    ['adsr', 5, 'PORTAMENTO', 'linear',   [[64,'min'],[16448,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16448'],
+    ['adsr', 6, 'BEND RANGE', 'selector', [[2048,'1 st'],[5117,'2 st'],[9209,'4 st'],[13301,'7 st'],[18432,'oct']], 'selector-5: 1 / 2 / 4 / 7 semitones / octave'],
+    ['adsr', 7, 'VOLUME',     'discrete', [[3276,10],[32767,100]], '1–100; raw ≈ floor(N × 32767 / 100)'],
   ];
 
   // ── GAPS (priority items for further research) ──────────
@@ -493,6 +503,7 @@
     { key: 'synth', label: 'SYNTH' },
     { key: 'fx', label: 'FX' },
     { key: 'lfo', label: 'LFO' },
+    { key: 'adsr', label: 'ADSR' },
     ...Object.entries(SCALE_META).map(([k, m]) => ({ key: k, label: m.label.toUpperCase() }))
   ];
   filterOptions.forEach(opt => {
