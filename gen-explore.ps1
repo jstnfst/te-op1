@@ -188,8 +188,8 @@ $lfoMaxParams = @{
     # PARAMETER[0-3]=selector(knob1-4) max=15360; DESTINATION[4-7]=selector(synth/env/fx/out) max=7168
     # 7168 inferred from lfo.element DESTINATION oracle (same selector type)
     midi     = '15360,15360,15360,15360,7168,7168,7168,7168'
-    # DESTINATION[2]=selector max, PARAMETER[4]=selector max; others are %/non-linear
-    random   = '32767,32767,32767,32767,32767,0,0,0'
+    # DESTINATION[2]=selector max=7168; PARAMETER[4]=selector max=15360 (element oracle pattern)
+    random   = '32767,32767,7168,32767,15360,0,0,0'
     # LFO SHAPE[7]=selector; indices 4-6=null (keep 0); other indices are fine at 32767
     tremolo  = '32767,32767,32767,32767,0,0,0,32767'
     # DESTINATION[2]=selector(synth/env/fx/mix) max=7168 (from element oracle); PARAMETER[3]=selector max=15360
