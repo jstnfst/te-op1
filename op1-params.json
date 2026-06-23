@@ -1,7 +1,7 @@
 {
   "_firmware": "1.5.7",
 
-  "adsr": [null, null, null, null, null, null, null, null],
+  "adsr": ["ATTACK", "DECAY", "SUSTAIN", "RELEASE", "PLAY MODE", "PORTAMENTO", "BEND RANGE", "VOLUME"],
 
   "synth.amp":       ["VOLUME", "COMPRESSOR", "TONE", "DRIVE"],
   "synth.cluster":   ["WAVES", "WAVE ENV", "SPREAD", "UNITOR"],

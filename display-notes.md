@@ -274,6 +274,22 @@ correctly for this reason regardless of knob values.
 | 3 | ENVELOPE | `%` | ~linear; 28925 → ~88% |
 | 4 | PARAMETER | `selector` | Context-dependent on DESTINATION; raw 0 → "freq" when destination = "fx" |
 
+### adsr (global, all synth types)
+
+Confirmed via oracle probes adsr01–adsr11 (2026-06-23). All 8 indices are global keyboard
+settings, not synth-type-specific. Baseline `[64, 64, 0, 64, 2048, 64, 2048, 3276]`.
+
+| Index | Name | Scale | Notes |
+|---|---|---|---|
+| 0 | ATTACK | continuous | hardware min=64, probe max=16320 |
+| 1 | DECAY | continuous | hardware min=64, probe max=16320 |
+| 2 | SUSTAIN | continuous | hardware min=0, max=32767 |
+| 3 | RELEASE | continuous | hardware min=64, probe max=16320 |
+| 4 | PLAY MODE | `selector-4` | 2048=poly, 6140=mono, 9209=legato, 14336=unison |
+| 5 | PORTAMENTO | continuous | hardware min=64, probe max=16448 |
+| 6 | BEND RANGE | `selector-5` | 1 semitone/2/4/7/octave; raw values TBD (need oracle probes) |
+| 7 | VOLUME | `discrete-100` | 1–100; formula: raw ≈ floor(N × 32767 / 100); 3276→10, 32767→100 |
+
 ---
 
 ## General observations
