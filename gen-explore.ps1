@@ -190,14 +190,12 @@ $lfoMaxParams = @{
     midi     = '15360,15360,15360,15360,7168,7168,7168,7168'
     # DESTINATION[2]=selector max=7168; PARAMETER[4]=selector max=15360 (element oracle pattern)
     random   = '32767,32767,7168,32767,15360,0,0,0'
-    # SPEED[0]=tempo-dial max=23544 (highest confirmed in hardware presets; 32767 invalid for tempo-dial)
-    # LFO SHAPE[7]=selector max=19456 ("exponential", highest confirmed value)
-    tremolo  = '23544,32767,32767,32767,0,0,0,19456'
-    # SPEED[0]=tempo-dial max=23544; DESTINATION[2]=synth-param selector max=15360 (same type as element PARAMETER)
-    # Note: value DESTINATION selects which synth param to modulate, NOT which engine — use 15360 not 7168
-    value    = '23544,32767,15360,15360,0,0,0,0'
-    # AMP[0]=% max=32767; VOLUME AMOUNT[1]=centered% max=32767
-    # DESTINATION[2]=engine selector max=7168 (synth/envelope/fx/mix, same type as element DESTINATION)
+    # [oracle] lfo-max(1): SPEED[0]=tempo-dial max=32440; LFO SHAPE[7] max=32767
+    tremolo  = '32440,32767,32767,32767,0,0,0,32767'
+    # [oracle] lfo-max(2): SPEED[0]=16384; DESTINATION[2]=11264 (amp synth, 4-knob selector);
+    # LFO SHAPE is at index 4 (not 7) for value; max=28086
+    value    = '16384,32767,11264,15360,28086,0,0,0'
+    # [oracle] lfo-max(3): AMP[0]=32767, VOLUME AMOUNT[1]=32767, DESTINATION[2]=7168, PARAMETER[3]=15360
     velocity = '32767,32767,7168,15360,0,0,0,0'
 }
 
