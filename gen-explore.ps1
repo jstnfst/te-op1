@@ -161,15 +161,20 @@ $synthKnobsMax = @{
 # Active params (0-3) use 32767 unless oracle data shows a lower ceiling.
 # [oracle] = confirmed from min oracle work (fx0-fx5.aif).
 $fxParamsMax = @{
-    # [oracle] indices 4-7 must be 0 (confirmed 0 in min oracles; must not be 32767)
+    # [oracle] cwo: all active params valid at 32767; indices 4-7=0
     cwo    = '32767,32767,32767,32767,0,0,0,0'
-    delay  = '32767,32767,32767,32767,0,0,0,0'
-    nitro  = '32767,32767,32767,32767,0,0,0,0'
-    # [oracle] indices 4-7 must be 8000
-    grid   = '32767,32767,32767,32767,8000,8000,8000,8000'
-    phone  = '32767,32767,32767,32767,8000,8000,8000,8000'
-    punch  = '32767,32767,32767,32767,8000,8000,8000,8000'
-    spring = '32767,32767,32767,32767,8000,8000,8000,8000'
+    # [oracle] fx-max(2).aif: RANGE=11264, FEEDBACK=16384; indices 4-7=0
+    delay  = '11264,32767,16384,32767,0,0,0,0'
+    # [oracle] fx-max(3).aif: X SIZE=16704, Y SIZE=16704; indices 4-7=8000
+    grid   = '16704,16704,32767,32767,8000,8000,8000,8000'
+    # [oracle] fx-max(1).aif: FREQ LOWS=16448, FEEDBACK=20643, FREQ HIGHS=16448; indices 4-7=0
+    nitro  = '16448,32767,20643,16448,0,0,0,0'
+    # [oracle] fx-max(7).aif: TONE=20480, GSM=17408, BAUD=16896; indices 4-7=8000
+    phone  = '20480,17408,16896,32767,8000,8000,8000,8000'
+    # [oracle] fx-max(4).aif: FREQUENCY=12480, ROUNDS=25088; indices 4-7=8000
+    punch  = '12480,32767,25088,32767,8000,8000,8000,8000'
+    # [oracle] fx-max(5).aif: TONE=16448, TURNS=16448, DAMPING=16384; indices 4-7=8000
+    spring = '16448,16448,16384,32767,8000,8000,8000,8000'
 }
 
 # ── Maximum lfo_params per LFO type ──────────────────────────────────────────

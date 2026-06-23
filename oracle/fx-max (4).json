@@ -1,0 +1,53 @@
+File      : C:\Users\jstnf\hack\te-op1\oracle\fx-max (4).aif
+Container : FORM/AIFC  (58940 bytes)
+
+Audio     : 1 ch, 28896 frames, 16-bit, 22050 Hz, sowt
+Duration  : 1.310 sec
+Sample    : 57800 bytes of audio data
+
+=== OP-1 Field Synth Metadata ===
+
+  Name          : 2026-173#04
+  Type          : amp
+  Synth version : 3
+  Octave        : -2
+  mtime         : 1782150875
+
+  Synth knobs (amp):
+    VOLUME           :  28159  (0.859)
+    COMPRESSOR       :      0  (0.000)
+    TONE             :  16384  (0.500)
+    DRIVE            :      0  (0.000)
+
+  Envelope:
+    Attack           :    576  (0.018)
+    Decay            :   4160  (0.127)
+    Sustain          :  17408  (0.531)
+    Release          :  15808  (0.482)
+    Attack2          :  14336  (0.438)
+    Decay2           :   7872  (0.240)
+    Sustain2         :  18432  (0.563)
+    Release2         :   3276  (0.100)
+
+  FX (punch)  active: no
+  FX params (punch):
+    FREQUENCY        :  12480  (0.381)
+    PUNCH            :  32767  (1.000)
+    ROUNDS           :  25088  (0.766)
+    POWER            :  32767  (1.000)
+    knob 4           :   8000  (0.244)  [unknown]
+    knob 5           :   8000  (0.244)  [unknown]
+    knob 6           :   8000  (0.244)  [unknown]
+    knob 7           :   8000  (0.244)  [unknown]
+
+  LFO (element)  active: no
+  LFO params (element):
+    SOURCE           :   4688  (0.143)
+    AMOUNT           :   9886  (0.302)
+    DESTINATION      :   2000  (0.061)
+    PARAMETER        :  10640  (0.325)
+
+--- raw JSON ---
+{"adsr":[576,4160,17408,15808,14336,7872,18432,3276],"fx_active":false,"fx_params":[12480,32767,25088,32767,8000,8000,8000,8000],"fx_type":"punch","knobs":[28159,0,16384,0,0,0,0,0],"lfo_active":false,"lfo_params":[4688,9886,2000,10640,0,0,0,0],"lfo_type":"element","mtime":1782150875.0,"name":"2026-173#04","octave":-2,"synth_version":3,"type":"amp"}
+
+Wrote C:\Users\jstnf\hack\te-op1\oracle\fx-max (4).json
