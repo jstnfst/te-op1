@@ -415,6 +415,35 @@ static int build_patch_json(const char *synth, const char *fx, const char *lfo,
         (long)time(NULL), name, ver, synth);
 }
 
+static int build_sampler_patch_json(const char *synth, const char *fx, const char *lfo,
+                                     const char *name, int ver,
+                                     const int knobs[8], const int fxp[8], const int lfop[8],
+                                     const int adsr[8],
+                                     char *out, size_t outsz) {
+    return snprintf(out, outsz,
+        "{\"adsr\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"base_freq\":261.625550,"
+        "\"fade\":0,"
+        "\"fx_active\":true,"
+        "\"fx_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"fx_type\":\"%s\","
+        "\"knobs\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"lfo_active\":true,"
+        "\"lfo_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"lfo_type\":\"%s\","
+        "\"mtime\":%ld.0,"
+        "\"name\":\"%s\","
+        "\"octave\":0,"
+        "\"stereo\":true,"
+        "\"synth_version\":%d,"
+        "\"type\":\"%s\"}",
+        adsr[0],adsr[1],adsr[2],adsr[3],adsr[4],adsr[5],adsr[6],adsr[7],
+        fxp[0],fxp[1],fxp[2],fxp[3],fxp[4],fxp[5],fxp[6],fxp[7], fx,
+        knobs[0],knobs[1],knobs[2],knobs[3],knobs[4],knobs[5],knobs[6],knobs[7],
+        lfop[0],lfop[1],lfop[2],lfop[3],lfop[4],lfop[5],lfop[6],lfop[7], lfo,
+        (long)time(NULL), name, ver, synth);
+}
+
 /* ---- run_explore --------------------------------------------------------- */
 
 static int run_explore(int vel_dest_raw, int vel_param) {
@@ -483,9 +512,13 @@ static int run_explore(int vel_dest_raw, int vel_param) {
                         lfop  = param_lookup(LFO_MAX_PARAMS,  lfo,   MAXS);
                     }
 
-                    jlen = build_patch_json(synth, fx, lfo, slug, ver,
-                                            knobs, fxp, lfop, adsr,
-                                            json_buf, sizeof(json_buf));
+                    jlen = (strcmp(synth, "sampler") == 0)
+                        ? build_sampler_patch_json(synth, fx, lfo, slug, ver,
+                                                   knobs, fxp, lfop, adsr,
+                                                   json_buf, sizeof(json_buf))
+                        : build_patch_json(synth, fx, lfo, slug, ver,
+                                           knobs, fxp, lfop, adsr,
+                                           json_buf, sizeof(json_buf));
                     if (jlen <= 0 || jlen >= APPL_JSON_MAX) {
                         fprintf(stderr, "JSON build failed for %s/%s/%s\n", synth, fx, lfo);
                         continue;

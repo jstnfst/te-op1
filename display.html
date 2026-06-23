@@ -260,7 +260,7 @@
     ['synth.dsynth', 6, 'ENVELOPE 2',          'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
     ['synth.dsynth', 7, 'CUTOFF',              'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
 
-    // synth.fm — oracle min confirmed (min3.aif); 4 params (indices 0–3 only)
+    // synth.fm — oracle min confirmed (min3.aif); indices 0–3 user-facing; indices 4–7 firmware-managed constants (15000/0/100/1500)
     ['synth.fm', 0, 'FM AMOUNT',  'discrete', [[31743, 95]],          '0–99'],
     ['synth.fm', 1, 'FREQUENCY',  'discrete', [[17352, 52]],          '0–99'],
     ['synth.fm', 2, 'TOPOLOGY',   'selector', [[1024,'min'],[13312, 6],[17408,'max']],'hardware min=1024, max=17408 (oracle); 9 options; non-linear raw mapping'],
@@ -404,26 +404,19 @@
     ['lfo.velocity', 3, 'PARAMETER',    'selector', [[15360,'telematic']],                          'context-dep on DESTINATION+synth; "telematic" when dest=fx/phone'],
 
     // adsr — global keyboard settings (oracle probes adsr01–adsr11, bendrange 1–3, 2026-06-23)
-    ['adsr', 0, 'ATTACK',     'linear',   [[64,'min'],[16320,'max']], 'oracle range confirmed (min=64, probe max=16320); display unit unknown (ms/s?)'],
-    ['adsr', 1, 'DECAY',      'linear',   [[64,'min'],[16320,'max']], 'oracle range confirmed (min=64, probe max=16320); display unit unknown (ms/s?)'],
+    ['adsr', 0, 'ATTACK',     '%',        [[64,'min'],[16320,'max']], 'linear %; hardware min=64, probe max=16320'],
+    ['adsr', 1, 'DECAY',      '%',        [[64,'min'],[16320,'max']], 'linear %; hardware min=64, probe max=16320'],
     ['adsr', 2, 'SUSTAIN',    'linear',   [[0,'min'],[32767,'max']], 'continuous; hardware min=0, max=32767'],
-    ['adsr', 3, 'RELEASE',    'linear',   [[64,'min'],[16320,'max']], 'oracle range confirmed (min=64, probe max=16320); display unit unknown (ms/s?)'],
+    ['adsr', 3, 'RELEASE',    '%',        [[64,'min'],[16320,'max']], 'linear %; hardware min=64, probe max=16320'],
     ['adsr', 4, 'PLAY MODE',  'selector', [[2048,'poly'],[6140,'mono'],[9209,'legato'],[14336,'unison']], 'selector-4: poly / mono / legato / unison'],
-    ['adsr', 5, 'PORTAMENTO', 'linear',   [[64,'min'],[16448,'max']], 'oracle range confirmed (min=64, probe max=16448); display unit unknown'],
+    ['adsr', 5, 'PORTAMENTO', '%',        [[64,'min'],[16448,'max']], 'linear %; hardware min=64, probe max=16448'],
     ['adsr', 6, 'BEND RANGE', 'selector', [[2048,'1 st'],[5117,'2 st'],[9209,'4 st'],[13301,'7 st'],[18432,'oct']], 'selector-5: 1 / 2 / 4 / 7 semitones / octave'],
     ['adsr', 7, 'VOLUME',     'discrete', [[3276,10],[32767,100]], '1–100; raw ≈ floor(N × 32767 / 100)'],
   ];
 
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
-    // medium — inferred data or confirmed range but incomplete display mapping
-    { priority:'medium', key:'adsr 0 ATTACK display unit',         reason:'oracle range confirmed (64–16320); display unit (ms/s?) unknown' },
-    { priority:'medium', key:'adsr 1 DECAY display unit',          reason:'oracle range confirmed (64–16320); display unit unknown' },
-    { priority:'medium', key:'adsr 3 RELEASE display unit',        reason:'oracle range confirmed (64–16320); display unit unknown' },
-    { priority:'medium', key:'adsr 5 PORTAMENTO display unit',     reason:'oracle range confirmed (64–16448); display unit unknown' },
-    { priority:'medium', key:'synth.sampler explore preset',       reason:'hardware sampler presets include base_freq/fade/stereo fields absent from explore presets — may not load on hardware' },
     // low — structural unknowns; possibly firmware-managed or non-standard encoding
-    { priority:'low', key:'synth.fm 4-7',                          reason:'fixed at 15000/0/100/1500 in all captures; likely firmware-managed' },
     { priority:'low', key:'fx.phone/punch/grid/spring 4-7',        reason:'fixed at 8000 in all captures; purpose unknown' },
     { priority:'low', key:'synth.drwave 4',                        reason:'hardware max=32000, non-zero at max; purpose unknown' },
     { priority:'low', key:'synth.cluster 3 UNITOR encoding',       reason:'non-standard selector (min=3, max=1638); intermediate values unknown' },

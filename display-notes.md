@@ -191,10 +191,10 @@ parameter type.
 | 1 | FREQUENCY | `discrete-99` | 0–99; 17352 → 52 |
 | 2 | TOPOLOGY | `selector` | Hardware min=1024, max=17408 (oracle min3+synthmax(8)); 9 options; 13312 → 6 |
 | 3 | DETUNE | `discrete-99` | 0–99; 0 → 0 |
-| 4 | (unknown) | — | Fixed at 15000 in ALL oracle captures (min and max); FM operator param, firmware-managed |
-| 5 | (unknown) | — | Fixed at 0 in ALL oracle captures |
-| 6 | (unknown) | — | Fixed at 100 in ALL oracle captures; FM operator param |
-| 7 | (unknown) | — | Fixed at 1500 in ALL oracle captures; FM operator param |
+| 4 | — | `fixed` | Firmware-managed FM operator constant; always 15000 across all oracle captures |
+| 5 | — | `fixed` | Firmware-managed FM operator constant; always 0 across all oracle captures |
+| 6 | — | `fixed` | Firmware-managed FM operator constant; always 100 across all oracle captures |
+| 7 | — | `fixed` | Firmware-managed FM operator constant; always 1500 across all oracle captures |
 
 ### synth.string
 | Index | Name | Scale | Notes |
@@ -251,9 +251,9 @@ parameter type.
 | 6 | LOOP FADE | `%` | raw 9103 → ~28% |
 | 7 | GAIN | `%` | raw 8192 → ~25%; hardware max=32767 |
 
-Note: sampler presets on hardware include extra JSON fields (`base_freq`, `fade`, `stereo`)
-not present in our generated explore presets. Explore presets for sampler may not load
-correctly for this reason regardless of knob values.
+Note: sampler presets include extra JSON fields (`base_freq`, `fade`, `stereo`) in addition
+to the standard keys. Explore presets now include these fields: `base_freq=261.625550` (Middle C),
+`fade=0`, `stereo=true`, matching oracle captures (`sampler-max-0000.json`).
 
 ### synth.vocoder
 | Index | Name | Scale | Notes |
@@ -307,12 +307,12 @@ settings, not synth-type-specific. Baseline `[64, 64, 0, 64, 2048, 64, 2048, 327
 
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | ATTACK | continuous | hardware min=64, probe max=16320 |
-| 1 | DECAY | continuous | hardware min=64, probe max=16320 |
+| 0 | ATTACK | `%` | linear %; hardware min=64, probe max=16320 |
+| 1 | DECAY | `%` | linear %; hardware min=64, probe max=16320 |
 | 2 | SUSTAIN | continuous | hardware min=0, max=32767 |
-| 3 | RELEASE | continuous | hardware min=64, probe max=16320 |
+| 3 | RELEASE | `%` | linear %; hardware min=64, probe max=16320 |
 | 4 | PLAY MODE | `selector-4` | 2048=poly, 6140=mono, 9209=legato, 14336=unison |
-| 5 | PORTAMENTO | continuous | hardware min=64, probe max=16448 |
+| 5 | PORTAMENTO | `%` | linear %; hardware min=64, probe max=16448 |
 | 6 | BEND RANGE | `selector-5` | 2048=1 semitone, 5117=2 semitones, 9209=4 semitones, 13301=7 semitones, 18432=octave |
 | 7 | VOLUME | `discrete-100` | 1–100; formula: raw ≈ floor(N × 32767 / 100); 3276→10, 32767→100 |
 
