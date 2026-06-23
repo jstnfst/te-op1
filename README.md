@@ -3,6 +3,8 @@
 Notes and tools for reading and writing `.aif` synth patch files for the
 Teenage Engineering OP-1 Field (firmware 1.5.7).
 
+See also: `index.html` (overview), `params.html` (parameter reference), `display.html` (scale analysis).
+
 ---
 
 ## Research Status
@@ -484,19 +486,26 @@ json2aif.exe mypatch.json out.aif    → writes out.aif
 
 ### `gen-explore.ps1`
 
-Generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO combinations.
+Generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO combinations (3024 files total).
 
 ```
-.\gen-explore.ps1
+.\gen-explore.ps1 [-VelocityDest <synth|envelope|fx|mix>] [-VelocityParam <raw>]
 ```
 
-- Writes to `explore\min\` and `explore\max\` (created if absent)
-- `explore\` is gitignored — delete the folder and re-run to regenerate
-- **min** uses actual hardware minimum values per parameter type: selectors → 1024,
-  centered % → -32767, % → 0. `lfo.element` min values are oracle-verified;
-  other LFO types are inferred from documented scale types
-- **max** sets all parameter arrays to 32767
-- ADSR is fixed to instant-attack / full-sustain so every combination produces audible output
+```
+.\gen-explore.ps1                                → default: velocity dest = synth (1024)
+.\gen-explore.ps1 -VelocityDest fx              → min velocity patches with dest = FX (10144)
+.\gen-explore.ps1 -VelocityDest fx -VelocityParam 5824  → also set PARAMETER raw value
+```
+
+- Deletes and recreates `explore\` at the start of each run
+- Output structure: `explore\aif\[mode]\[synth]\[lfo]\*.aif` and `explore\json\[mode]\[synth]\[lfo]\*.json`
+- **min** uses oracle-confirmed hardware minimums per parameter type:
+  - `%` scale → 0, `centered %` scale → -32767, `selector` → 1024
+  - Synth types with non-zero floors (cluster, digital, dna, fm, string) use oracle-verified values
+  - FX types with non-zero floors (delay, grid, nitro, phone, punch, spring) use oracle-verified values
+- **max** uses oracle-confirmed hardware maximums per type; only types with ceilings below 32767 have explicit entries (e.g. cluster WAVES max = 17408, delay RANGE max = 11264)
+- ADSR is fixed to oracle-verified hardware values for instant-attack / full-sustain so every combination produces audible output
 - Requires `json2aif.exe` in the current directory (run `build.bat` first)
 
 ### `summarize.ps1`
@@ -539,6 +548,18 @@ Diffs two patch files and shows exactly which fields and array indices changed.
 - For array fields: lists each changed index with before → after and signed delta (`+N` / `-N`)
 - Prints "No differences" if the patches are identical (excluding skipped fields)
 
+### `test_aif.exe`
+
+Validates that a generated `.aif` file conforms to the OP-1 Field file spec (29 checks).
+
+```
+test_aif.exe <file.aif>
+```
+
+Checks include: file size, chunk order and sizes (FVER/COMM/APPL/SSND), COMM spec (22050 Hz, 28896 frames, 16-bit `sowt`), APPL JSON (all required keys present, alphabetical key order, `mtime` presence and validity, no UTF-8 BOM), and SSND audio byte count. Exits 0 on pass, non-zero on any failure.
+
+Build with `build.bat`. Source: `test_aif.c`.
+
 ### `explore-aif.ps1`
 
 Low-level binary inspector for `.aif` file internals. Multiple flags can be combined in one call.
@@ -578,18 +599,25 @@ te-op1/
   op1dump.exe        compiled dumper
   json2aif.c         source — JSON to AIF writer
   json2aif.exe       compiled writer
+  test_aif.c         source — 29-check AIF validator
+  test_aif.exe       compiled validator
   op1-params.json    knob/param name database (edit freely, no recompile)
   op1-params-ok.json tracks hardware-verified param indices per type
   display-notes.md   raw↔display value mappings and scale notes per param
-  build.bat          recompile both tools (requires MSVC)
+  build.bat          recompile all tools (requires MSVC)
   dump-all.bat       batch-process presets/ folder
   gen-explore.ps1    generate min+max boundary patches for all 756 combinations
   summarize.ps1      discovery report across all presets
   diff-patches.ps1   diff two patch files
   explore-aif.ps1    low-level AIF inspector
+  index.html         project overview website
+  params.html        complete parameter reference (all 29 types)
+  display.html       raw↔display scale analysis with oracle-confirmed samples
   presets/           .aif patch files and their .json sidecars
   oracle/            hardware-verified reference exports (tracked in git, never regenerated)
   explore/           generated boundary patches — gitignored, recreate with gen-explore.ps1
+                     explore\aif\[min|max]\[synth]\[lfo]\*.aif
+                     explore\json\[min|max]\[synth]\[lfo]\*.json
 ```
 
 ---
@@ -606,8 +634,18 @@ OP-1 Field with known knob positions. These are the ground truth for parameter v
 - Naming convention: `<synth>-<fx>-<lfo>-<tag>.aif` where tag is `0000` (all-min),
   `ffff` (all-max), or a short descriptor.
 
-**Currently verified oracles:**
+**Currently verified oracles (53 files):**
 
-| File | Synth | FX | LFO | Knob position |
-|------|-------|----|-----|---------------|
-| `amp-cwo-elem-0000.aif` | amp | cwo | element | all-min |
+| Batch | Files | Purpose |
+|-------|-------|---------|
+| `amp-cwo-elem-0000` | 1 | All-min reference: amp + cwo + element, all knobs at leftmost position |
+| `min0` – `min4` | 5 | Synth-knob minimums: cluster, digital, dna, fm, string |
+| `synthmax (1)` – `synthmax (12)` | 12 | Synth-knob maximums: all 14 engine types (amp, cluster, digital, dimension, dna, drwave, fm, phase, pulse, vocoder, voltage, and 1 extra) |
+| `synthmax-string-0000`, `synthmax-string` | 2 | String synth max values |
+| `sampler-max-0000`, `sampler-max-0001` | 2 | Sampler knob max values (DIRECTION, GAIN) |
+| `fx0` – `fx5` | 6 | FX-params minimums: delay, grid, nitro, phone, punch, spring |
+| `fx-max (1)` – `fx-max (7)` | 7 | FX-params maximums: mother, nitro, delay, grid, punch, spring, phone |
+| `element-max-0000` | 1 | LFO element max values: SOURCE, DESTINATION, PARAMETER selectors |
+| `lfo-max (1)` – `lfo-max (3)` | 3 | LFO max values: tremolo SPEED, value SPEED+DESTINATION+LFO SHAPE, velocity |
+| `trem-min` | 1 | Tremolo LFO min values |
+| `captures-needed (1)` – `captures-needed (14)` | 14 | Mixed captures confirming specific bounded params (phone linear %, mother SPEED, amp/voltage scale data, dsynth, fm topology, cluster, string min/max bounds) |
