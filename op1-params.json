@@ -5,7 +5,7 @@
 
   "synth.amp":       ["VOLUME", "COMPRESSOR", "TONE", "DRIVE"],
   "synth.cluster":   ["WAVE NUMBER", "WAVE ENV", "SPREAD", "UNITOR"],
-  "synth.dbox":      [null, null, null, null, null, null, null, null],
+  "synth.dbox":      ["ENVELOPE CROSSFADER", "WAVEFORM 1", "ENVELOPE 1", "CROSS MODULATION", "FREQUENCY", "WAVEFORM 2", "ENVELOPE 2", "CUTOFF"],
   "synth.digital":   ["WAVE SHAPER", "OCTAVE", "DETUNE+RINGMOD", "DIGITALNESS"],
   "synth.dimension": ["WAVEFORM", "STEREO", "FILTER CUTOFF FREQ", "RESONANCE"],
   "synth.dna":       ["FILTER", "WAVE NUMBER", "WAVE MODIFIER", "NOISE"],

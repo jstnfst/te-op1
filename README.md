@@ -126,7 +126,9 @@ Uses `drum_version: 2` instead of `synth_version`. No `adsr` field. Unique JSON 
 | `fademode`  | `null`       | Fade mode (optional) |
 | `stereo`    | `bool`       | Stereo flag (optional) |
 
-Knob names not yet identified (indices 2, 3, 4, 6, 7 have non-zero values in oracle captures).
+Knob parameters are identical to `dsynth`:  
+`0` ENVELOPE CROSSFADER · `1` WAVEFORM 1 · `2` ENVELOPE 1 · `3` CROSS MODULATION  
+`4` FREQUENCY · `5` WAVEFORM 2 · `6` ENVELOPE 2 · `7` CUTOFF
 
 lfo.element PARAMETER selector for dbox differs from other 8-param synths:
 `knob 0: 1024 · knob 1: 2464 · knob 2: 4384 · knob 3: 6304 · knob 4: 8224 · knob 5: 10624 · knob 6: 12544 · knob 7: 14464`
