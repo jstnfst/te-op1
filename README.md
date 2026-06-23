@@ -26,9 +26,9 @@ scale details per parameter.
 ```
 1.  Drop .aif files into  presets/
 2.  dump-all.bat             → writes a .json sidecar next to each .aif
-3.  .\summarize.ps1          → grouped report: what's known, what's unknown
+3.  summarize.exe            → grouped report: what's known, what's unknown
 4.  Edit op1-params.json     → add names for any [unknown] knobs found
-5.  .\summarize.ps1          → confirm names appear, no recompile needed
+5.  summarize.exe            → confirm names appear, no recompile needed
 ```
 
 ### Mapping a new parameter
@@ -38,19 +38,19 @@ To identify what a single physical knob does:
 1. On the OP-1 Field, load a patch and save a snapshot (`name0001.aif`).
 2. Change **one knob only**, save another snapshot (`name0002.aif`).
 3. Copy both files to `presets/` and run `dump-all.bat`.
-4. Run `.\diff-patches.ps1 presets\name0001.json presets\name0002.json`.
+4. Run `diff-patches.exe presets\name0001.json presets\name0002.json`.
 5. The output shows exactly which array index changed and by how much.
 6. Add the name to `op1-params.json` under the appropriate key (e.g. `"synth.cluster"`).
 
 ### Adding a newly discovered synth/fx/lfo type
 
-When `summarize.ps1` reports a type under **"Missing from op1-params.json"**:
+When `summarize.exe` reports a type under **"Missing from op1-params.json"**:
 
 1. Add a stub line to `op1-params.json`:
    ```json
    "synth.newtype": []
    ```
-2. Re-run `summarize.ps1` — it will now show `[names TBD]` instead of the red warning.
+2. Re-run `summarize.exe` — it will now show `[names TBD]` instead of the red warning.
 3. Map each knob using the snapshot diff process above, filling in the array as you go:
    ```json
    "synth.newtype": ["PARAM A", "PARAM B", null, null]
@@ -70,7 +70,7 @@ When `summarize.ps1` reports a type under **"Missing from op1-params.json"**:
 - Key format: `"group.type"` — group is `synth`, `fx`, or `lfo`
 - Values: array of up to 8 strings (index = knob position)
 - `null` = knob position exists but is unused for this type
-- Missing key = type not yet seen; `summarize.ps1` will flag it red
+- Missing key = type not yet seen; `summarize.exe` will flag it red
 
 ### Rebuilding the tools
 
@@ -300,38 +300,32 @@ dump-all.bat
 
 ### `json2aif.exe`
 
-Creates a valid OP-1 Field `.aif` from a `.json` patch file.
+Creates a valid OP-1 Field `.aif` from a `.json` patch file. Also generates all 756×2 boundary patches via the `explore` subcommand.
 
 ```
 json2aif.exe <patch.json> [output.aif]
+json2aif.exe zero <patch.json> [output.aif]
+json2aif.exe max  <patch.json> [output.aif]
+json2aif.exe explore [-dest <synth|envelope|fx|mix>] [-param <N>]
 ```
 
 ```
-json2aif.exe mypatch.json            → writes mypatch.aif
-json2aif.exe mypatch.json out.aif    → writes out.aif
+json2aif.exe mypatch.json                → writes mypatch.aif
+json2aif.exe mypatch.json out.aif        → writes out.aif
+json2aif.exe zero mypatch.json           → zeros knobs/fx_params/lfo_params
+json2aif.exe max  mypatch.json           → sets all three arrays to 32767
+json2aif.exe explore                     → generates all 3024 files in explore\
+json2aif.exe explore -dest fx            → min velocity patches with dest = FX (10144)
+json2aif.exe explore -dest fx -param 5824
 ```
 
 - Output format: AIFC with FVER + COMM (mono, 16-bit, 22050 Hz, `sowt`, 28896 frames ~1.310 s) + APPL (1028 bytes) + SSND (silence)
 - JSON must be ≤ 1024 bytes; exits with an error message if too large
-- APPL chunk: `"op-1"` signature + JSON + `\n` + space padding to fill the fixed 1028-byte area
-- Audio is always silence (all zero samples) — replace SSND manually if real audio is needed
-- Automatically injects `"mtime":<unix_ts>.0` at write time in alphabetical position (before `"name"`)
-- Refuses to overwrite an existing output file — delete it first or choose a different path
+- Automatically injects `"mtime":<unix_ts>.0` at write time
+- Refuses to overwrite an existing output file (single-file modes only)
 - Strips UTF-8 BOM from input JSON if present
 
-### `gen-explore.ps1`
-
-Generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO combinations (3024 files total).
-
-```
-.\gen-explore.ps1 [-VelocityDest <synth|envelope|fx|mix>] [-VelocityParam <raw>]
-```
-
-```
-.\gen-explore.ps1                                → default: velocity dest = synth (1024)
-.\gen-explore.ps1 -VelocityDest fx              → min velocity patches with dest = FX (10144)
-.\gen-explore.ps1 -VelocityDest fx -VelocityParam 5824  → also set PARAMETER raw value
-```
+**`explore` subcommand** — generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO combinations (3024 files total):
 
 - Deletes and recreates `explore\` at the start of each run
 - Output structure: `explore\aif\[mode]\[synth]\[lfo]\*.aif` and `explore\json\[mode]\[synth]\[lfo]\*.json`
@@ -339,16 +333,15 @@ Generates min and max boundary patches for all 14 × 9 × 6 = 756 synth/FX/LFO c
   - `%` scale → 0, `centered %` scale → -32767, `selector` → 1024
   - Synth types with non-zero floors (cluster, digital, dna, fm, string) use oracle-verified values
   - FX types with non-zero floors (delay, grid, nitro, phone, punch, spring) use oracle-verified values
-- **max** uses oracle-confirmed hardware maximums per type; only types with ceilings below 32767 have explicit entries (e.g. cluster WAVES max = 17408, delay RANGE max = 11264)
+- **max** uses oracle-confirmed hardware maximums per type; types with ceilings below 32767 use explicit oracle entries (e.g. cluster WAVES max = 17408, delay RANGE max = 11264)
 - ADSR is fixed to oracle-verified hardware values for instant-attack / full-sustain so every combination produces audible output
-- Requires `json2aif.exe` in the current directory (run `build.bat` first)
 
-### `summarize.ps1`
+### `summarize.exe`
 
 Reads all parsed presets and produces a grouped discovery report.
 
 ```
-.\summarize.ps1
+summarize.exe
 ```
 
 - **Prerequisite:** run `dump-all.bat` first to generate the `.json` sidecars
@@ -359,20 +352,19 @@ Reads all parsed presets and produces a grouped discovery report.
 - Color coding: green = all params named and verified · yellow = some unnamed or unverified · red = type not in `op1-params.json`
 - Trailing **"Missing from op1-params.json"** section prints exact stub lines to paste in
 
-### `diff-patches.ps1`
+### `diff-patches.exe`
 
 Diffs two patch files and shows exactly which fields and array indices changed.
 
 ```
-.\diff-patches.ps1 -FileA <path> -FileB <path>
+diff-patches.exe <file_a> <file_b>
 ```
 
 ```
-.\diff-patches.ps1 presets\name0001.json presets\name0002.json
-.\diff-patches.ps1 sandbox\epiphany.aif  presets\epiphany0005.aif
+diff-patches.exe presets\name0001.json presets\name0002.json
+diff-patches.exe sandbox\epiphany.aif  presets\epiphany0005.aif
 ```
 
-- Both `-FileA` and `-FileB` are required (positional, no flag name needed)
 - Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it — run `op1dump.exe` first if the sidecar is missing
 - Skips `name`, `mtime`, and `_file` automatically (they always differ between snapshots)
 - For array fields: lists each changed index with before → after and signed delta (`+N` / `-N`)
@@ -390,33 +382,32 @@ Checks include: file size, chunk order and sizes (FVER/COMM/APPL/SSND), COMM spe
 
 Build with `build.bat`. Source: `test_aif.c`.
 
-### `explore-aif.ps1`
+### `explore-aif.exe`
 
 Low-level binary inspector for `.aif` file internals. Multiple flags can be combined in one call.
 
 ```
-.\explore-aif.ps1 -File <path> [flags]
+explore-aif.exe <file.aif> [flags]
 ```
 
 | Flag | Description |
 |------|-------------|
-| `-ReadBytes` | Hex + ASCII dump of the first N bytes of the file |
-| `-ByteCount N` | Number of bytes to show with `-ReadBytes` (default: 128) |
-| `-ParseChunks` | Walk the IFF chunk tree — prints chunk ID, file offset, and size for every chunk; peeks COMM channel/frame/bit-depth and APPL signature |
-| `-DumpChunk <ID>` | Hex + ASCII dump of a specific chunk by its 4-char ID (e.g. `APPL`, `COMM`, `SSND`, `FVER`); also prints the chunk as UTF-8 text |
-| `-ShowJson` | Scan the file for `{...}` blocks and pretty-print each one found |
-| `-DecodeFver` | Print the FVER version constant and confirm whether it matches the AIFC standard value `0xA2805140` |
-| `-DecodeComm` | Full COMM decode: channels, frame count, bit depth, 80-bit extended sample rate in Hz, compression type and name; includes raw hex |
-| `-AnalyzeSsnd` | SSND audio stats: offset/blockSize header, audio byte count, sample count, min/max sample, zero-sample ratio (silence %), peak level in dBFS; shows first and last 32 bytes of audio |
+| `--read-bytes [N]` | Hex + ASCII dump of the first N bytes of the file (default: 128) |
+| `--parse-chunks` | Walk the IFF chunk tree — prints chunk ID, file offset, and size for every chunk; peeks COMM channel/frame/bit-depth and APPL signature |
+| `--dump-chunk <ID>` | Hex + ASCII dump of a specific chunk by its 4-char ID (e.g. `APPL`, `COMM`, `SSND`, `FVER`); also prints the chunk as text |
+| `--show-json` | Scan the file for `{...}` blocks and print each one found |
+| `--decode-fver` | Print the FVER version constant and confirm whether it matches the AIFC standard value `0xA2805140` |
+| `--decode-comm` | Full COMM decode: channels, frame count, bit depth, 80-bit extended sample rate in Hz, compression type and name; includes raw hex |
+| `--analyze-ssnd` | SSND audio stats: offset/blockSize header, audio byte count, sample count, min/max sample, zero-sample ratio (silence %), peak level in dBFS; shows first and last 32 bytes of audio |
 
-```powershell
-.\explore-aif.ps1 -File epiphany.aif -ParseChunks
-.\explore-aif.ps1 -File epiphany.aif -DumpChunk APPL
-.\explore-aif.ps1 -File epiphany.aif -DecodeComm
-.\explore-aif.ps1 -File epiphany.aif -AnalyzeSsnd
-.\explore-aif.ps1 -File epiphany.aif -ShowJson
-.\explore-aif.ps1 -File epiphany.aif -ReadBytes -ByteCount 256
-.\explore-aif.ps1 -File epiphany.aif -ParseChunks -DecodeComm -ShowJson
+```
+explore-aif.exe epiphany.aif --parse-chunks
+explore-aif.exe epiphany.aif --dump-chunk APPL
+explore-aif.exe epiphany.aif --decode-comm
+explore-aif.exe epiphany.aif --analyze-ssnd
+explore-aif.exe epiphany.aif --show-json
+explore-aif.exe epiphany.aif --read-bytes 256
+explore-aif.exe epiphany.aif --parse-chunks --decode-comm --show-json
 ```
 
 ---
@@ -427,25 +418,30 @@ Low-level binary inspector for `.aif` file internals. Multiple flags can be comb
 te-op1/
   op1dump.c          source — patch dumper
   op1dump.exe        compiled dumper
-  json2aif.c         source — JSON to AIF writer
-  json2aif.exe       compiled writer
+  json2aif.c         source — JSON to AIF writer + explore generator
+  json2aif.exe       compiled writer/generator
   test_aif.c         source — 29-check AIF validator
   test_aif.exe       compiled validator
+  diff-patches.c     source — patch diff tool
+  diff-patches.exe   compiled diff tool
+  explore-aif.c      source — low-level AIF inspector
+  explore-aif.exe    compiled inspector
+  summarize.c        source — preset discovery report
+  summarize.exe      compiled report tool
+  op1_aif.h          shared binary helpers (big-endian reads, hex dump, 80-bit float)
+  cJSON.c            vendored JSON library (from github.com/DaveGamble/cJSON)
+  cJSON.h            vendored JSON library header
   op1-params.json    knob/param name database (edit freely, no recompile)
   op1-params-ok.json tracks hardware-verified param indices per type
   display-notes.md   raw↔display value mappings and scale notes per param
   build.bat          recompile all tools (requires MSVC)
   dump-all.bat       batch-process presets/ folder
-  gen-explore.ps1    generate min+max boundary patches for all 756 combinations
-  summarize.ps1      discovery report across all presets
-  diff-patches.ps1   diff two patch files
-  explore-aif.ps1    low-level AIF inspector
   index.html         project overview website
   params.html        complete parameter reference (all 29 types)
   display.html       raw↔display scale analysis with oracle-confirmed samples
   presets/           .aif patch files and their .json sidecars
   oracle/            hardware-verified reference exports (tracked in git, never regenerated)
-  explore/           generated boundary patches — gitignored, recreate with gen-explore.ps1
+  explore/           generated boundary patches — gitignored, recreate with: json2aif.exe explore
                      explore\aif\[min|max]\[synth]\[lfo]\*.aif
                      explore\json\[min|max]\[synth]\[lfo]\*.json
 ```

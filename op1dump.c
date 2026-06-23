@@ -12,32 +12,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "op1_aif.h"
 
 #define PARAMS_FILE  "op1-params.json"
 #define MAX_PARAMS   8
 #define MAX_LABEL    48   /* max chars per param name */
-
-/* =========================================================================
- * BIG-ENDIAN READ
- * ========================================================================= */
-
-static uint32_t be32(const uint8_t *p) {
-    return ((uint32_t)p[0] << 24) | ((uint32_t)p[1] << 16) |
-           ((uint32_t)p[2] <<  8) |  (uint32_t)p[3];
-}
-
-/* Decode an IEEE 754 80-bit extended (big-endian, 10 bytes) to Hz. */
-static uint32_t read_80bit_extended(const uint8_t *p) {
-    uint16_t biased_exp = ((uint16_t)(p[0] & 0x7F) << 8) | p[1];
-    uint64_t mantissa   = 0;
-    for (int i = 2; i < 10; i++)
-        mantissa = (mantissa << 8) | p[i];
-    if (biased_exp == 0 && mantissa == 0) return 0;
-    int shift = (int)biased_exp - 16383 - 63;
-    if (shift >= 0)      return (uint32_t)(mantissa << shift);
-    if (shift > -64)     return (uint32_t)(mantissa >> (-shift));
-    return 0;
-}
 
 /* =========================================================================
  * MINIMAL JSON EXTRACTORS
@@ -248,14 +227,14 @@ int main(int argc, char *argv[]) {
     while (pos + 8 <= (uint32_t)fsize) {
         char id[5] = {0};
         memcpy(id, buf + pos, 4);
-        uint32_t size = be32(buf + pos + 4);
+        uint32_t size = u32be(buf + pos + 4);
         uint32_t data = pos + 8;
 
         if (strcmp(id, "COMM") == 0 && size >= 26) {
-            uint16_t ch  = ((uint16_t)buf[data]   << 8) | buf[data+1];
-            uint32_t fr  = be32(buf + data + 2);
-            uint16_t bd  = ((uint16_t)buf[data+6] << 8) | buf[data+7];
-            uint32_t hz  = read_80bit_extended(buf + data + 8);
+            uint16_t ch  = u16be(buf + data);
+            uint32_t fr  = u32be(buf + data + 2);
+            uint16_t bd  = u16be(buf + data + 6);
+            uint32_t hz  = read_80bit_ext(buf + data + 8);
             char comp[5] = {0};
             memcpy(comp, buf + data + 18, 4);
             printf("Audio     : %u ch, %u frames, %u-bit, %u Hz, %s\n",

@@ -2,21 +2,13 @@
  * json2aif.c — create an OP-1 Field AIFF-C patch file from a JSON file
  *
  * Usage:
- *   json2aif <patch.json> [output.aif]        — pass-through
- *   json2aif zero <patch.json> [output.aif]   — zero knobs/fx_params/lfo_params
- *   json2aif max  <patch.json> [output.aif]   — set all three arrays to 32767
+ *   json2aif <patch.json> [output.aif]           — pass-through
+ *   json2aif zero <patch.json> [output.aif]      — zero knobs/fx_params/lfo_params
+ *   json2aif max  <patch.json> [output.aif]      — set all three arrays to 32767
+ *   json2aif explore [-dest <synth|envelope|fx|mix>] [-param <N>]
+ *                                                — generate all 756x2 boundary patches
  *
- * Reads synth metadata from <patch.json>.
- * Produces an AIFF-C file with:
- *   - Standard AIFC container (FVER + COMM + APPL + SSND)
- *   - COMM: mono, 16-bit, 44100 Hz, sowt (little-endian signed PCM)
- *   - APPL: "op-1" signature + JSON padded to 1028 bytes (OP-1 fixed size)
- *   - SSND: 1 second of silence (44100 zero samples)
- *
- * NOTE: epiphany.aif uses 22050 Hz. If the OP-1 Field rejects 44100 Hz
- * synth patches, change SAMPLE_RATE to 22050 and NUM_FRAMES accordingly.
- *
- * Build: cl json2aif.c /Fe:json2aif.exe /D_CRT_SECURE_NO_WARNINGS
+ * Build: cl json2aif.c /Fe:json2aif.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  */
 
 #include <stdio.h>
@@ -24,145 +16,98 @@
 #include <string.h>
 #include <stdint.h>
 #include <time.h>
+#include <windows.h>   /* CreateDirectoryA */
 
 /* ---- tunables ------------------------------------------------------------ */
 
-#define SAMPLE_RATE   22050
-#define NUM_CHANNELS  1
-#define BIT_DEPTH     16
-#define NUM_FRAMES    28896   /* matches OP-1 Field hardware export frame count */
+#define SAMPLE_RATE     22050
+#define NUM_CHANNELS    1
+#define BIT_DEPTH       16
+#define NUM_FRAMES      28896   /* matches OP-1 Field hardware export frame count */
+#define APPL_DATA_SIZE  1028    /* 4-byte "op-1" sig + 1024-byte JSON area */
+#define APPL_JSON_MAX   (APPL_DATA_SIZE - 4)
 
-/* OP-1 APPL chunk: fixed 1028 bytes (4-byte "op-1" sig + 1024-byte JSON area) */
-#define APPL_DATA_SIZE  1028
-#define APPL_JSON_MAX   (APPL_DATA_SIZE - 4)   /* 1024 */
-
-/* ---- big-endian write helpers -------------------------------------------- */
+/* ---- binary write helpers ------------------------------------------------ */
 
 static void w16(uint8_t *p, uint16_t v) {
-    p[0] = (v >> 8) & 0xFF;
-    p[1] =  v       & 0xFF;
+    p[0] = (v >> 8) & 0xFF; p[1] = v & 0xFF;
 }
-
 static void w32(uint8_t *p, uint32_t v) {
-    p[0] = (v >> 24) & 0xFF;
-    p[1] = (v >> 16) & 0xFF;
-    p[2] = (v >>  8) & 0xFF;
-    p[3] =  v        & 0xFF;
+    p[0] = (v >> 24) & 0xFF; p[1] = (v >> 16) & 0xFF;
+    p[2] = (v >>  8) & 0xFF; p[3] =  v         & 0xFF;
 }
 
-/*
- * Write a sample rate as an IEEE 754 80-bit extended (10 bytes, big-endian).
- * Only handles integer Hz values representable with mantissa <= 2^16.
- */
 static void write_80bit_extended(uint8_t *p, uint32_t hz) {
-    /* Find highest set bit to determine exponent */
     int exp = 0;
     uint32_t tmp = hz;
     while (tmp > 1) { tmp >>= 1; exp++; }
-    /* Biased exponent for 80-bit extended: bias = 16383 */
     uint16_t biased_exp = (uint16_t)(exp + 16383);
-    /* Explicit-integer mantissa: hz shifted left to fill 64 bits */
-    uint64_t mantissa = (uint64_t)hz << (63 - exp);
-
-    p[0] = (biased_exp >> 8) & 0xFF;
-    p[1] =  biased_exp       & 0xFF;
-    p[2] = (uint8_t)(mantissa >> 56);
-    p[3] = (uint8_t)(mantissa >> 48);
-    p[4] = (uint8_t)(mantissa >> 40);
-    p[5] = (uint8_t)(mantissa >> 32);
-    p[6] = (uint8_t)(mantissa >> 24);
-    p[7] = (uint8_t)(mantissa >> 16);
-    p[8] = (uint8_t)(mantissa >>  8);
-    p[9] = (uint8_t)(mantissa      );
+    uint64_t mantissa   = (uint64_t)hz << (63 - exp);
+    p[0] = (biased_exp >> 8) & 0xFF; p[1] = biased_exp & 0xFF;
+    p[2] = (uint8_t)(mantissa >> 56); p[3] = (uint8_t)(mantissa >> 48);
+    p[4] = (uint8_t)(mantissa >> 40); p[5] = (uint8_t)(mantissa >> 32);
+    p[6] = (uint8_t)(mantissa >> 24); p[7] = (uint8_t)(mantissa >> 16);
+    p[8] = (uint8_t)(mantissa >>  8); p[9] = (uint8_t)(mantissa      );
 }
 
 /* ---- output path helpers ------------------------------------------------- */
 
 static char *make_aif_path(const char *json_path) {
     size_t len = strlen(json_path);
-    char *out = malloc(len + 5);
+    char *out = (char *)malloc(len + 5);
     if (!out) return NULL;
     memcpy(out, json_path, len);
     out[len] = '\0';
-
-    char *dot = strrchr(out, '.');
-    char *sep = strrchr(out, '/');
+    char *dot = strrchr(out, '.'), *sep = strrchr(out, '/');
 #ifdef _WIN32
-    char *bsep = strrchr(out, '\\');
-    if (!sep || (bsep && bsep > sep)) sep = bsep;
+    char *bs = strrchr(out, '\\');
+    if (!sep || (bs && bs > sep)) sep = bs;
 #endif
-    if (dot && (!sep || dot > sep))
-        strcpy(dot, ".aif");
-    else
-        strcpy(out + len, ".aif");
+    if (dot && (!sep || dot > sep)) strcpy(dot, ".aif");
+    else strcpy(out + len, ".aif");
     return out;
 }
 
-/* Like make_aif_path but inserts _<suffix> before the .aif extension.
-   foo.json -> foo_zero.aif  (suffix="zero") */
-static char *make_aif_path_mode(const char *json_path, const char *suffix)
-{
-    size_t len  = strlen(json_path);
-    size_t slen = strlen(suffix);
-    char *out = malloc(len + slen + 6);   /* _<suffix>.aif\0 */
+static char *make_aif_path_mode(const char *json_path, const char *suffix) {
+    size_t len = strlen(json_path), slen = strlen(suffix);
+    char *out = (char *)malloc(len + slen + 6);
     if (!out) return NULL;
-    memcpy(out, json_path, len);
-    out[len] = '\0';
-
-    char *dot = strrchr(out, '.');
-    char *sep = strrchr(out, '/');
+    memcpy(out, json_path, len); out[len] = '\0';
+    char *dot = strrchr(out, '.'), *sep = strrchr(out, '/');
 #ifdef _WIN32
-    char *bsep = strrchr(out, '\\');
-    if (!sep || (bsep && bsep > sep)) sep = bsep;
+    char *bs = strrchr(out, '\\');
+    if (!sep || (bs && bs > sep)) sep = bs;
 #endif
-    if (dot && (!sep || dot > sep)) *dot = '\0';   /* strip extension */
-
-    strcat(out, "_");
-    strcat(out, suffix);
-    strcat(out, ".aif");
+    if (dot && (!sep || dot > sep)) *dot = '\0';
+    strcat(out, "_"); strcat(out, suffix); strcat(out, ".aif");
     return out;
 }
 
-/* ---- JSON array replacement ---------------------------------------------- */
+/* ---- JSON helpers -------------------------------------------------------- */
 
-/*
- * In src (length srclen), replace the first occurrence of "key":[...] with
- * "key":[fill,fill,...,fill] (always 8 values) and write the result to out.
- * Returns the new string length, or -1 if the key is not found.
- */
 static int json_replace_array(const char *src, size_t srclen,
-                               char *out,  size_t outsz,
-                               const char *key, int fill)
-{
+                               char *out, size_t outsz,
+                               const char *key, int fill) {
     char pat[64];
     snprintf(pat, sizeof(pat), "\"%s\":[", key);
-
     const char *p = strstr(src, pat);
     if (!p) return -1;
-
-    /* copy everything up to and including the opening '[' */
     size_t prefix = (size_t)(p - src) + strlen(pat);
     if (prefix >= outsz) return -1;
     memcpy(out, src, prefix);
     size_t pos = prefix;
-
-    /* write 8 fill values */
-    for (int i = 0; i < 8; i++) {
+    int i;
+    for (i = 0; i < 8; i++) {
         int w = snprintf(out + pos, outsz - pos, "%s%d", i ? "," : "", fill);
         if (w <= 0 || (size_t)w >= outsz - pos) return -1;
         pos += (size_t)w;
     }
-
-    /* closing bracket */
     if (pos >= outsz - 1) return -1;
     out[pos++] = ']';
-
-    /* skip the old array in src (find matching ']') and copy the rest */
-    const char *arr_open  = p + strlen(pat) - 1;   /* points at '[' in src */
+    const char *arr_open  = p + strlen(pat) - 1;
     const char *arr_close = strchr(arr_open, ']');
     if (!arr_close) return -1;
-    arr_close++;                                     /* step past ']' */
-
+    arr_close++;
     size_t rest = srclen - (size_t)(arr_close - src);
     if (pos + rest >= outsz) return -1;
     memcpy(out + pos, arr_close, rest);
@@ -171,74 +116,411 @@ static int json_replace_array(const char *src, size_t srclen,
     return (int)pos;
 }
 
-/* ---- mtime injection ----------------------------------------------------- */
-
-/*
- * Inject the current Unix timestamp as "mtime":<ts>.0 into src.
- * If "mtime": is already present its value is replaced.
- * If absent it is inserted immediately before "name": (alphabetical order).
- * Returns new length, or -1 on error.
- */
 static int json_inject_mtime(const char *src, size_t srclen,
-                              char *out, size_t outsz)
-{
-    char ts_str[32];
-    snprintf(ts_str, sizeof(ts_str), "%.1f", (double)time(NULL));
-    size_t ts_len = strlen(ts_str);
-
+                              char *out, size_t outsz) {
+    char ts[32];
+    snprintf(ts, sizeof(ts), "%.1f", (double)time(NULL));
+    size_t ts_len = strlen(ts);
     const char *p = strstr(src, "\"mtime\":");
     if (p) {
-        size_t prefix = (size_t)(p - src) + 8;  /* past "mtime": */
+        size_t prefix = (size_t)(p - src) + 8;
         if (prefix >= outsz) return -1;
         memcpy(out, src, prefix);
         size_t pos = prefix;
         if (pos + ts_len >= outsz) return -1;
-        memcpy(out + pos, ts_str, ts_len);
-        pos += ts_len;
+        memcpy(out + pos, ts, ts_len); pos += ts_len;
         const char *v = src + prefix;
         if (*v == '-') v++;
         while (*v >= '0' && *v <= '9') v++;
         if (*v == '.') { v++; while (*v >= '0' && *v <= '9') v++; }
         size_t rest = srclen - (size_t)(v - src);
         if (pos + rest >= outsz) return -1;
-        memcpy(out + pos, v, rest);
-        pos += rest;
+        memcpy(out + pos, v, rest); pos += rest;
         out[pos] = '\0';
         return (int)pos;
     }
-
-    /* insert before "name": */
-    const char *name_key = strstr(src, "\"name\":");
-    if (!name_key) return -1;
-    size_t prefix = (size_t)(name_key - src);
-    char insert[48];
-    snprintf(insert, sizeof(insert), "\"mtime\":%s,", ts_str);
-    size_t ins_len = strlen(insert);
+    const char *nk = strstr(src, "\"name\":");
+    if (!nk) return -1;
+    size_t prefix = (size_t)(nk - src);
+    char ins[48];
+    snprintf(ins, sizeof(ins), "\"mtime\":%s,", ts);
+    size_t ins_len = strlen(ins);
     size_t rest = srclen - prefix;
     if (prefix + ins_len + rest >= outsz) return -1;
     memcpy(out, src, prefix);
-    memcpy(out + prefix, insert, ins_len);
-    memcpy(out + prefix + ins_len, name_key, rest);
+    memcpy(out + prefix, ins, ins_len);
+    memcpy(out + prefix + ins_len, nk, rest);
     size_t pos = prefix + ins_len + rest;
     out[pos] = '\0';
     return (int)pos;
 }
 
-/* ---- chunk builders ------------------------------------------------------ */
+/* ---- chunk header -------------------------------------------------------- */
 
-/* Write 8-byte chunk header (ID + big-endian size) and return new pos */
 static uint32_t write_chunk_header(uint8_t *buf, uint32_t pos,
                                    const char *id, uint32_t size) {
-    memcpy(buf + pos, id, 4);
-    w32(buf + pos + 4, size);
+    memcpy(buf + pos, id, 4); w32(buf + pos + 4, size);
     return pos + 8;
 }
 
-/* ---- main ---------------------------------------------------------------- */
+/* ---- core AIF writer ----------------------------------------------------- */
+
+/*
+ * Write an AIFF-C file from a pre-built JSON string.
+ * Returns 0 on success, 1 on error.
+ * If allow_overwrite is 0, fails if aif_path already exists.
+ */
+static int write_aif(const char *json_str, int json_len,
+                     const char *aif_path, int allow_overwrite) {
+    if (json_len > APPL_JSON_MAX) {
+        fprintf(stderr, "JSON too large (%d bytes, max %d)\n", json_len, APPL_JSON_MAX);
+        return 1;
+    }
+
+    if (!allow_overwrite) {
+        FILE *chk = fopen(aif_path, "rb");
+        if (chk) {
+            fclose(chk);
+            fprintf(stderr, "error: output file already exists: %s\n", aif_path);
+            fprintf(stderr, "  delete it first or choose a different output path.\n");
+            return 1;
+        }
+    }
+
+    static const char *COMPR_NAME = "Signed integer (little-endian) linear PCM";
+    uint8_t pascal_len  = (uint8_t)strlen(COMPR_NAME);
+    uint32_t pascal_total = 1 + pascal_len;            /* 42 */
+    uint32_t comm_size  = 2 + 4 + 2 + 10 + 4 + pascal_total;  /* 64 */
+    uint32_t audio_bytes = NUM_FRAMES * (BIT_DEPTH / 8);
+    uint32_t ssnd_size   = 4 + 4 + audio_bytes;
+    uint32_t form_body   = (8+4) + (8+comm_size) + (8+APPL_DATA_SIZE) + (8+ssnd_size);
+    uint32_t total_size  = 12 + form_body;
+
+    uint8_t *buf = (uint8_t *)calloc(1, total_size);
+    if (!buf) { fprintf(stderr, "out of memory\n"); return 1; }
+
+    uint32_t pos = 0;
+    memcpy(buf+pos,"FORM",4); pos+=4;
+    w32(buf+pos, form_body);  pos+=4;
+    memcpy(buf+pos,"AIFC",4); pos+=4;
+
+    pos = write_chunk_header(buf, pos, "FVER", 4);
+    w32(buf+pos, 0xA2805140); pos+=4;
+
+    pos = write_chunk_header(buf, pos, "COMM", comm_size);
+    w16(buf+pos, NUM_CHANNELS);  pos+=2;
+    w32(buf+pos, NUM_FRAMES);    pos+=4;
+    w16(buf+pos, BIT_DEPTH);     pos+=2;
+    write_80bit_extended(buf+pos, SAMPLE_RATE); pos+=10;
+    memcpy(buf+pos,"sowt",4);    pos+=4;
+    buf[pos++] = pascal_len;
+    memcpy(buf+pos, COMPR_NAME, pascal_len); pos+=pascal_len;
+
+    pos = write_chunk_header(buf, pos, "APPL", APPL_DATA_SIZE);
+    memcpy(buf+pos,"op-1",4);                    pos+=4;
+    memcpy(buf+pos, json_str, (size_t)json_len); pos+=(uint32_t)json_len;
+    buf[pos++] = '\n';
+    uint32_t pad = APPL_JSON_MAX - (uint32_t)json_len - 1;
+    memset(buf+pos, ' ', pad); pos+=pad;
+
+    pos = write_chunk_header(buf, pos, "SSND", ssnd_size);
+    w32(buf+pos,0); pos+=4;
+    w32(buf+pos,0); pos+=4;
+    pos += audio_bytes;  /* zeroed by calloc */
+
+    FILE *f = fopen(aif_path, "wb");
+    if (!f) { perror(aif_path); free(buf); return 1; }
+    if (fwrite(buf, 1, total_size, f) != total_size) {
+        fprintf(stderr, "write error: %s\n", aif_path); fclose(f); free(buf); return 1;
+    }
+    fclose(f);
+    free(buf);
+    return 0;
+}
+
+/* =========================================================================
+ * EXPLORE: oracle tables and generation logic
+ * ========================================================================= */
+
+static const char *SYNTH_TYPES[] = {
+    "amp","cluster","digital","dimension","dna","drwave",
+    "dsynth","fm","phase","pulse","sampler","string","vocoder","voltage", NULL
+};
+static const char *FX_TYPES[] = {
+    "cwo","delay","grid","mother","nitro","phone","punch","spring","terminal", NULL
+};
+static const char *LFO_TYPES[] = {
+    "element","midi","random","tremolo","value","velocity", NULL
+};
+
+typedef struct { const char *name; int ver; } SynthVer;
+typedef struct { const char *name; int v[8]; } ParamRow;
+
+static int synth_version(const char *type) {
+    static const SynthVer T[] = {
+        {"amp",3},{"cluster",3},{"digital",3},{"dimension",3},{"dna",3},
+        {"drwave",2},{"dsynth",2},{"fm",3},{"phase",2},{"pulse",2},
+        {"sampler",3},{"string",3},{"vocoder",3},{"voltage",2},{NULL,0}
+    };
+    int i;
+    for (i = 0; T[i].name; i++)
+        if (strcmp(T[i].name, type) == 0) return T[i].ver;
+    return 3;
+}
+
+static const int ZEROS[8] = {0,0,0,0,0,0,0,0};
+static const int MAXS[8]  = {32767,32767,32767,32767,32767,32767,32767,32767};
+
+static const int *param_lookup(const ParamRow *tbl, const char *type, const int *def) {
+    for (; tbl->name; tbl++)
+        if (strcmp(tbl->name, type) == 0) return tbl->v;
+    return def;
+}
+
+static const ParamRow SYNTH_KNOBS_MIN[] = {
+    {"cluster", {3072,0,512,3,0,0,0,0}},
+    {"digital", {0,2048,-32768,0,0,0,0,0}},
+    {"dna",     {-29491,4608,0,0,0,0,0,0}},
+    {"fm",      {0,0,1024,0,15000,0,100,1500}},
+    {"string",  {64,512,0,8256,0,0,0,0}},
+    {NULL, {0}}
+};
+
+static const ParamRow SYNTH_KNOBS_MAX[] = {
+    {"amp",       {32767,32767,32767,32767,0,0,0,0}},
+    {"cluster",   {17408,32767,24064,1638,0,0,0,0}},
+    {"digital",   {32767,26624,32767,32767,0,0,0,0}},
+    {"dimension", {32767,32767,32767,32767,0,0,0,0}},
+    {"dna",       {32767,12800,32767,32767,0,0,0,0}},
+    {"drwave",    {24568,16379,16377,32767,32000,0,0,0}},
+    {"fm",        {32767,32767,17408,32767,15000,0,100,1500}},
+    {"phase",     {32767,29491,32767,32767,0,0,0,0}},
+    {"pulse",     {23168,16384,16384,16384,0,0,0,0}},
+    {"sampler",   {32766,32767,32767,32767,24576,32767,32767,32767}},
+    {"string",    {8256,24064,16384,16448,0,0,0,0}},
+    {"vocoder",   {32767,32767,32767,32767,0,0,0,0}},
+    {"voltage",   {32767,32767,32767,32767,0,0,0,0}},
+    {NULL, {0}}
+};
+
+static const ParamRow FX_PARAMS_MIN[] = {
+    {"delay",  {1024,3276,0,0,0,0,0,0}},
+    {"grid",   {1344,1344,0,0,8000,8000,8000,8000}},
+    {"nitro",  {64,-32768,0,64,0,0,0,0}},
+    {"phone",  {204,3072,1536,0,8000,8000,8000,8000}},
+    {"punch",  {1344,0,1536,0,8000,8000,8000,8000}},
+    {"spring", {1344,7744,0,0,8000,8000,8000,8000}},
+    {NULL, {0}}
+};
+
+static const ParamRow FX_PARAMS_MAX[] = {
+    {"cwo",    {32767,32767,32767,32767,0,0,0,0}},
+    {"delay",  {11264,32767,16384,32767,0,0,0,0}},
+    {"grid",   {16704,16704,32767,32767,8000,8000,8000,8000}},
+    {"nitro",  {16448,32767,20643,16448,0,0,0,0}},
+    {"phone",  {20480,17408,16896,32767,8000,8000,8000,8000}},
+    {"punch",  {12480,32767,25088,32767,8000,8000,8000,8000}},
+    {"spring", {16448,16448,16384,32767,8000,8000,8000,8000}},
+    {NULL, {0}}
+};
+
+static const ParamRow LFO_MIN_PARAMS[] = {
+    {"element",  {1024,-32767,1024,1024,0,0,0,0}},
+    {"midi",     {1024,1024,1024,1024,1024,1024,1024,1024}},
+    {"random",   {0,0,1024,0,1024,0,0,0}},
+    {"tremolo",  {0,-32767,-32767,0,0,0,0,0}},
+    {"value",    {0,-32767,1024,1024,0,0,0,0}},
+    {NULL, {0}}   /* velocity handled dynamically */
+};
+
+static const ParamRow LFO_MAX_PARAMS[] = {
+    {"element",  {7168,32767,7168,15360,0,0,0,0}},
+    {"midi",     {15360,15360,15360,15360,7168,7168,7168,7168}},
+    {"random",   {32767,32767,7168,32767,15360,0,0,0}},
+    {"tremolo",  {32440,32767,32767,32767,0,0,0,32767}},
+    {"value",    {16384,32767,11264,15360,28086,0,0,0}},
+    {"velocity", {32767,32767,7168,15360,0,0,0,0}},
+    {NULL, {0}}
+};
+
+/* ---- explore helpers ----------------------------------------------------- */
+
+static void make_dirs(const char *path) {
+    char tmp[512];
+    char *p;
+    strncpy(tmp, path, sizeof(tmp) - 1);
+    tmp[sizeof(tmp) - 1] = '\0';
+    for (p = tmp + 1; *p; p++) {
+        if (*p == '\\' || *p == '/') {
+            char c = *p; *p = '\0';
+            CreateDirectoryA(tmp, NULL);
+            *p = c;
+        }
+    }
+    CreateDirectoryA(tmp, NULL);
+}
+
+static void get_slug(const char *name, char *out) {
+    int i = 0;
+    while (*name && i < 4) {
+        unsigned char c = (unsigned char)*name++;
+        if (c >= 'a' && c <= 'z')      out[i++] = (char)c;
+        else if (c >= '0' && c <= '9') out[i++] = (char)c;
+        else if (c >= 'A' && c <= 'Z') out[i++] = (char)(c + 32);
+    }
+    while (i < 4) out[i++] = '_';
+    out[4] = '\0';
+}
+
+static int build_patch_json(const char *synth, const char *fx, const char *lfo,
+                             const char *name, int ver,
+                             const int knobs[8], const int fxp[8], const int lfop[8],
+                             char *out, size_t outsz) {
+    return snprintf(out, outsz,
+        "{\"adsr\":[576,4160,17408,15808,14336,7872,18432,3276],"
+        "\"fx_active\":true,"
+        "\"fx_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"fx_type\":\"%s\","
+        "\"knobs\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"lfo_active\":true,"
+        "\"lfo_params\":[%d,%d,%d,%d,%d,%d,%d,%d],"
+        "\"lfo_type\":\"%s\","
+        "\"mtime\":%ld.0,"
+        "\"name\":\"%s\","
+        "\"octave\":0,"
+        "\"synth_version\":%d,"
+        "\"type\":\"%s\"}",
+        fxp[0],fxp[1],fxp[2],fxp[3],fxp[4],fxp[5],fxp[6],fxp[7], fx,
+        knobs[0],knobs[1],knobs[2],knobs[3],knobs[4],knobs[5],knobs[6],knobs[7],
+        lfop[0],lfop[1],lfop[2],lfop[3],lfop[4],lfop[5],lfop[6],lfop[7], lfo,
+        (long)time(NULL), name, ver, synth);
+}
+
+/* ---- run_explore --------------------------------------------------------- */
+
+static int run_explore(int vel_dest_raw, int vel_param) {
+    int si, fi, li, mi;
+    int n = 0;
+    int vel_min[8] = {0, -32767, vel_dest_raw, vel_param, 0, 0, 0, 0};
+
+    /* Count synth/fx/lfo type lengths */
+    int n_synth = 0, n_fx = 0, n_lfo = 0;
+    while (SYNTH_TYPES[n_synth]) n_synth++;
+    while (FX_TYPES[n_fx])       n_fx++;
+    while (LFO_TYPES[n_lfo])     n_lfo++;
+
+    int total = n_synth * n_fx * n_lfo;
+
+    /* Clean slate */
+    system("rd /s /q explore 2>nul");
+
+    printf("\nGenerating %d combinations x 2 (min + max) = %d pairs ...\n",
+           total, total * 2);
+    printf("Each pair = 1 JSON + 1 AIF  ->  %d files total\n\n", total * 4);
+
+    static const char *MODES[2] = {"min", "max"};
+
+    for (si = 0; SYNTH_TYPES[si]; si++) {
+        const char *synth = SYNTH_TYPES[si];
+        int ver = synth_version(synth);
+
+        for (li = 0; LFO_TYPES[li]; li++) {
+            const char *lfo = LFO_TYPES[li];
+
+            for (mi = 0; mi < 2; mi++) {
+                const char *mode = MODES[mi];
+                char aif_dir[512], json_dir[512];
+                snprintf(aif_dir,  sizeof(aif_dir),  "explore\\aif\\%s\\%s\\%s",  mode, synth, lfo);
+                snprintf(json_dir, sizeof(json_dir), "explore\\json\\%s\\%s\\%s", mode, synth, lfo);
+                make_dirs(aif_dir);
+                make_dirs(json_dir);
+
+                for (fi = 0; FX_TYPES[fi]; fi++) {
+                    const char *fx = FX_TYPES[fi];
+                    char slug_s[5], slug_f[5], slug_l[5], slug[14];
+                    char json_buf[APPL_JSON_MAX];
+                    char json_path[512], aif_path[512];
+                    int  jlen;
+                    FILE *jf;
+
+                    get_slug(synth, slug_s);
+                    get_slug(fx,    slug_f);
+                    get_slug(lfo,   slug_l);
+                    snprintf(slug, sizeof(slug), "%s%s%s", slug_s, slug_f, slug_l);
+
+                    const int *knobs, *fxp, *lfop;
+
+                    if (mi == 0) {  /* min */
+                        knobs = param_lookup(SYNTH_KNOBS_MIN, synth, ZEROS);
+                        fxp   = param_lookup(FX_PARAMS_MIN,   fx,    ZEROS);
+                        lfop  = (strcmp(lfo, "velocity") == 0)
+                                ? (const int *)vel_min
+                                : param_lookup(LFO_MIN_PARAMS, lfo, ZEROS);
+                    } else {        /* max */
+                        knobs = param_lookup(SYNTH_KNOBS_MAX, synth, MAXS);
+                        fxp   = param_lookup(FX_PARAMS_MAX,   fx,    MAXS);
+                        lfop  = param_lookup(LFO_MAX_PARAMS,  lfo,   MAXS);
+                    }
+
+                    jlen = build_patch_json(synth, fx, lfo, slug, ver,
+                                            knobs, fxp, lfop,
+                                            json_buf, sizeof(json_buf));
+                    if (jlen <= 0 || jlen >= APPL_JSON_MAX) {
+                        fprintf(stderr, "JSON build failed for %s/%s/%s\n", synth, fx, lfo);
+                        continue;
+                    }
+
+                    snprintf(json_path, sizeof(json_path), "%s\\%s.json", json_dir, slug);
+                    snprintf(aif_path,  sizeof(aif_path),  "%s\\%s.aif",  aif_dir,  slug);
+
+                    jf = fopen(json_path, "wb");
+                    if (jf) {
+                        fwrite(json_buf, 1, (size_t)jlen, jf);
+                        fclose(jf);
+                    }
+
+                    if (write_aif(json_buf, jlen, aif_path, 1) != 0)
+                        fprintf(stderr, "write_aif failed: %s\n", aif_path);
+                }
+            }
+
+            n += n_fx;
+            if (n % (n_fx * n_lfo) == 0)
+                printf("  %d / %d  (last synth: %s)\n", n, total, synth);
+        }
+    }
+
+    printf("\nDone.  %d combinations processed.\n\n", total);
+    return 0;
+}
+
+/* =========================================================================
+ * MAIN
+ * ========================================================================= */
 
 int main(int argc, char *argv[]) {
-    /* detect optional zero / max subcommand */
-    int  mode      = 0;   /* 0 = pass-through, 1 = zero, 2 = max */
+    int i;
+
+    /* -- explore subcommand -- */
+    if (argc >= 2 && strcmp(argv[1], "explore") == 0) {
+        int vel_dest_raw = 1024;  /* synth */
+        int vel_param    = 1024;
+        for (i = 2; i < argc - 1; i++) {
+            if (strcmp(argv[i], "-dest") == 0) {
+                const char *d = argv[++i];
+                if      (strcmp(d, "synth")    == 0) vel_dest_raw = 1024;
+                else if (strcmp(d, "envelope") == 0) vel_dest_raw = 5824;
+                else if (strcmp(d, "fx")       == 0) vel_dest_raw = 10144;
+                else if (strcmp(d, "mix")      == 0) vel_dest_raw = 15360;
+            } else if (strcmp(argv[i], "-param") == 0) {
+                vel_param = atoi(argv[++i]);
+            }
+        }
+        return run_explore(vel_dest_raw, vel_param);
+    }
+
+    /* -- single-file subcommands: zero / max / pass-through -- */
+    int  mode      = 0;
     int  arg_shift = 0;
     if (argc >= 2) {
         if      (strcmp(argv[1], "zero") == 0) { mode = 1; arg_shift = 1; }
@@ -248,199 +530,98 @@ int main(int argc, char *argv[]) {
     char **real_argv = argv + arg_shift;
 
     if (real_argc < 2 || real_argc > 3) {
-        fprintf(stderr, "Usage: %s [zero|max] <patch.json> [output.aif]\n", argv[0]);
+        fprintf(stderr,
+            "Usage:\n"
+            "  %s [zero|max] <patch.json> [output.aif]\n"
+            "  %s explore [-dest <synth|envelope|fx|mix>] [-param <N>]\n",
+            argv[0], argv[0]);
         return 1;
     }
     const char *json_path = real_argv[1];
 
-    /* --- read and validate JSON --- */
     FILE *jf = fopen(json_path, "rb");
     if (!jf) { perror(json_path); return 1; }
     fseek(jf, 0, SEEK_END);
     long json_size = ftell(jf);
     rewind(jf);
-
-    char *json_raw = malloc(json_size + 1);
+    char *json_raw = (char *)malloc((size_t)json_size + 1);
     if (!json_raw) { fprintf(stderr, "out of memory\n"); return 1; }
-    fread(json_raw, 1, json_size, jf);
+    fread(json_raw, 1, (size_t)json_size, jf);
     fclose(jf);
     json_raw[json_size] = '\0';
 
-    /* strip UTF-8 BOM if present */
+    /* strip UTF-8 BOM */
     if (json_size >= 3 &&
         (uint8_t)json_raw[0] == 0xEF &&
         (uint8_t)json_raw[1] == 0xBB &&
         (uint8_t)json_raw[2] == 0xBF) {
-        memmove(json_raw, json_raw + 3, json_size - 3);
-        json_size -= 3;
-        json_raw[json_size] = '\0';
+        memmove(json_raw, json_raw + 3, (size_t)(json_size - 3));
+        json_size -= 3; json_raw[json_size] = '\0';
     }
-
-    /* strip trailing whitespace */
     while (json_size > 0 && (json_raw[json_size-1] == '\n' ||
                               json_raw[json_size-1] == '\r' ||
                               json_raw[json_size-1] == ' '))
         json_size--;
     json_raw[json_size] = '\0';
 
-    /* --- three scratch buffers:
-     *   [2] — mtime injection (always applied)
-     *   [0],[1] — ping-pong for zero/max array replacement             */
     static char scratch[3][APPL_JSON_MAX + 2];
 
-    /* inject current timestamp as mtime */
     int mt_r = json_inject_mtime(json_raw, (size_t)json_size,
                                   scratch[2], sizeof(scratch[2]));
-    const char *mt_src  = (mt_r > 0) ? scratch[2]       : json_raw;
-    size_t      mt_slen = (mt_r > 0) ? (size_t)mt_r     : (size_t)json_size;
+    const char *mt_src  = (mt_r > 0) ? scratch[2]   : json_raw;
+    size_t      mt_slen = (mt_r > 0) ? (size_t)mt_r : (size_t)json_size;
 
     const char *json_write_ptr  = mt_src;
-    long        json_write_size = (long)mt_slen;
+    int         json_write_size = (int)mt_slen;
 
     if (mode != 0) {
         static const char *KEYS[] = { "knobs", "fx_params", "lfo_params" };
-        int         fill = (mode == 1) ? 0 : 32767;
-        int         cur  = 0;
+        int fill = (mode == 1) ? 0 : 32767;
+        int cur  = 0;
         const char *src  = mt_src;
         size_t      slen = mt_slen;
-
-        for (int k = 0; k < 3; k++) {
+        int k;
+        for (k = 0; k < 3; k++) {
             int r = json_replace_array(src, slen,
                                        scratch[cur], sizeof(scratch[0]),
                                        KEYS[k], fill);
-            if (r > 0) {
-                src  = scratch[cur];
-                slen = (size_t)r;
-                cur ^= 1;
-            }
+            if (r > 0) { src = scratch[cur]; slen = (size_t)r; cur ^= 1; }
         }
         json_write_ptr  = src;
-        json_write_size = (long)slen;
+        json_write_size = (int)slen;
     }
 
-    if (json_write_size > APPL_JSON_MAX) {
-        fprintf(stderr, "JSON too large (%ld bytes, max %d)\n",
-                json_write_size, APPL_JSON_MAX);
-        return 1;
-    }
-
-    /* -----------------------------------------------------------------------
-     * Chunk sizes:
-     *
-     * FVER  data: 4 bytes
-     * COMM  data: 2 (channels) + 4 (frames) + 2 (bitdepth)
-     *             + 10 (80-bit rate) + 4 (comprType) + 42 (pascal string) = 64
-     * APPL  data: 1028 (fixed OP-1 size)
-     * SSND  data: 4 (offset) + 4 (blockSize) + NUM_FRAMES*2 (audio)
-     * ---------------------------------------------------------------------- */
-
-    static const char *COMPR_NAME = "Signed integer (little-endian) linear PCM";
-    uint8_t pascal_len = (uint8_t)strlen(COMPR_NAME);  /* 41 = 0x29 */
-    /* Pascal string must be padded to even total length (len byte + chars).
-       41 chars + 1 len byte = 42 bytes — already even, no padding needed. */
-    uint32_t pascal_total = 1 + pascal_len;  /* 42 */
-    uint32_t comm_size = 2 + 4 + 2 + 10 + 4 + pascal_total;  /* 64 */
-
-    uint32_t audio_bytes = NUM_FRAMES * (BIT_DEPTH / 8);   /* 88200 */
-    uint32_t ssnd_size   = 4 + 4 + audio_bytes;            /* 88208 */
-
-    uint32_t form_body =
-        (8 + 4)          +   /* FVER */
-        (8 + comm_size)  +   /* COMM */
-        (8 + APPL_DATA_SIZE) +   /* APPL */
-        (8 + ssnd_size);     /* SSND */
-
-    uint32_t total_size = 12 + form_body;
-
-    uint8_t *buf = calloc(1, total_size);  /* calloc zeroes audio for us */
-    if (!buf) { fprintf(stderr, "out of memory\n"); return 1; }
-
-    uint32_t pos = 0;
-
-    /* --- FORM header --- */
-    memcpy(buf + pos, "FORM", 4); pos += 4;
-    w32(buf + pos, form_body);    pos += 4;
-    memcpy(buf + pos, "AIFC", 4); pos += 4;
-
-    /* --- FVER chunk --- */
-    pos = write_chunk_header(buf, pos, "FVER", 4);
-    w32(buf + pos, 0xA2805140);  /* the one and only AIFC version constant */
-    pos += 4;
-
-    /* --- COMM chunk --- */
-    pos = write_chunk_header(buf, pos, "COMM", comm_size);
-    w16(buf + pos, NUM_CHANNELS);   pos += 2;
-    w32(buf + pos, NUM_FRAMES);     pos += 4;
-    w16(buf + pos, BIT_DEPTH);      pos += 2;
-    write_80bit_extended(buf + pos, SAMPLE_RATE); pos += 10;
-    memcpy(buf + pos, "sowt", 4);   pos += 4;
-    buf[pos++] = pascal_len;
-    memcpy(buf + pos, COMPR_NAME, pascal_len); pos += pascal_len;
-    /* pascal_total is 42 (even) so no pad byte needed */
-
-    /* --- APPL chunk --- */
-    pos = write_chunk_header(buf, pos, "APPL", APPL_DATA_SIZE);
-    memcpy(buf + pos, "op-1", 4);                           pos += 4;
-    memcpy(buf + pos, json_write_ptr, json_write_size);     pos += json_write_size;
-    buf[pos++] = '\n';
-    /* fill remainder of 1024-byte JSON area with spaces */
-    uint32_t remaining = APPL_JSON_MAX - (uint32_t)json_write_size - 1;
-    memset(buf + pos, ' ', remaining);  pos += remaining;
-
-    /* --- SSND chunk --- */
-    pos = write_chunk_header(buf, pos, "SSND", ssnd_size);
-    w32(buf + pos, 0); pos += 4;   /* offset */
-    w32(buf + pos, 0); pos += 4;   /* blockSize */
-    /* audio: already zeroed by calloc — 44100 frames of silence */
-    pos += audio_bytes;
-
-    /* --- write output file --- */
+    /* resolve output path */
     char *out_path;
-    int   out_path_allocated = 0;
+    int   out_path_alloc = 0;
     if (real_argc == 3) {
         out_path = (char *)real_argv[2];
     } else if (mode == 1) {
-        out_path = make_aif_path_mode(json_path, "zero");
-        out_path_allocated = 1;
+        out_path = make_aif_path_mode(json_path, "zero"); out_path_alloc = 1;
     } else if (mode == 2) {
-        out_path = make_aif_path_mode(json_path, "max");
-        out_path_allocated = 1;
+        out_path = make_aif_path_mode(json_path, "max");  out_path_alloc = 1;
     } else {
-        out_path = make_aif_path(json_path);
-        out_path_allocated = 1;
+        out_path = make_aif_path(json_path); out_path_alloc = 1;
     }
     if (!out_path) { fprintf(stderr, "out of memory\n"); return 1; }
 
-    /* refuse to overwrite — oracle files must never be clobbered */
-    {
-        FILE *chk = fopen(out_path, "rb");
-        if (chk) {
-            fclose(chk);
-            fprintf(stderr, "error: output file already exists: %s\n", out_path);
-            fprintf(stderr, "  delete it first or choose a different output path.\n");
-            if (out_path_allocated) free(out_path);
-            return 1;
-        }
+    if (write_aif(json_write_ptr, json_write_size, out_path, 0) != 0) {
+        if (out_path_alloc) free(out_path);
+        free(json_raw);
+        return 1;
     }
 
-    FILE *of = fopen(out_path, "wb");
-    if (!of) { perror(out_path); return 1; }
-    if (fwrite(buf, 1, total_size, of) != total_size) {
-        fprintf(stderr, "write error: %s\n", out_path); return 1;
-    }
-    fclose(of);
-
+    uint32_t audio_bytes = NUM_FRAMES * (BIT_DEPTH / 8);
+    uint32_t ssnd_size   = 4 + 4 + audio_bytes;
     printf("Wrote %s\n", out_path);
     printf("  FVER : 0xA2805140 (AIFC standard)\n");
     printf("  COMM : %u ch, %u frames, %u-bit, %u Hz, sowt\n",
            NUM_CHANNELS, NUM_FRAMES, BIT_DEPTH, SAMPLE_RATE);
-    printf("  APPL : %d bytes  (%ld bytes JSON + padding)\n",
+    printf("  APPL : %d bytes  (%d bytes JSON + padding)\n",
            APPL_DATA_SIZE, json_write_size);
     printf("  SSND : %u bytes  (%u frames silence)\n", ssnd_size, NUM_FRAMES);
-    printf("  Total: %u bytes\n", total_size);
 
+    if (out_path_alloc) free(out_path);
     free(json_raw);
-    free(buf);
-    if (out_path_allocated) free(out_path);
     return 0;
 }

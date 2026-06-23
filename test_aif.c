@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include "op1_aif.h"
 
 /* Hardware-verified constants (oracle: oracle/amp-cwo-elem-0000.aif) */
 #define EXPECTED_FILE_SIZE   58940u
@@ -27,27 +28,6 @@ static void check(int cond, const char *name)
 {
     if (cond) { printf("  PASS  %s\n", name); g_pass++; }
     else       { printf("  FAIL  %s\n", name); g_fail++; }
-}
-
-static uint32_t u32be(const uint8_t *p)
-{
-    return ((uint32_t)p[0]<<24)|((uint32_t)p[1]<<16)|((uint32_t)p[2]<<8)|p[3];
-}
-static uint16_t u16be(const uint8_t *p) { return ((uint16_t)p[0]<<8)|p[1]; }
-
-static uint32_t read_80bit_ext(const uint8_t *p)
-{
-    uint16_t exp = ((uint16_t)(p[0] & 0x7F) << 8) | p[1];
-    uint64_t man = 0;
-    int i;
-    for (i = 2; i < 10; i++) man = (man << 8) | p[i];
-    if (!exp && !man) return 0;
-    {
-        int sh = (int)exp - 16383 - 63;
-        if (sh >= 0)    return (uint32_t)(man << sh);
-        if (sh > -64)   return (uint32_t)(man >> (-sh));
-    }
-    return 0;
 }
 
 /* Locate the JSON string inside the APPL data block.
