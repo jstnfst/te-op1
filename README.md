@@ -9,15 +9,13 @@ See also: `index.html` (overview), `params.html` (parameter reference), `display
 
 ## Research Status
 
-All synth, FX, and LFO parameter types have been fully mapped and verified
-against hardware. See `op1-params.json` for the complete name database and
-`display-notes.md` for hardware display scale details per parameter.
+All 29 synth, FX, and LFO parameter types have been fully mapped and verified against hardware.
+See `op1-params.json` for the complete name database and `display-notes.md` for hardware display
+scale details per parameter.
 
-| Group | Verified types |
-|-------|---------------|
-| synth | amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage |
-| fx    | cwo, delay, grid, mother, nitro, phone, punch, spring, terminal |
-| lfo   | element, midi, random, tremolo, value, velocity |
+**synth** — amp, cluster, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
+**fx** — cwo, delay, grid, mother, nitro, phone, punch, spring, terminal  
+**lfo** — element, midi, random, tremolo, value, velocity
 
 ---
 
@@ -150,18 +148,12 @@ Most numeric parameters are **16-bit integers in the range 0–32767**
 > keys correctly. Required order:
 > `adsr, fx_active, fx_params, fx_type, knobs, lfo_active, lfo_params, lfo_type, mtime, name, octave, synth_version, type`
 
-### ADSR (always 8 values — two envelopes)
+### ADSR
 
-| Index | Label    |
-|-------|----------|
-| 0     | Attack   |
-| 1     | Decay    |
-| 2     | Sustain  |
-| 3     | Release  |
-| 4     | Attack2  |
-| 5     | Decay2   |
-| 6     | Sustain2 |
-| 7     | Release2 |
+Always 8 values — two four-stage envelopes back to back:
+
+`0–3` Attack · Decay · Sustain · Release  
+`4–7` Attack 2 · Decay 2 · Sustain 2 · Release 2
 
 ---
 
@@ -171,266 +163,109 @@ Full name database is in `op1-params.json`. Display scale details and
 observed raw↔display value mappings are in `display-notes.md`.
 `op1-params-ok.json` tracks which indices have been hardware-verified.
 
-Note: most types use 4 active params (indices 0–3). Exceptions:
-`synth.dsynth` and `synth.sampler` use all 8; `lfo.midi` uses all 8;
-`lfo.random` and `lfo.value` use 5; `lfo.tremolo` uses indices 0–3 and 7.
+Most types use 4 active params (indices 0–3). Exceptions: `synth.dsynth`
+and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
+`lfo.value` use 5; `lfo.tremolo` uses indices 0–3 and 7.
 
-### Synth types
+### Synth
 
 #### `amp`
-| Index | Name |
-|-------|------|
-| 0 | VOLUME |
-| 1 | COMPRESSOR |
-| 2 | TONE |
-| 3 | DRIVE |
+`0` VOLUME · `1` COMPRESSOR · `2` TONE · `3` DRIVE
 
 #### `cluster`
-| Index | Name |
-|-------|------|
-| 0 | WAVES |
-| 1 | WAVE ENV |
-| 2 | SPREAD |
-| 3 | UNITOR |
+`0` WAVES · `1` WAVE ENV · `2` SPREAD · `3` UNITOR
 
 #### `digital`
-| Index | Name |
-|-------|------|
-| 0 | WAVE SHAPER |
-| 1 | OCTAVE |
-| 2 | DETUNE+RINGMOD |
-| 3 | DIGITALNESS |
+`0` WAVE SHAPER · `1` OCTAVE · `2` DETUNE+RINGMOD · `3` DIGITALNESS
 
 #### `dimension`
-| Index | Name |
-|-------|------|
-| 0 | WAVEFORM |
-| 1 | STEREO |
-| 2 | FILTER FREQ |
-| 3 | RES |
+`0` WAVEFORM · `1` STEREO · `2` FILTER FREQ · `3` RES
 
 #### `dna`
-| Index | Name |
-|-------|------|
-| 0 | FILTER |
-| 1 | WAVE NUMBER |
-| 2 | WAVE MODIFIER |
-| 3 | NOISE |
+`0` FILTER · `1` WAVE NUMBER · `2` WAVE MODIFIER · `3` NOISE
 
 #### `drwave`
-| Index | Name |
-|-------|------|
-| 0 | WAVE TYPE AND LENGTH |
-| 1 | FILTER |
-| 2 | PHASE |
-| 3 | CHORUS |
+`0` WAVE TYPE AND LENGTH · `1` FILTER · `2` PHASE · `3` CHORUS
 
 #### `dsynth`
-| Index | Name |
-|-------|------|
-| 0 | ENV CROSSFADER |
-| 1 | WAVEFORM |
-| 2 | ENVELOPE |
-| 3 | CROSS MODULATION |
-| 4 | FREQUENCY |
-| 5 | WAVEFORM |
-| 6 | ENVELOPE |
-| 7 | FILTER CUTOFF FREQUENCY |
+`0` ENV CROSSFADER · `1` WAVEFORM · `2` ENVELOPE · `3` CROSS MODULATION  
+`4` FREQUENCY · `5` WAVEFORM · `6` ENVELOPE · `7` FILTER CUTOFF FREQUENCY
 
 #### `fm`
-| Index | Name |
-|-------|------|
-| 0 | FM AMOUNT |
-| 1 | FREQUENCY |
-| 2 | TOPOLOGY |
-| 3 | DETUNE |
+`0` FM AMOUNT · `1` FREQUENCY · `2` TOPOLOGY · `3` DETUNE
 
 #### `phase`
-| Index | Name |
-|-------|------|
-| 0 | PHASE SHIFT |
-| 1 | DISTORTION AMOUNT |
-| 2 | PHASE FILTER |
-| 3 | PHASE TILT |
+`0` PHASE SHIFT · `1` DISTORTION AMOUNT · `2` PHASE FILTER · `3` PHASE TILT
 
 #### `pulse`
-| Index | Name |
-|-------|------|
-| 0 | FILTER |
-| 1 | AMPLITUDE |
-| 2 | SECOND PULSE |
-| 3 | MODULATION |
+`0` FILTER · `1` AMPLITUDE · `2` SECOND PULSE · `3` MODULATION
 
 #### `sampler`
-| Index | Name |
-|-------|------|
-| 0 | START |
-| 1 | LOOP IN |
-| 2 | LOOP OUT |
-| 3 | END |
-| 4 | DIRECTION |
-| 5 | FINE TUNE |
-| 6 | LOOP FADE |
-| 7 | GAIN |
+`0` START · `1` LOOP IN · `2` LOOP OUT · `3` END  
+`4` DIRECTION · `5` FINE TUNE · `6` LOOP FADE · `7` GAIN
 
 #### `string`
-| Index | Name |
-|-------|------|
-| 0 | TENSION |
-| 1 | IMPULSE |
-| 2 | STEREO |
-| 3 | IMPULSE TYPE |
+`0` TENSION · `1` IMPULSE · `2` STEREO · `3` IMPULSE TYPE
 
 #### `vocoder`
-| Index | Name |
-|-------|------|
-| 0 | WAVEFORM |
-| 1 | FORMANT |
-| 2 | BANDS |
-| 3 | MIX |
+`0` WAVEFORM · `1` FORMANT · `2` BANDS · `3` MIX
 
 #### `voltage`
-| Index | Name |
-|-------|------|
-| 0 | MODULATION |
-| 1 | GROUND NOISE |
-| 2 | PHASE FILTER |
-| 3 | DETUNE |
+`0` MODULATION · `1` GROUND NOISE · `2` PHASE FILTER · `3` DETUNE
 
 ---
 
-### FX types
+### FX
 
 #### `cwo`
-| Index | Name |
-|-------|------|
-| 0 | FREQUENCY |
-| 1 | DELAY |
-| 2 | FEEDBACK |
-| 3 | SIDEBAND |
+`0` FREQUENCY · `1` DELAY · `2` FEEDBACK · `3` SIDEBAND
 
 #### `delay`
-| Index | Name |
-|-------|------|
-| 0 | RANGE |
-| 1 | SPEED |
-| 2 | FEEDBACK |
-| 3 | LEVEL |
+`0` RANGE · `1` SPEED · `2` FEEDBACK · `3` LEVEL
 
 #### `grid`
-| Index | Name |
-|-------|------|
-| 0 | X SIZE |
-| 1 | Y SIZE |
-| 2 | Z FEEDBACK |
-| 3 | MIX |
+`0` X SIZE · `1` Y SIZE · `2` Z FEEDBACK · `3` MIX
 
 #### `mother`
-| Index | Name |
-|-------|------|
-| 0 | DISTANCE |
-| 1 | GATE |
-| 2 | COLOR |
-| 3 | MIX |
+`0` DISTANCE · `1` GATE · `2` COLOR · `3` MIX
 
 #### `nitro`
-| Index | Name |
-|-------|------|
-| 0 | FREQUENCY LOWS |
-| 1 | FILTER FOLLOW |
-| 2 | FEEDBACK |
-| 3 | FREQUENCY HIGHS |
+`0` FREQUENCY LOWS · `1` FILTER FOLLOW · `2` FEEDBACK · `3` FREQUENCY HIGHS
 
 #### `phone`
-| Index | Name |
-|-------|------|
-| 0 | TONE |
-| 1 | GSM |
-| 2 | BAUD |
-| 3 | TELEMATIC |
+`0` TONE · `1` GSM · `2` BAUD · `3` TELEMATIC
 
 #### `punch`
-| Index | Name |
-|-------|------|
-| 0 | FREQUENCY |
-| 1 | PUNCH |
-| 2 | ROUNDS |
-| 3 | POWER |
+`0` FREQUENCY · `1` PUNCH · `2` ROUNDS · `3` POWER
 
 #### `spring`
-| Index | Name |
-|-------|------|
-| 0 | TONE |
-| 1 | TURNS |
-| 2 | DAMPING |
-| 3 | MIX |
+`0` TONE · `1` TURNS · `2` DAMPING · `3` MIX
 
 #### `terminal`
-| Index | Name |
-|-------|------|
-| 0 | FREQUENCY |
-| 1 | BITS |
-| 2 | MODEL |
-| 3 | MIX |
+`0` FREQUENCY · `1` BITS · `2` MODEL · `3` MIX
 
 ---
 
-### LFO types
+### LFO
 
 #### `element`
-| Index | Name |
-|-------|------|
-| 0 | SOURCE |
-| 1 | AMOUNT |
-| 2 | DESTINATION |
-| 3 | PARAMETER |
+`0` SOURCE · `1` AMOUNT · `2` DESTINATION · `3` PARAMETER
 
 #### `midi`
-| Index | Name |
-|-------|------|
-| 0 | PARAMETER 1 |
-| 1 | PARAMETER 2 |
-| 2 | PARAMETER 3 |
-| 3 | PARAMETER 4 |
-| 4 | DESTINATION 1 |
-| 5 | DESTINATION 2 |
-| 6 | DESTINATION 3 |
-| 7 | DESTINATION 4 |
+`0` PARAMETER 1 · `1` PARAMETER 2 · `2` PARAMETER 3 · `3` PARAMETER 4  
+`4` DESTINATION 1 · `5` DESTINATION 2 · `6` DESTINATION 3 · `7` DESTINATION 4
 
 #### `random`
-| Index | Name |
-|-------|------|
-| 0 | SPEED |
-| 1 | AMOUNT |
-| 2 | DESTINATION |
-| 3 | ENVELOPE |
-| 4 | PARAMETER |
+`0` SPEED · `1` AMOUNT · `2` DESTINATION · `3` ENVELOPE · `4` PARAMETER
 
 #### `tremolo`
-| Index | Name |
-|-------|------|
-| 0 | SPEED |
-| 1 | PITCH AMOUNT |
-| 2 | VOLUME LEVEL |
-| 3 | PITCH ENVELOPE |
-| 7 | LFO SHAPE |
+`0` SPEED · `1` PITCH AMOUNT · `2` VOLUME LEVEL · `3` PITCH ENVELOPE · `7` LFO SHAPE
 
 #### `value`
-| Index | Name |
-|-------|------|
-| 0 | SPEED |
-| 1 | AMOUNT |
-| 2 | DESTINATION |
-| 3 | PARAMETER |
-| 4 | LFO SHAPE |
+`0` SPEED · `1` AMOUNT · `2` DESTINATION · `3` PARAMETER · `4` LFO SHAPE
 
 #### `velocity`
-| Index | Name |
-|-------|------|
-| 0 | DESTINATION AMOUNT |
-| 1 | VOLUME AMOUNT |
-| 2 | DESTINATION |
-| 3 | PARAMETER |
+`0` DESTINATION AMOUNT · `1` VOLUME AMOUNT · `2` DESTINATION · `3` PARAMETER
 
 ---
 
@@ -516,17 +351,13 @@ Reads all parsed presets and produces a grouped discovery report.
 .\summarize.ps1
 ```
 
-- No parameters
 - **Prerequisite:** run `dump-all.bat` first to generate the `.json` sidecars
 - Reads: `presets/*.json`, `op1-params.json`, `op1-params-ok.json`
 - Output sections: **Synth Engines**, **FX**, **LFO** — each type shows:
   - Mapping status tag and per-knob min/max raw + normalized ranges + patch count
   - How many patches have that engine/fx/lfo active
-- Color coding:
-  - Green — all params named and hardware-verified
-  - Yellow — type known but some params unnamed or unverified
-  - Red — type not in `op1-params.json` at all
-- Trailing **"Missing from op1-params.json"** section prints the exact stub lines to paste in
+- Color coding: green = all params named and verified · yellow = some unnamed or unverified · red = type not in `op1-params.json`
+- Trailing **"Missing from op1-params.json"** section prints exact stub lines to paste in
 
 ### `diff-patches.ps1`
 
@@ -544,7 +375,6 @@ Diffs two patch files and shows exactly which fields and array indices changed.
 - Both `-FileA` and `-FileB` are required (positional, no flag name needed)
 - Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it — run `op1dump.exe` first if the sidecar is missing
 - Skips `name`, `mtime`, and `_file` automatically (they always differ between snapshots)
-- For scalar fields: prints before/after values
 - For array fields: lists each changed index with before → after and signed delta (`+N` / `-N`)
 - Prints "No differences" if the patches are identical (excluding skipped fields)
 
