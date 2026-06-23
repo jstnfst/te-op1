@@ -292,7 +292,7 @@
     ['synth.string', 0, 'TENSION',      'linear',    [[64,'min'],[3392, 10],[8256,'max']], 'hardware min=64, max=8256 (oracle); narrow range'],
     ['synth.string', 1, 'DECAY',         'nonlinear', [[24064, 'max']],    'max at raw 24064; hardware min=512 (not 0); silence below min'],
     ['synth.string', 2, 'DETUNE',       'linear',    [[16384, 50]],       ''],
-    ['synth.string', 3, 'IMPULSE TYPE', 'selector',  [[8256,'min']],      'hardware min=8256; selector-like (not linear %)'],
+    ['synth.string', 3, 'IMPULSE TYPE', '%',          [[8256,0],[16448,100]], 'linear %; hardware min=8256, max=16448 (oracle)'],
 
     // synth.vocoder — index 3 MIX max confirmed (synthmax(11).aif)
     ['synth.vocoder', 0, 'WAVEFORM', 'selector', [[0, 'S']],  '8 options: S,1,2,3,4,5,6,N'],
@@ -417,7 +417,6 @@
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
     // low — structural unknowns; possibly firmware-managed or non-standard encoding
-    { priority:'low', key:'synth.string 3 IMPULSE TYPE encoding',  reason:'non-standard selector encoding; not 1024-based' },
     { priority:'low', key:'synth.pulse 3 MODULATION negative',     reason:'negative-side display value unknown; sample shows [[-6144, "?"]]' },
     { priority:'low', key:'synth.dna 0 FILTER formula',            reason:'bipolar; hardware min=−29491 (~−90%); exact formula undetermined' },
   ];

@@ -201,7 +201,7 @@ parameter type.
 | 0 | TENSION | `%` | Hardware min=64, hardware max=8256 (narrow raw range) |
 | 1 | DECAY | `max~24064` | Hardware min=512, hardware max=24064 (not 32767); similar to drwave |
 | 2 | DETUNE | `%` | Hardware max=16384; 16384 → 100% display |
-| 3 | IMPULSE TYPE | `selector` | Hardware min=8256, hardware max=16448 |
+| 3 | IMPULSE TYPE | `%` | linear %; hardware min=8256, max=16448 (oracle) |
 
 ### fx.grid
 | Index | Name | Scale | Notes |
