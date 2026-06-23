@@ -12,3 +12,6 @@
 
 # external dependency clones — source is vendored into the repo root
 /repos/
+/explore-minmax/
+*.exp
+*.lib
