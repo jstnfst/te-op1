@@ -221,7 +221,7 @@
     ['synth.amp', 3, 'DRIVE',      'linear',   [[16384, 50]], 'confirmed linear % (oracle capture 12)'],
 
     // synth.cluster — oracle min (min0) + max (synthmax(2)) confirmed
-    ['synth.cluster', 0, 'WAVES',    'linear',   [[3072,'min'],[17408,'max']], 'hardware min=3072, max=17408 (oracle); does not span full 0–32767'],
+    ['synth.cluster', 0, 'WAVE NUMBER', 'linear',   [[3072,'min'],[17408,'max']], 'hardware min=3072, max=17408 (oracle); does not span full 0–32767'],
     ['synth.cluster', 1, 'WAVE ENV', 'linear',   [[0,'min'],[32767,'max']], 'hardware min=0, max=32767 (oracle)'],
     ['synth.cluster', 2, 'SPREAD',   'linear',   [[512,'min'],[24064,'max']], 'hardware min=512, max=24064 (oracle); does not span full 0–32767'],
     ['synth.cluster', 3, 'UNITOR',   'selector', [[3,'min'],[1638,'max']], 'hardware min=3, max=1638 (oracle); selector-like encoding (not 0 or 1024)'],
@@ -235,8 +235,8 @@
     // synth.dimension
     ['synth.dimension', 0, 'WAVEFORM',    'linear', [], ''],
     ['synth.dimension', 1, 'STEREO',      'linear', [], ''],
-    ['synth.dimension', 2, 'FILTER FREQ', 'hz',     [[13742, '1320 Hz']], 'log Hz scale'],
-    ['synth.dimension', 3, 'RES',         'linear', [], ''],
+    ['synth.dimension', 2, 'FILTER CUTOFF FREQ', 'hz',     [[13742, '1320 Hz']], 'log Hz scale'],
+    ['synth.dimension', 3, 'RESONANCE',          'linear', [], ''],
 
     // synth.dna — oracle min confirmed (min2.aif)
     ['synth.dna', 0, 'FILTER',        'centered', [[-29491,'~-90%']], 'bipolar; hardware min=-29491 (not 0)'],
@@ -251,24 +251,20 @@
     ['synth.drwave', 3, 'CHORUS',               'discrete', [[0, 0],[32767, 99]],      '0–99 (100 steps)'],
 
     // synth.dsynth — all knobs linear 0–32767 (oracle min capture 1 + synthmax(7))
-    ['synth.dsynth', 0, 'ENV CROSSFADER',          'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 1, 'WAVEFORM',                'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 2, 'ENVELOPE',                'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 3, 'CROSS MODULATION',        'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 4, 'FREQUENCY',               'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 5, 'WAVEFORM',                'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 6, 'ENVELOPE',                'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
-    ['synth.dsynth', 7, 'FILTER CUTOFF FREQUENCY', 'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 0, 'ENVELOPE CROSSFADER', 'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 1, 'WAVEFORM 1',          'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 2, 'ENVELOPE 1',          'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 3, 'CROSS MODULATION',    'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 4, 'FREQUENCY',           'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 5, 'WAVEFORM 2',          'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 6, 'ENVELOPE 2',          'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
+    ['synth.dsynth', 7, 'CUTOFF',              'linear', [[0,'min'],[32767,'max']], 'linear knob; range 0–32767 (oracle)'],
 
-    // synth.fm — oracle min confirmed (min3.aif); indices 4-7 are unknown FM operator params
+    // synth.fm — oracle min confirmed (min3.aif); 4 params (indices 0–3 only)
     ['synth.fm', 0, 'FM AMOUNT',  'discrete', [[31743, 95]],          '0–99'],
     ['synth.fm', 1, 'FREQUENCY',  'discrete', [[17352, 52]],          '0–99'],
     ['synth.fm', 2, 'TOPOLOGY',   'selector', [[1024,'min'],[13312, 6],[17408,'max']],'hardware min=1024, max=17408 (oracle); 9 options; non-linear raw mapping'],
     ['synth.fm', 3, 'DETUNE',     'discrete', [[0, 0]],               '0–99'],
-    ['synth.fm', 4, '(unknown)',  'unknown',  [[15000,'fixed']],       'FM operator param; always 15000 in observed presets'],
-    ['synth.fm', 5, '(unknown)',  'unknown',  [[0,'fixed']],           'FM operator param; always 0 in observed presets'],
-    ['synth.fm', 6, '(unknown)',  'unknown',  [[100,'fixed']],         'FM operator param; always 100 in observed presets'],
-    ['synth.fm', 7, '(unknown)',  'unknown',  [[1500,'fixed']],        'FM operator param; always 1500 in observed presets'],
 
     // synth.phase
     ['synth.phase', 0, 'PHASE SHIFT',       'linear', [[0, 0]],       ''],
@@ -279,7 +275,7 @@
     // synth.pulse
     ['synth.pulse', 0, 'FILTER',       'linear',   [[18848, 57]],  'hardware max=23168 (oracle synthmax(10))'],
     ['synth.pulse', 1, 'AMPLITUDE',    'linear',   [[3984, 12]],   'hardware max=16384 (oracle)'],
-    ['synth.pulse', 2, 'SECOND PULSE', 'linear',   [[10752, 33]],  'hardware max=16384 (oracle)'],
+    ['synth.pulse', 2, 'PULSE TWO',    'linear',   [[10752, 33]],  'hardware max=16384 (oracle)'],
     ['synth.pulse', 3, 'MODULATION',   'centered', [[-6144, '?']], 'bipolar; hardware max=16384 positive side (oracle)'],
 
     // synth.sampler
@@ -294,8 +290,8 @@
 
     // synth.string — oracle min confirmed (min4.aif)
     ['synth.string', 0, 'TENSION',      'linear',    [[64,'min'],[3392, 10],[8256,'max']], 'hardware min=64, max=8256 (oracle); narrow range'],
-    ['synth.string', 1, 'IMPULSE',      'nonlinear', [[24064, 'max']],    'max at raw 24064; hardware min=512 (not 0); silence below min'],
-    ['synth.string', 2, 'STEREO',       'linear',    [[16384, 50]],       ''],
+    ['synth.string', 1, 'DECAY',         'nonlinear', [[24064, 'max']],    'max at raw 24064; hardware min=512 (not 0); silence below min'],
+    ['synth.string', 2, 'DETUNE',       'linear',    [[16384, 50]],       ''],
     ['synth.string', 3, 'IMPULSE TYPE', 'selector',  [[8256,'min']],      'hardware min=8256; selector-like (not linear %)'],
 
     // synth.vocoder
@@ -305,10 +301,10 @@
     ['synth.vocoder', 3, 'MIX',      'linear',   [[0, 0]],    ''],
 
     // synth.voltage — confirmed linear % (oracle captures 13+14)
-    ['synth.voltage', 0, 'MODULATION',   'linear', [[16383, 50],[26623, 81]], 'confirmed linear % (oracle captures 13+14)'],
-    ['synth.voltage', 1, 'GROUND NOISE', 'linear', [[14336, 44],[26623, 81]], 'confirmed linear % (oracle captures 13+14)'],
-    ['synth.voltage', 2, 'PHASE FILTER', 'linear', [[20992, 64],[29183, 89]], 'confirmed linear % (oracle captures 13+14)'],
-    ['synth.voltage', 3, 'DETUNE',       'linear', [[16384, 50],[26112, 80]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 0, 'AMPERE MODULATION', 'linear', [[16383, 50],[26623, 81]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 1, 'GROUND NOISE',      'linear', [[14336, 44],[26623, 81]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 2, 'PHASE FILTER',      'linear', [[20992, 64],[29183, 89]], 'confirmed linear % (oracle captures 13+14)'],
+    ['synth.voltage', 3, 'VOLTAGE DETUNE',    'linear', [[16384, 50],[26112, 80]], 'confirmed linear % (oracle captures 13+14)'],
 
     // fx.cwo
     ['fx.cwo', 0, 'FREQUENCY', 'linear', [[16366, 50]], '~linear; raw 16366→50%'],
