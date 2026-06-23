@@ -241,7 +241,7 @@
     // synth.dna — oracle min confirmed (min2.aif)
     ['synth.dna', 0, 'FILTER',        'centered', [[-29491,'~-90%']], 'bipolar; hardware min=-29491 (not 0)'],
     ['synth.dna', 1, 'WAVE NUMBER',   'linear',   [[4608,'min'],[12800,'max']], 'hardware min=4608, max=12800 (oracle synthmax(5)); limited range'],
-    ['synth.dna', 2, 'WAVE MODIFIER', 'linear',   [], 'max=32767'],
+    ['synth.dna', 2, 'WAVE MODIFIER', 'linear',   [[32767,'max']], 'hardware max=32767 (notes)'],
     ['synth.dna', 3, 'NOISE',         'linear',   [], ''],
 
     // synth.drwave
@@ -279,14 +279,14 @@
     ['synth.pulse', 3, 'MODULATION',   'centered', [[-6144, '?']], 'bipolar; hardware max=16384 positive side (oracle)'],
 
     // synth.sampler
-    ['synth.sampler', 0, 'START',     'linear',   [[0, 0]],              ''],
-    ['synth.sampler', 1, 'LOOP IN',   'linear',   [[9821, 30]],          ''],
-    ['synth.sampler', 2, 'LOOP OUT',  'linear',   [[18033, 55]],         ''],
-    ['synth.sampler', 3, 'END',       'linear',   [[31301, 96]],         ''],
-    ['synth.sampler', 4, 'DIRECTION', 'selector', [[12000, 'forward']], 'forward / reverse; larger raw = reverse'],
-    ['synth.sampler', 5, 'FINE TUNE', 'linear',   [[30195, 92]],         ''],
-    ['synth.sampler', 6, 'LOOP FADE', 'linear',   [[9103, 28]],          ''],
-    ['synth.sampler', 7, 'GAIN',      'linear',   [[8192, 25]],          ''],
+    ['synth.sampler', 0, 'START',     'linear',   [[0,'min'],[32766,'max']],              'linear %; hardware min=0, max=32766 (notes)'],
+    ['synth.sampler', 1, 'LOOP IN',   'linear',   [[0,'min'],[9821,30],[32767,'max']],    'linear %; raw 9821≈30% (notes, approx)'],
+    ['synth.sampler', 2, 'LOOP OUT',  'linear',   [[0,'min'],[18033,55],[32767,'max']],   'linear %; raw 18033≈55% (notes, approx)'],
+    ['synth.sampler', 3, 'END',       'linear',   [[0,'min'],[31301,96],[32767,'max']],   'linear %; raw 31301≈96% (notes, approx)'],
+    ['synth.sampler', 4, 'DIRECTION', 'selector', [[12000, 'forward']],                  'forward / reverse; larger raw = reverse'],
+    ['synth.sampler', 5, 'FINE TUNE', 'linear',   [[0,'min'],[30195,92],[32767,'max']],   'linear %; raw 30195≈92% (notes, approx)'],
+    ['synth.sampler', 6, 'LOOP FADE', 'linear',   [[0,'min'],[9103,28],[32767,'max']],    'linear %; raw 9103≈28% (notes, approx)'],
+    ['synth.sampler', 7, 'GAIN',      'linear',   [[0,'min'],[8192,25],[32767,'max']],    'linear %; raw 8192≈25%; hardware max=32767 (notes)'],
 
     // synth.string — oracle min confirmed (min4.aif)
     ['synth.string', 0, 'TENSION',      'linear',    [[64,'min'],[3392, 10],[8256,'max']], 'hardware min=64, max=8256 (oracle); narrow range'],
@@ -363,18 +363,18 @@
     // lfo.element
     ['lfo.element', 0, 'SOURCE',      'selector', [[2000,'gravity sensor']], 'seen: envelope, gravity sensor'],
     ['lfo.element', 1, 'AMOUNT',      'centered', [[-13743,-41],[6245,19],[8265,25],[32767,100]], '-100 to +100'],
-    ['lfo.element', 2, 'DESTINATION', 'selector', [], 'seen: synthesizer / synth'],
-    ['lfo.element', 3, 'PARAMETER',   'selector', [], 'context-dep on DESTINATION+synth type; seen: cutoff, filter, crossfade, tilt'],
+    ['lfo.element', 2, 'DESTINATION', 'selector', [[1024,'synth'],[7168,'mix']], 'selector-4: synth/envelope/fx/mix; 1024=synth (confirmed), max=7168 (oracle); same encoding as lfo.velocity DESTINATION'],
+    ['lfo.element', 3, 'PARAMETER',   'selector', [[1024,'min'],[15360,'max']], 'context-dep on DESTINATION+synth type; 4-param synths: 1024/4864/8704/15360 (confirmed cluster, predicted others); 8-param: 1024/2944/4384/6304/8224/10624/13024/15360 (confirmed dsynth, predicted sampler)'],
 
     // lfo.midi
     ['lfo.midi', 0, 'PARAMETER 1',   'selector', [[1024, 1]],           '1–4; selects target knob'],
-    ['lfo.midi', 1, 'PARAMETER 2',   'selector', [[5824, 2]],           ''],
-    ['lfo.midi', 2, 'PARAMETER 3',   'selector', [[10144, 3]],          ''],
-    ['lfo.midi', 3, 'PARAMETER 4',   'selector', [[15360, 4]],          ''],
-    ['lfo.midi', 4, 'DESTINATION 1', 'selector', [[1024,'synth']],      'options: synth, envelope, fx, sound output'],
-    ['lfo.midi', 5, 'DESTINATION 2', 'selector', [[2144,'envelope']],   ''],
-    ['lfo.midi', 6, 'DESTINATION 3', 'selector', [[4384,'fx']],         ''],
-    ['lfo.midi', 7, 'DESTINATION 4', 'selector', [[7168,'sound output']],''],
+    ['lfo.midi', 1, 'PARAMETER 2',   'selector', [[5824, 2]],            'inferred: same selector as idx 0 (PARAMETER 1=raw 1024→1)'],
+    ['lfo.midi', 2, 'PARAMETER 3',   'selector', [[10144, 3]],           'inferred'],
+    ['lfo.midi', 3, 'PARAMETER 4',   'selector', [[15360, 4]],           'inferred'],
+    ['lfo.midi', 4, 'DESTINATION 1', 'selector', [[1024,'synth']],       'options: synth, envelope, fx, sound output'],
+    ['lfo.midi', 5, 'DESTINATION 2', 'selector', [[2144,'envelope']],    'inferred: same selector as idx 4 (DESTINATION 1=raw 1024→synth)'],
+    ['lfo.midi', 6, 'DESTINATION 3', 'selector', [[4384,'fx']],          'inferred'],
+    ['lfo.midi', 7, 'DESTINATION 4', 'selector', [[7168,'sound output']], 'inferred'],
 
     // lfo.random
     ['lfo.random', 0, 'SPEED',       'tempo',    [[4952, 6]],    ''],
@@ -404,18 +404,48 @@
     ['lfo.velocity', 3, 'PARAMETER',    'selector', [[15360,'telematic']],                          'context-dep on DESTINATION+synth; "telematic" when dest=fx/phone'],
 
     // adsr — global keyboard settings (oracle probes adsr01–adsr11, bendrange 1–3, 2026-06-23)
-    ['adsr', 0, 'ATTACK',     'linear',   [[64,'min'],[16320,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16320'],
-    ['adsr', 1, 'DECAY',      'linear',   [[64,'min'],[16320,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16320'],
+    ['adsr', 0, 'ATTACK',     'linear',   [[64,'min'],[16320,'max']], 'oracle range confirmed (min=64, probe max=16320); display unit unknown (ms/s?)'],
+    ['adsr', 1, 'DECAY',      'linear',   [[64,'min'],[16320,'max']], 'oracle range confirmed (min=64, probe max=16320); display unit unknown (ms/s?)'],
     ['adsr', 2, 'SUSTAIN',    'linear',   [[0,'min'],[32767,'max']], 'continuous; hardware min=0, max=32767'],
-    ['adsr', 3, 'RELEASE',    'linear',   [[64,'min'],[16320,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16320'],
+    ['adsr', 3, 'RELEASE',    'linear',   [[64,'min'],[16320,'max']], 'oracle range confirmed (min=64, probe max=16320); display unit unknown (ms/s?)'],
     ['adsr', 4, 'PLAY MODE',  'selector', [[2048,'poly'],[6140,'mono'],[9209,'legato'],[14336,'unison']], 'selector-4: poly / mono / legato / unison'],
-    ['adsr', 5, 'PORTAMENTO', 'linear',   [[64,'min'],[16448,'max']], 'continuous; display scale unconfirmed; hardware min=64, probe max=16448'],
+    ['adsr', 5, 'PORTAMENTO', 'linear',   [[64,'min'],[16448,'max']], 'oracle range confirmed (min=64, probe max=16448); display unit unknown'],
     ['adsr', 6, 'BEND RANGE', 'selector', [[2048,'1 st'],[5117,'2 st'],[9209,'4 st'],[13301,'7 st'],[18432,'oct']], 'selector-5: 1 / 2 / 4 / 7 semitones / octave'],
     ['adsr', 7, 'VOLUME',     'discrete', [[3276,10],[32767,100]], '1–100; raw ≈ floor(N × 32767 / 100)'],
   ];
 
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
+    // high — no sample points; need oracle capture
+    { priority:'high', key:'synth.digital 0 WAVE SHAPER',        reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'synth.digital 3 DIGITALNESS',         reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'synth.dimension 0 WAVEFORM',          reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'synth.dimension 1 STEREO',            reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'synth.dimension 3 RESONANCE',         reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'synth.dna 3 NOISE',                   reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'synth.phase 0/2/3 PHASE params',      reason:'only raw-0 anchor; max and display mapping unknown; need oracle capture' },
+    { priority:'high', key:'synth.vocoder 3 MIX',                 reason:'only raw-0 anchor; max and display mapping unknown' },
+    { priority:'high', key:'fx.delay 3 LEVEL',                    reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'fx.grid 3 MIX',                       reason:'no sample points; need oracle capture' },
+    { priority:'high', key:'lfo.value 2 DESTINATION',             reason:'no sample points; need oracle capture (encoding may match lfo.element DESTINATION)' },
+    { priority:'high', key:'lfo.value 3 PARAMETER',               reason:'no sample points; context-dependent selector' },
+    // medium — inferred data or confirmed range but incomplete display mapping
+    { priority:'medium', key:'lfo.midi 1-3 PARAMETER 2/3/4',      reason:'raw values inferred from PARAMETER 1 pattern; unconfirmed on hardware' },
+    { priority:'medium', key:'lfo.midi 5-7 DESTINATION 2/3/4',    reason:'raw values inferred from DESTINATION 1 pattern; unconfirmed on hardware' },
+    { priority:'medium', key:'lfo.element 3 PARAMETER predictions',reason:'4-param selector confirmed only for cluster; 8-param confirmed only for dsynth; all others predicted' },
+    { priority:'medium', key:'adsr 0 ATTACK display unit',         reason:'oracle range confirmed (64–16320); display unit (ms/s?) unknown' },
+    { priority:'medium', key:'adsr 1 DECAY display unit',          reason:'oracle range confirmed (64–16320); display unit unknown' },
+    { priority:'medium', key:'adsr 3 RELEASE display unit',        reason:'oracle range confirmed (64–16320); display unit unknown' },
+    { priority:'medium', key:'adsr 5 PORTAMENTO display unit',     reason:'oracle range confirmed (64–16448); display unit unknown' },
+    { priority:'medium', key:'synth.sampler explore preset',       reason:'hardware sampler presets include base_freq/fade/stereo fields absent from explore presets — may not load on hardware' },
+    // low — structural unknowns; possibly firmware-managed or non-standard encoding
+    { priority:'low', key:'synth.fm 4-7',                          reason:'fixed at 15000/0/100/1500 in all captures; likely firmware-managed' },
+    { priority:'low', key:'fx.phone/punch/grid/spring 4-7',        reason:'fixed at 8000 in all captures; purpose unknown' },
+    { priority:'low', key:'synth.drwave 4',                        reason:'hardware max=32000, non-zero at max; purpose unknown' },
+    { priority:'low', key:'synth.cluster 3 UNITOR encoding',       reason:'non-standard selector (min=3, max=1638); intermediate values unknown' },
+    { priority:'low', key:'synth.string 3 IMPULSE TYPE encoding',  reason:'non-standard selector encoding; not 1024-based' },
+    { priority:'low', key:'synth.pulse 3 MODULATION negative',     reason:'negative-side display value unknown; sample shows [[-6144, "?"]]' },
+    { priority:'low', key:'synth.dna 0 FILTER formula',            reason:'bipolar; hardware min=−29491 (~−90%); exact formula undetermined' },
   ];
 
   // ── RENDER: LEGEND ──────────────────────────────────────
