@@ -451,8 +451,8 @@ static int run_explore(int vel_dest_raw, int vel_param) {
             for (mi = 0; mi < 2; mi++) {
                 const char *mode = MODES[mi];
                 char aif_dir[512], json_dir[512];
-                snprintf(aif_dir,  sizeof(aif_dir),  "explore\\aif\\%s\\%s\\%s",  mode, synth, lfo);
-                snprintf(json_dir, sizeof(json_dir), "explore\\json\\%s\\%s\\%s", mode, synth, lfo);
+                snprintf(aif_dir,  sizeof(aif_dir),  "explore\\aif\\%s\\%s",  mode, synth);
+                snprintf(json_dir, sizeof(json_dir), "explore\\json\\%s\\%s", mode, synth);
                 make_dirs(aif_dir);
                 make_dirs(json_dir);
 
