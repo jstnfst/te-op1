@@ -328,11 +328,11 @@
     ['fx.grid', 2, 'Z FEEDBACK', 'discrete', [[23248, 72]], '0–99; ~linear'],
     ['fx.grid', 3, 'MIX',        'linear',   [],            ''],
 
-    // fx.mother — no display notes
-    ['fx.mother', 0, 'DISTANCE', 'linear', [], 'no display notes; assumed linear'],
-    ['fx.mother', 1, 'GATE',     'linear', [], 'no display notes; assumed linear'],
-    ['fx.mother', 2, 'COLOR',    'linear', [], 'no display notes; assumed linear'],
-    ['fx.mother', 3, 'MIX',      'linear', [], 'no display notes; assumed linear'],
+    // fx.mother — capture 12: amp at 50% with mother FX at preset position
+    ['fx.mother', 0, 'DISTANCE', 'linear', [[19041, 58]], 'inferred linear %; 19041→58 from capture 12 preset position'],
+    ['fx.mother', 1, 'GATE',     'linear', [[0, 0]],      'hardware min=0 confirmed (capture 12)'],
+    ['fx.mother', 2, 'COLOR',    'linear', [[9832, 30]],  'inferred linear %; 9832→30 from capture 12 preset position'],
+    ['fx.mother', 3, 'MIX',      'linear', [[10826, 33]], 'inferred linear %; 10826→33 from capture 12 preset position'],
 
     // fx.nitro — oracle fx2 (min), fx-max(1) (max)
     ['fx.nitro', 0, 'FREQUENCY LOWS',  'linear',   [[64,'min'],[16448,'max']], 'hardware min=64, max=16448 (oracle)'],
@@ -340,11 +340,11 @@
     ['fx.nitro', 2, 'FEEDBACK',        'linear',   [[0,'min'],[20643,'max']], 'hardware max=20643 (oracle); does not reach 32767'],
     ['fx.nitro', 3, 'FREQUENCY HIGHS', 'linear',   [[64,'min'],[16448,'max']], 'hardware min=64, max=16448 (oracle)'],
 
-    // fx.phone — oracle fx3 (min), fx-max(7) (max); names confirmed by op1dump
-    ['fx.phone', 0, 'TONE',     'linear', [[204,'min'],[20480,'max']], 'hardware min=204, max=20480 (oracle)'],
-    ['fx.phone', 1, 'GSM',      'linear', [[3072,'min'],[17408,'max']], 'hardware min=3072, max=17408 (oracle)'],
-    ['fx.phone', 2, 'BAUD',     'linear', [[1536,'min'],[16896,'max']], 'hardware min=1536, max=16896 (oracle)'],
-    ['fx.phone', 3, 'TELEMATIC','linear', [[0, 0],[32767,'max']], 'full 0–32767 range (oracle)'],
+    // fx.phone — oracle fx3 (min), fx-max(7) (max), captures (10-11) confirm linear %
+    ['fx.phone', 0, 'TONE',     'linear', [[204,'min'],[5458,26],[10522,51],[20480,'max']], 'confirmed linear % (captures 10+11); display=(raw-204)/20276×100'],
+    ['fx.phone', 1, 'GSM',      'linear', [[3072,'min'],[6712,26],[10352,51],[17408,'max']], 'confirmed linear % (captures 10+11); display=(raw-3072)/14336×100'],
+    ['fx.phone', 2, 'BAUD',     'linear', [[1536,'min'],[5466,26],[9426,52],[16896,'max']], 'confirmed linear % (captures 10+11); display=(raw-1536)/15360×100'],
+    ['fx.phone', 3, 'TELEMATIC','linear', [[0,0],[8441,26],[16876,52],[32767,'max']], 'confirmed linear % (captures 10+11); full 0–32767 range'],
 
     // fx.punch
     ['fx.punch', 0, 'FREQUENCY', 'hz',       [],                     'log Hz scale; non-linear — need calibration data'],
@@ -388,7 +388,7 @@
     ['lfo.random', 4, 'PARAMETER',   'selector', [[0,'freq']],   'context-dep on DESTINATION; raw 0="freq" when dest=fx'],
 
     // lfo.tremolo
-    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [[0,'min'],[32440,'max']], 'hardware min=0, max=32440 (oracle); display unit unknown — no raw→BPM pairs captured'],
+    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [[0,'min'],[2943,'?'],[4576,'?'],[12751,'?'],[16348,'?'],[22228,'?'],[29422,'?'],[32440,'max']], '8-position hardware sweep (captures 2–9); BPM display values not recorded'],
     ['lfo.tremolo', 1, 'PITCH AMOUNT',   'centered', [[985,'~3%'],[2264,'~7%']],'bipolar -100 to +100'],
     ['lfo.tremolo', 2, 'VOLUME LEVEL',   'centered', [[-12759,-38]],            '-100 to +100'],
     ['lfo.tremolo', 3, 'PITCH ENVELOPE', 'linear',   [[4592,14],[12136,37]],    ''],
@@ -411,14 +411,13 @@
   // ── GAPS (priority items for further research) ──────────
   const GAPS = [
     { priority: 'high',   key: 'synth.dsynth',    reason: 'Hardware min=0 confirmed for all 8 params. Scale type for all 8 knobs still unknown — no display readings. Likely: WAVEFORM=selector, FREQUENCY/FILTER=hz, others=linear or discrete.' },
-    { priority: 'medium', key: 'fx.phone scale',  reason: 'Param names and hardware min/max confirmed by oracle. Display scale type assumed linear (%) but not formally verified — a raw→% snapshot would confirm.' },
     { priority: 'medium', key: 'fx.punch FREQ',   reason: 'Scale type is log Hz but no calibration samples recorded. Need at least 3 raw→Hz pairs to characterize the curve.' },
     { priority: 'medium', key: 'lfo.*.SPEED',     reason: 'Raw range confirmed: tremolo 0–32440, value 0–16384. Display unit (BPM or clock division) still uncharacterized — no raw→display pairs recorded.' },
     { priority: 'medium', key: 'lfo.element PARAM','reason': 'Selector options are context-dependent on both DESTINATION and the loaded synth type. Need a matrix of (destination × synth type) to enumerate.' },
     { priority: 'medium', key: 'synth.drwave [0]', reason: 'WAVE TYPE AND LENGTH internal max is ~24400 (not 32767). The encoding packs wave type + length together — how the bits are split is unknown.' },
     { priority: 'low',    key: 'synth.cluster',    reason: 'Oracle min+max confirmed for all 4 params. Scale types partially inferred — WAVES/WAVE ENV/SPREAD assumed linear %, UNITOR is selector-like. Need display readings to confirm.' },
     { priority: 'low',    key: 'synth.fm [4–7]',  reason: 'Four extra knob indices (4–7) with fixed values (15000, 0, 100, 1500) observed in all presets. Their meaning (FM operator levels/envelope?) is unknown.' },
-    { priority: 'low',    key: 'fx.mother',        reason: 'No display notes. All 4 params assumed linear. Needs a single before/after snapshot to confirm.' },
+    { priority: 'low',    key: 'fx.mother',        reason: 'GATE=0 confirmed. DISTANCE/COLOR/MIX have inferred values from capture 12 preset position (linear % assumed). No deliberate calibration snapshot taken.' },
   ];
 
   // ── RENDER: LEGEND ──────────────────────────────────────

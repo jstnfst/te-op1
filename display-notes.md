@@ -66,10 +66,10 @@ parameter type.
 ### fx.phone
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | TONE | `%` | Hardware min=204, hardware max=20480 |
-| 1 | GSM | `%` | Hardware min=3072, hardware max=17408 |
-| 2 | BAUD | `%` | Hardware min=1536, hardware max=16896 |
-| 3 | TELEMATIC | `%` | Hardware min=0, hardware max=32767 |
+| 0 | TONE | `%` | Confirmed linear %; display=(raw−204)/20276×100; 5458→26, 10522→51 (oracle captures 10+11) |
+| 1 | GSM | `%` | Confirmed linear %; display=(raw−3072)/14336×100; 6712→26, 10352→51 (oracle captures 10+11) |
+| 2 | BAUD | `%` | Confirmed linear %; display=(raw−1536)/15360×100; 5466→26, 9426→52 (oracle captures 10+11) |
+| 3 | TELEMATIC | `%` | Confirmed linear %; full 0–32767 range; 8441→26, 16876→52 (oracle captures 10+11) |
 | 4–7 | (unknown) | — | Fixed at 8000 in all observed presets |
 
 ### lfo.value
@@ -187,7 +187,7 @@ parameter type.
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial; hardware min=0, max=32440 (oracle); no raw→BPM pairs captured |
+| 0 | SPEED | `tempo-dial` | Non-linear tempo/BPM dial; hardware min=0, max=32440 (oracle); 8-position raw sweep captured: 0, 2943, 4576, 12751, 16348, 22228, 29422, 32440 — BPM display values not recorded |
 | 1 | PITCH AMOUNT | `centered %` | Bipolar -100 to +100; 985 → ~3%, 2264 → ~7% |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
