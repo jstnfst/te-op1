@@ -76,10 +76,10 @@ parameter type.
 ### synth.drwave
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVE TYPE AND LENGTH | `discrete-98` | 0–98; hardware max=24568; encodes wave type + length together; 14209 → 57 |
-| 1 | FILTER | `discrete-98` | 0–98; hardware max=16379; 11735 → 70 |
-| 2 | PHASE | `discrete-98` | 0–98; hardware max=16377; 8199 → 49 |
-| 3 | CHORUS | `discrete-99` | 0–99; 100 steps; 0 → 0 |
+| 0 | WAVE TYPE AND LENGTH | `discrete-98` | 0–98; hardware max=24568 (oracle synthmax(6)); encodes wave type + length together; 14209 → 57, 24568 → 98 |
+| 1 | FILTER | `discrete-98` | 0–98; hardware max=16379 (oracle); 11735 → 70, 16379 → 98 |
+| 2 | PHASE | `discrete-98` | 0–98; hardware max=16377 (oracle); 8199 → 49, 16377 → 98 |
+| 3 | CHORUS | `discrete-99` | 0–99; 100 steps; 0 → 0, 32767 → 99 |
 | 4 | (unknown) | — | hardware max=32000; non-zero at max position |
 
 ### fx.delay
@@ -126,7 +126,7 @@ parameter type.
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | PHASE SHIFT | `%` | 0 → min |
-| 1 | DISTORTION AMOUNT | `%` | 14310 → ~44%; hardware max=29491 (does not reach 32767) |
+| 1 | DISTORTION AMOUNT | `%` | 14310 → 44, 29491 → 90; hardware max=29491 (oracle synthmax(9)); does not reach 32767 |
 | 2 | PHASE FILTER | `%` | 0 → min |
 | 3 | PHASE TILT | `%` | 0 → min |
 

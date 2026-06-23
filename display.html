@@ -224,11 +224,11 @@
     ['synth.cluster', 0, 'WAVES',    'linear',   [], 'hardware min=3072 (knob does not reach 0)'],
     ['synth.cluster', 1, 'WAVE ENV', 'linear',   [], 'hardware min=0'],
     ['synth.cluster', 2, 'SPREAD',   'linear',   [], 'hardware min=512 (knob does not reach 0)'],
-    ['synth.cluster', 3, 'UNITOR',   'selector', [[3,'min']], 'hardware min=3; selector-like encoding (not 0 or 1024)'],
+    ['synth.cluster', 3, 'UNITOR',   'selector', [[3,'min'],[1638,'max']], 'hardware min=3, max=1638 (oracle synthmax(2)); selector-like encoding (not 0 or 1024)'],
 
     // synth.digital — oracle min confirmed (min1.aif)
     ['synth.digital', 0, 'WAVE SHAPER',    'linear',   [], ''],
-    ['synth.digital', 1, 'OCTAVE',         'discrete', [[19712, 4]], '0–6 inclusive; hardware min=2048 (not 0)'],
+    ['synth.digital', 1, 'OCTAVE',         'discrete', [[2048, 0],[19712, 4],[26624, 6]], '0–6 inclusive; hardware min=2048, max=26624 (oracle)'],
     ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-32768,'min'],[-10369, 33]], 'bipolar; hardware min=-32768'],
     ['synth.digital', 3, 'DIGITALNESS',    'linear',   [], ''],
 
@@ -240,15 +240,15 @@
 
     // synth.dna — oracle min confirmed (min2.aif)
     ['synth.dna', 0, 'FILTER',        'centered', [[-29491,'~-90%']], 'bipolar; hardware min=-29491 (not 0)'],
-    ['synth.dna', 1, 'WAVE NUMBER',   'linear',   [], 'hardware min=4608 (not 0)'],
+    ['synth.dna', 1, 'WAVE NUMBER',   'linear',   [[4608,'min'],[12800,'max']], 'hardware min=4608, max=12800 (oracle synthmax(5)); limited range'],
     ['synth.dna', 2, 'WAVE MODIFIER', 'linear',   [], 'max=32767'],
     ['synth.dna', 3, 'NOISE',         'linear',   [], ''],
 
     // synth.drwave
-    ['synth.drwave', 0, 'WAVE TYPE AND LENGTH', 'discrete', [[14209, 57]], '0–98; internal max ~24400 (not 32767); encodes wave type + length'],
-    ['synth.drwave', 1, 'FILTER',               'discrete', [[11735, 70]], '0–98; internal max 16383'],
-    ['synth.drwave', 2, 'PHASE',                'discrete', [[8199, 49]],  '0–98; internal max 16383'],
-    ['synth.drwave', 3, 'CHORUS',               'discrete', [[0, 0]],      '0–99 (100 steps)'],
+    ['synth.drwave', 0, 'WAVE TYPE AND LENGTH', 'discrete', [[14209, 57],[24568, 98]], '0–98; hardware max=24568 (oracle synthmax(6)); encodes wave type + length'],
+    ['synth.drwave', 1, 'FILTER',               'discrete', [[11735, 70],[16379, 98]], '0–98; hardware max=16379 (oracle)'],
+    ['synth.drwave', 2, 'PHASE',                'discrete', [[8199, 49],[16377, 98]],  '0–98; hardware max=16377 (oracle)'],
+    ['synth.drwave', 3, 'CHORUS',               'discrete', [[0, 0],[32767, 99]],      '0–99 (100 steps)'],
 
     // synth.dsynth — no display notes at all
     ['synth.dsynth', 0, 'ENV CROSSFADER',          'unknown', [], '', 'no display notes — needs characterization'],
@@ -272,15 +272,15 @@
 
     // synth.phase
     ['synth.phase', 0, 'PHASE SHIFT',       'linear', [[0, 0]],       ''],
-    ['synth.phase', 1, 'DISTORTION AMOUNT', 'linear', [[14310, 44]],  ''],
+    ['synth.phase', 1, 'DISTORTION AMOUNT', 'linear', [[14310, 44],[29491, 90]],  'hardware max=29491 (oracle synthmax(9)); does not reach 32767'],
     ['synth.phase', 2, 'PHASE FILTER',      'linear', [[0, 0]],       ''],
     ['synth.phase', 3, 'PHASE TILT',        'linear', [[0, 0]],       ''],
 
     // synth.pulse
-    ['synth.pulse', 0, 'FILTER',       'linear',   [[18848, 57]],  ''],
-    ['synth.pulse', 1, 'AMPLITUDE',    'linear',   [[3984, 12]],   ''],
-    ['synth.pulse', 2, 'SECOND PULSE', 'linear',   [[10752, 33]],  ''],
-    ['synth.pulse', 3, 'MODULATION',   'centered', [[-6144, '?']], 'bipolar; negative raw values'],
+    ['synth.pulse', 0, 'FILTER',       'linear',   [[18848, 57]],  'hardware max=23168 (oracle synthmax(10))'],
+    ['synth.pulse', 1, 'AMPLITUDE',    'linear',   [[3984, 12]],   'hardware max=16384 (oracle)'],
+    ['synth.pulse', 2, 'SECOND PULSE', 'linear',   [[10752, 33]],  'hardware max=16384 (oracle)'],
+    ['synth.pulse', 3, 'MODULATION',   'centered', [[-6144, '?']], 'bipolar; hardware max=16384 positive side (oracle)'],
 
     // synth.sampler
     ['synth.sampler', 0, 'START',     'linear',   [[0, 0]],              ''],
@@ -293,7 +293,7 @@
     ['synth.sampler', 7, 'GAIN',      'linear',   [[8192, 25]],          ''],
 
     // synth.string — oracle min confirmed (min4.aif)
-    ['synth.string', 0, 'TENSION',      'linear',    [[3392, 10]],        'hardware min=64 (not 0)'],
+    ['synth.string', 0, 'TENSION',      'linear',    [[64,'min'],[3392, 10],[8256,'max']], 'hardware min=64, max=8256 (oracle); narrow range'],
     ['synth.string', 1, 'IMPULSE',      'nonlinear', [[24064, 'max']],    'max at raw 24064; hardware min=512 (not 0); silence below min'],
     ['synth.string', 2, 'STEREO',       'linear',    [[16384, 50]],       ''],
     ['synth.string', 3, 'IMPULSE TYPE', 'selector',  [[8256,'min']],      'hardware min=8256; selector-like (not linear %)'],
@@ -334,17 +334,17 @@
     ['fx.mother', 2, 'COLOR',    'linear', [], 'no display notes; assumed linear'],
     ['fx.mother', 3, 'MIX',      'linear', [], 'no display notes; assumed linear'],
 
-    // fx.nitro
-    ['fx.nitro', 0, 'FREQUENCY LOWS',  'linear',   [[64, '~0%']], 'raw 64 = near min; effective min > 0'],
-    ['fx.nitro', 1, 'FILTER FOLLOW',   'centered', [[0, 0]],     '0 = neutral center (not min); bipolar'],
-    ['fx.nitro', 2, 'FEEDBACK',        'linear',   [[0, 0]],     ''],
-    ['fx.nitro', 3, 'FREQUENCY HIGHS', 'linear',   [],           'internal max ~18688 (not 32767)'],
+    // fx.nitro — oracle fx2 (min), fx-max(1) (max)
+    ['fx.nitro', 0, 'FREQUENCY LOWS',  'linear',   [[64,'min'],[16448,'max']], 'hardware min=64, max=16448 (oracle)'],
+    ['fx.nitro', 1, 'FILTER FOLLOW',   'centered', [[-32768,'min'],[0, 0],[32767,'max']], '0 = neutral center; bipolar; hardware min=-32768, max=32767 (oracle)'],
+    ['fx.nitro', 2, 'FEEDBACK',        'linear',   [[0,'min'],[20643,'max']], 'hardware max=20643 (oracle); does not reach 32767'],
+    ['fx.nitro', 3, 'FREQUENCY HIGHS', 'linear',   [[64,'min'],[16448,'max']], 'hardware min=64, max=16448 (oracle)'],
 
-    // fx.phone — oracle fx-max(7) confirmed names and hardware bounds
-    ['fx.phone', 0, 'TONE',     'linear', [[20480,'max']], 'hardware min=204, hardware max=20480'],
-    ['fx.phone', 1, 'GSM',      'linear', [[17408,'max']], 'hardware min=3072, hardware max=17408'],
-    ['fx.phone', 2, 'BAUD',     'linear', [[16896,'max']], 'hardware min=1536, hardware max=16896'],
-    ['fx.phone', 3, 'TELEMATIC','linear', [[32767,'max']], 'full 0–32767 range'],
+    // fx.phone — oracle fx3 (min), fx-max(7) (max); names confirmed by op1dump
+    ['fx.phone', 0, 'TONE',     'linear', [[204,'min'],[20480,'max']], 'hardware min=204, max=20480 (oracle)'],
+    ['fx.phone', 1, 'GSM',      'linear', [[3072,'min'],[17408,'max']], 'hardware min=3072, max=17408 (oracle)'],
+    ['fx.phone', 2, 'BAUD',     'linear', [[1536,'min'],[16896,'max']], 'hardware min=1536, max=16896 (oracle)'],
+    ['fx.phone', 3, 'TELEMATIC','linear', [[0, 0],[32767,'max']], 'full 0–32767 range (oracle)'],
 
     // fx.punch
     ['fx.punch', 0, 'FREQUENCY', 'hz',       [],                     'log Hz scale; non-linear — need calibration data'],
