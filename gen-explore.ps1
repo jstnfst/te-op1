@@ -190,8 +190,8 @@ $lfoMaxParams = @{
     midi     = '15360,15360,15360,15360,7168,7168,7168,7168'
     # DESTINATION[2]=selector max=7168; PARAMETER[4]=selector max=15360 (element oracle pattern)
     random   = '32767,32767,7168,32767,15360,0,0,0'
-    # LFO SHAPE[7]=selector; indices 4-6=null (keep 0); other indices are fine at 32767
-    tremolo  = '32767,32767,32767,32767,0,0,0,32767'
+    # LFO SHAPE[7]=selector; max capped at 19456 ("exponential", highest confirmed value)
+    tremolo  = '32767,32767,32767,32767,0,0,0,19456'
     # DESTINATION[2]=selector(synth/env/fx/mix) max=7168 (from element oracle); PARAMETER[3]=selector max=15360
     value    = '32767,32767,7168,15360,0,0,0,0'
     # AMP[0]=% max, VOLUME AMOUNT[1]=centered% max, DESTINATION[2]=selector max=7168, PARAMETER[3]=selector max=15360
