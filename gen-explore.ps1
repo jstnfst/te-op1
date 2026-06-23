@@ -4,20 +4,22 @@
 
 .DESCRIPTION
     Produces 14 synths × 9 FX × 6 LFOs = 756 unique combinations.
-    For each combination two files are written to explore\min\ and explore\max\:
-      [ssssffffllll].json   — compact patch JSON (source of truth)
-      [ssssffffllll].aif    — AIFF-C ready to load on the OP-1 Field
+    For each combination two files are written:
+      explore\aif\[mode]\[synth]\[lfo]\[ssssfffflllo].aif   — AIFF-C ready to load on the OP-1 Field
+      explore\json\[mode]\[synth]\[lfo]\[ssssfffflllo].json  — compact patch JSON (source of truth)
 
-    "min" uses the actual hardware minimum for each parameter type:
+    "min" uses oracle-confirmed hardware minimums per parameter type:
       - % scale          → 0
       - centered % scale → -32767
-      - selector         → 1024 (first option, consistent across observed selectors)
-    lfo_params vary by LFO type because they contain selector and centered-% params.
-    Synth knobs and fx_params are all % or discrete with min = 0.
+      - selector         → 1024 (first option, oracle-confirmed for lfo.element)
+    Several synth and FX types have non-zero minimums for specific params and
+    use oracle-verified values from $synthKnobsMin / $fxParamsMin.
 
-    "max" sets all arrays to 32767.
+    "max" uses oracle-confirmed hardware maximums per parameter type.
+    Several synth and FX types have ceilings below 32767 for specific params
+    and use oracle-verified values from $synthKnobsMax / $fxParamsMax / $lfoMaxParams.
 
-    ADSR is fixed to instant-attack / full-sustain so every combination
+    ADSR is fixed to oracle-verified hardware values so every combination
     produces audible output when a key is held.
 
     Run from the te-op1 root.  Output goes to explore\ which is gitignored.
@@ -124,7 +126,7 @@ $synthKnobsMin = @{
 # ── Maximum synth knobs per engine type ──────────────────────────────────────
 # Hardware-confirmed maximum knob values (all knobs at rightmost position).
 # Only engines whose hardware maxes differ from all-32767 are listed here.
-# Missing: sampler, string (no synthmax oracle provided).
+# dsynth is the only engine where all 8 params are valid at 32767 — no entry needed.
 # [oracle] = raw JSON extracted from synthmax(N).aif hardware exports.
 $synthKnobsMax = @{
     # [oracle] synthmax(1).aif: indices 4-7 fixed at 0
@@ -157,9 +159,10 @@ $synthKnobsMax = @{
 }
 
 # ── Maximum fx_params per FX type ────────────────────────────────────────────
-# Indices 4-7 must remain 8000 for these FX types (same as min; firmware requirement).
+# Indices 4-7 must remain 8000 for these FX types (firmware requirement).
 # Active params (0-3) use 32767 unless oracle data shows a lower ceiling.
-# [oracle] = confirmed from min oracle work (fx0-fx5.aif).
+# mother and terminal have no oracle max data; 32767 is assumed for active params.
+# [oracle] = raw JSON extracted from fx-max(1)-fx-max(7).aif hardware exports.
 $fxParamsMax = @{
     # [oracle] cwo: all active params valid at 32767; indices 4-7=0
     cwo    = '32767,32767,32767,32767,0,0,0,0'
@@ -220,8 +223,8 @@ $fxParamsMin = @{
 }
 
 # ── Output directories ───────────────────────────────────────────────────────
-# Structure: explore\aif\[mode]\[synth]\[fx]\*.aif
-#            explore\json\[mode]\[synth]\[fx]\*.json
+# Structure: explore\aif\[mode]\[synth]\[lfo]\*.aif
+#            explore\json\[mode]\[synth]\[lfo]\*.json
 if (Test-Path "explore") { Remove-Item -Recurse -Force "explore" }
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -264,8 +267,8 @@ function Build-Json {
 # ── Main loop ────────────────────────────────────────────────────────────────
 $total = $synthTypes.Count * $fxTypes.Count * $lfoTypes.Count
 Write-Host ""
-Write-Host "Generating $total combinations × 2 (min + max) = $($total * 2) pairs ..."
-Write-Host "Each pair = 1 JSON + 1 AIF  →  $($total * 4) files total"
+Write-Host "Generating $total combinations x 2 (min + max) = $($total * 2) pairs ..."
+Write-Host "Each pair = 1 JSON + 1 AIF  ->  $($total * 4) files total"
 Write-Host ""
 
 $zeros8 = '0,0,0,0,0,0,0,0'
@@ -333,7 +336,7 @@ $minJson = (Get-ChildItem "explore\json\min" -Recurse -Filter "*.json").Count
 $maxJson = (Get-ChildItem "explore\json\max" -Recurse -Filter "*.json").Count
 
 Write-Host "  explore\aif\min\[synth]\[lfo]\   $minAif AIF  (hardware minimum values)"
-Write-Host "  explore\aif\max\[synth]\[lfo]\   $maxAif AIF  (all params = 32767)"
+Write-Host "  explore\aif\max\[synth]\[lfo]\   $maxAif AIF  (oracle-confirmed hardware maximums)"
 Write-Host "  explore\json\min\[synth]\[lfo]\  $minJson JSON"
 Write-Host "  explore\json\max\[synth]\[lfo]\  $maxJson JSON"
 Write-Host ""
