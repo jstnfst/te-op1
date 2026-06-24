@@ -1,0 +1,1 @@
+{"adsr":[64,10746,32767,10000,4000,64,4000,18021],"base_freq":7902.1320,"fade":0,"fx_active":true,"fx_params":[0,0,0,0,0,0,0,0],"fx_type":"cwo","knobs":[0,0,0,0,8192,0,0,0],"lfo_active":true,"lfo_params":[1024,-32767,1024,1024,0,0,0,0],"lfo_type":"element","mtime":1782288000.0,"name":"0026-175#01","octave":0,"stereo":true,"synth_version":3,"type":"sampler"}

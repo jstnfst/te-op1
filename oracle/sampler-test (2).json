@@ -1,0 +1,1 @@
+{"adsr":[64,10746,32767,10000,4000,64,4000,18021],"base_freq":11240.05250,"fade":0,"fx_active":true,"fx_params":[17000,0,30285,11880,0,0,0,0],"fx_type":"mother","knobs":[0,0,0,0,8192,0,0,0],"lfo_active":true,"lfo_params":[4688,9886,2000,11520,0,0,0,0],"lfo_type":"element","mtime":1782286000.0,"name":"j026-175#01","octave":0,"stereo":true,"synth_version":3,"type":"sampler"}

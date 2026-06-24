@@ -15,3 +15,5 @@
 /explore-minmax/
 *.exp
 *.lib
+*.wav
+sampler*.aif

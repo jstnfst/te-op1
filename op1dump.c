@@ -180,6 +180,41 @@ static void print_params(const char *section, const char *type,
 }
 
 /* =========================================================================
+ * WAV SIDECAR WRITER
+ * ========================================================================= */
+
+static void w16le(uint8_t *p, uint16_t v) {
+    p[0] = v & 0xFF; p[1] = (v >> 8) & 0xFF;
+}
+static void w32le(uint8_t *p, uint32_t v) {
+    p[0] = v & 0xFF; p[1] = (v >> 8) & 0xFF;
+    p[2] = (v >> 16) & 0xFF; p[3] = (v >> 24) & 0xFF;
+}
+
+static int write_wav(const char *path,
+                     const uint8_t *pcm, uint32_t audio_bytes,
+                     uint16_t channels, uint32_t rate, uint16_t bits) {
+    FILE *wf = fopen(path, "wb");
+    if (!wf) { perror(path); return 1; }
+    uint32_t byte_rate   = rate * channels * (bits / 8);
+    uint16_t block_align = (uint16_t)(channels * (bits / 8));
+    uint32_t riff_size   = 36 + audio_bytes;
+    uint8_t  h[44];
+    memcpy(h,    "RIFF", 4); w32le(h + 4,  riff_size);
+    memcpy(h+8,  "WAVE", 4);
+    memcpy(h+12, "fmt ", 4); w32le(h + 16, 16);
+    w16le(h+20, 1);                  /* PCM */
+    w16le(h+22, channels);           w32le(h+24, rate);
+    w32le(h+28, byte_rate);          w16le(h+32, block_align);
+    w16le(h+34, bits);
+    memcpy(h+36, "data", 4);         w32le(h+40, audio_bytes);
+    fwrite(h,   1, 44,         wf);
+    fwrite(pcm, 1, audio_bytes, wf);
+    fclose(wf);
+    return 0;
+}
+
+/* =========================================================================
  * MAIN
  * ========================================================================= */
 
@@ -223,6 +258,12 @@ int main(int argc, char *argv[]) {
     const char *json_str = NULL;
     char json_buf[2048] = {0};
 
+    uint16_t        comm_channels   = 0;
+    uint16_t        comm_bitdepth   = 0;
+    uint32_t        comm_rate       = 0;
+    const uint8_t  *ssnd_audio      = NULL;
+    uint32_t        ssnd_audio_bytes = 0;
+
     uint32_t pos = 12;
     while (pos + 8 <= (uint32_t)fsize) {
         char id[5] = {0};
@@ -240,6 +281,10 @@ int main(int argc, char *argv[]) {
             printf("Audio     : %u ch, %u frames, %u-bit, %u Hz, %s\n",
                    ch, fr, bd, hz, comp);
             printf("Duration  : %.3f sec\n", hz ? (double)fr / hz : 0.0);
+            comm_channels = ch;
+            comm_bitdepth = bd;
+            comm_rate     = hz;
+            (void)fr;
         }
 
         if (strcmp(id, "APPL") == 0 && size >= 5 &&
@@ -255,8 +300,12 @@ int main(int argc, char *argv[]) {
             json_str = json_buf;
         }
 
-        if (strcmp(id, "SSND") == 0)
-            printf("Sample    : %u bytes of audio data\n", size);
+        if (strcmp(id, "SSND") == 0 && size >= 8) {
+            uint32_t ssnd_off = u32be(buf + data);
+            ssnd_audio       = buf + data + 8 + ssnd_off;
+            ssnd_audio_bytes = size - 8 - ssnd_off;
+            printf("Sample    : %u bytes of audio data\n", ssnd_audio_bytes);
+        }
 
         pos = data + size + (size & 1);
     }
@@ -361,6 +410,28 @@ int main(int argc, char *argv[]) {
     }
 
     free(json_path);
+
+    /* --- write .wav audio sidecar (sampler presets only) --- */
+    if (strcmp(synth_type, "sampler") == 0 && ssnd_audio && ssnd_audio_bytes > 0) {
+        char *wav_path = malloc(inlen + 6);
+        if (wav_path) {
+            memcpy(wav_path, input, inlen);
+            wav_path[inlen] = '\0';
+            char *wdot = strrchr(wav_path, '.');
+            char *wsep = strrchr(wav_path, '/');
+#ifdef _WIN32
+            char *wbs = strrchr(wav_path, '\\');
+            if (!wsep || (wbs && wbs > wsep)) wsep = wbs;
+#endif
+            if (wdot && (!wsep || wdot > wsep)) strcpy(wdot, ".wav");
+            else strcpy(wav_path + inlen, ".wav");
+            if (write_wav(wav_path, ssnd_audio, ssnd_audio_bytes,
+                          comm_channels, comm_rate, comm_bitdepth) == 0)
+                printf("Wrote %s\n", wav_path);
+            free(wav_path);
+        }
+    }
+
     free(g_params_json);
     free(buf);
     return 0;
