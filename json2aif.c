@@ -394,7 +394,7 @@ static void get_slug(const char *name, char *out) {
 static const int DBOX_DYNA_ENV_MIN[8] = {-32768,     0, -32768,     0, 0, 0, 0, 0};
 static const int DBOX_DYNA_ENV_MAX[8] = { 32767,  8192,  32767, 32767, 0, 0, 0, 0};
 
-/* 24 per-pad rows, all zeros — used for dbox explore patches */
+/* 24 per-pad rows, all zeros — min explore */
 static const char DBOX_DATA_ZEROS[] =
     "[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
     "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
@@ -405,10 +405,23 @@ static const char DBOX_DATA_ZEROS[] =
     "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
     "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]";
 
+/* oracle dbox-max: pad 14 fully maxed; other pads as captured from hardware */
+static const char DBOX_DATA_MAX[] =
+    "[[0,654,0,5540,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,327,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[1940,7848,4905,20274,0,0,0,14080],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[24832,32767,32767,32767,32767,32767,32767,32767],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
+    "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0]]";
+
 static int build_dbox_patch_json(const char *fx, const char *lfo,
                                   const char *name,
                                   const int fxp[8], const int lfop[8],
                                   const int dyna_env[8],
+                                  const char *dbox_data,
                                   char *out, size_t outsz) {
     return snprintf(out, outsz,
         "{\"dbox_data\":%s,"
@@ -424,7 +437,7 @@ static int build_dbox_patch_json(const char *fx, const char *lfo,
         "\"name\":\"%s\","
         "\"octave\":0,"
         "\"type\":\"dbox\"}",
-        DBOX_DATA_ZEROS,
+        dbox_data,
         dyna_env[0],dyna_env[1],dyna_env[2],dyna_env[3],
         dyna_env[4],dyna_env[5],dyna_env[6],dyna_env[7],
         fxp[0],fxp[1],fxp[2],fxp[3],fxp[4],fxp[5],fxp[6],fxp[7], fx,
@@ -559,6 +572,7 @@ static int run_explore(int vel_dest_raw, int vel_param) {
                         ? build_dbox_patch_json(fx, lfo, slug,
                                                 fxp, lfop,
                                                 mi == 0 ? DBOX_DYNA_ENV_MIN : DBOX_DYNA_ENV_MAX,
+                                                mi == 0 ? DBOX_DATA_ZEROS : DBOX_DATA_MAX,
                                                 json_buf, sizeof(json_buf))
                         : (strcmp(synth, "sampler") == 0)
                         ? build_sampler_patch_json(synth, fx, lfo, slug, ver,
