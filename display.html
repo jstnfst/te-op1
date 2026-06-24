@@ -218,6 +218,11 @@
     ['synth.dbox', 6, 'ENVELOPE 2',          'percent', [[0,'min'],[32767,'max']], ''],
     ['synth.dbox', 7, 'CUTOFF',              'percent', [[0,'min'],[32767,'max']], ''],
 
+    ['dbox.dyna_env', 0, 'ATTACK',  'centered', [[-32768,'min'],[32767,'max']], 'bipolar'],
+    ['dbox.dyna_env', 1, 'GAIN',    'percent',  [[0,'min'],[8192,'max']], 'max 8192'],
+    ['dbox.dyna_env', 2, 'RELEASE', 'centered', [[-32768,'min'],[32767,'max']], 'bipolar'],
+    ['dbox.dyna_env', 3, 'SMOOTH',  'percent',  [[0,'min'],[32767,'max']], ''],
+
     ['synth.digital', 0, 'WAVE SHAPER',    'percent',  [[0,'min'],[32767,'max']], ''],
     ['synth.digital', 1, 'OCTAVE',         'discrete', [[2048, 0],[19712, 4],[26624, 6]], '0–6'],
     ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-32768,'min'],[-10369, 33]], 'bipolar'],

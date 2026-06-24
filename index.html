@@ -176,8 +176,12 @@
         <td class="types-list">element, midi, random, tremolo, value, velocity</td>
       </tr>
       <tr>
-        <td>ADSR</td>
+        <td>ADSR (standard synths)</td>
         <td class="types-list">attack, decay, sustain, release, play mode, portamento, bend range, volume</td>
+      </tr>
+      <tr>
+        <td>dbox envelope</td>
+        <td class="types-list">attack, gain, release, smooth (stored as dyna_env; replaces ADSR for dbox)</td>
       </tr>
     </tbody>
   </table>
@@ -198,7 +202,7 @@
       </div>
       <div class="format-card">
         <div class="format-chunk">APPL</div>
-        <div class="format-size">1028 bytes</div>
+        <div class="format-size">4100 bytes</div>
         <div class="format-desc"><code style="font-size:10px">"op-1"</code> signature + compact JSON + space padding. All knob values are 16-bit integers 0–32767.</div>
       </div>
       <div class="format-card">
