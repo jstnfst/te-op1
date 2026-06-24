@@ -17,3 +17,4 @@
 *.lib
 *.wav
 sampler*.aif
+/collection/
