@@ -732,57 +732,27 @@ static int run_explore(int vel_dest_raw, int vel_param) {
 }
 
 /* =========================================================================
- * MAIN
+ * SINGLE-FILE PROCESSOR
  * ========================================================================= */
 
-int main(int argc, char *argv[]) {
-    int i;
+typedef struct { int processed; int failed; } WalkStats;
 
-    /* -- explore subcommand -- */
-    if (argc >= 2 && strcmp(argv[1], "explore") == 0) {
-        int vel_dest_raw = 1024;  /* synth */
-        int vel_param    = 1024;
-        for (i = 2; i < argc - 1; i++) {
-            if (strcmp(argv[i], "-dest") == 0) {
-                const char *d = argv[++i];
-                if      (strcmp(d, "synth")    == 0) vel_dest_raw = 1024;
-                else if (strcmp(d, "envelope") == 0) vel_dest_raw = 5824;
-                else if (strcmp(d, "fx")       == 0) vel_dest_raw = 10144;
-                else if (strcmp(d, "mix")      == 0) vel_dest_raw = 15360;
-            } else if (strcmp(argv[i], "-param") == 0) {
-                vel_param = atoi(argv[++i]);
-            }
-        }
-        return run_explore(vel_dest_raw, vel_param);
-    }
-
-    /* -- single-file subcommands: zero / max / pass-through -- */
-    int  mode      = 0;
-    int  arg_shift = 0;
-    if (argc >= 2) {
-        if      (strcmp(argv[1], "zero") == 0) { mode = 1; arg_shift = 1; }
-        else if (strcmp(argv[1], "max")  == 0) { mode = 2; arg_shift = 1; }
-    }
-    int    real_argc = argc - arg_shift;
-    char **real_argv = argv + arg_shift;
-
-    if (real_argc < 2 || real_argc > 3) {
-        fprintf(stderr,
-            "Usage:\n"
-            "  %s [zero|max] <patch.json> [output.aif]\n"
-            "  %s explore [-dest <synth|envelope|fx|mix>] [-param <N>]\n",
-            argv[0], argv[0]);
-        return 1;
-    }
-    const char *json_path = real_argv[1];
-
+/*
+ * Process one JSON file → AIF.
+ * mode: 0=pass-through, 1=zero, 2=max.
+ * allow_overwrite: 1 for directory batch mode, 0 for single-file mode.
+ * out_path_override: explicit output path, or NULL to derive from json_path.
+ */
+static int process_json_file(const char *json_path, int mode,
+                              int allow_overwrite,
+                              const char *out_path_override) {
     FILE *jf = fopen(json_path, "rb");
     if (!jf) { perror(json_path); return 1; }
     fseek(jf, 0, SEEK_END);
     long json_size = ftell(jf);
     rewind(jf);
     char *json_raw = (char *)malloc((size_t)json_size + 1);
-    if (!json_raw) { fprintf(stderr, "out of memory\n"); return 1; }
+    if (!json_raw) { fprintf(stderr, "out of memory\n"); fclose(jf); return 1; }
     fread(json_raw, 1, (size_t)json_size, jf);
     fclose(jf);
     json_raw[json_size] = '\0';
@@ -801,7 +771,7 @@ int main(int argc, char *argv[]) {
         json_size--;
     json_raw[json_size] = '\0';
 
-    static char scratch[3][APPL_JSON_MAX + 2];
+    char scratch[3][APPL_JSON_MAX + 2];
 
     int mt_r = json_inject_mtime(json_raw, (size_t)json_size,
                                   scratch[2], sizeof(scratch[2]));
@@ -831,8 +801,8 @@ int main(int argc, char *argv[]) {
     /* resolve output path */
     char *out_path;
     int   out_path_alloc = 0;
-    if (real_argc == 3) {
-        out_path = (char *)real_argv[2];
+    if (out_path_override) {
+        out_path = (char *)out_path_override;
     } else if (mode == 1) {
         out_path = make_aif_path_mode(json_path, "zero"); out_path_alloc = 1;
     } else if (mode == 2) {
@@ -840,9 +810,9 @@ int main(int argc, char *argv[]) {
     } else {
         out_path = make_aif_path(json_path); out_path_alloc = 1;
     }
-    if (!out_path) { fprintf(stderr, "out of memory\n"); return 1; }
+    if (!out_path) { fprintf(stderr, "out of memory\n"); free(json_raw); return 1; }
 
-    static int16_t main_sine[22050];
+    static int16_t proc_sine[22050];
     const int16_t *aif_audio    = NULL;
     uint32_t       aif_frames   = NUM_FRAMES;
     uint16_t       aif_channels = NUM_CHANNELS;
@@ -867,8 +837,8 @@ int main(int argc, char *argv[]) {
             free(wav_path);
         }
         if (!wav_buf) {
-            gen_sine_wave(440.0f, SAMPLE_RATE, 22050, main_sine);
-            aif_audio    = main_sine;
+            gen_sine_wave(440.0f, SAMPLE_RATE, 22050, proc_sine);
+            aif_audio    = proc_sine;
             aif_frames   = 22050;
             aif_channels = NUM_CHANNELS;
             aif_rate     = SAMPLE_RATE;
@@ -878,26 +848,125 @@ int main(int argc, char *argv[]) {
 
     uint32_t appl_sz = strstr(json_write_ptr, "\"type\":\"dbox\"")
                        ? APPL_DATA_SIZE_DBOX : APPL_DATA_SIZE_SYNTH;
-    if (write_aif(json_write_ptr, json_write_size, out_path, 0,
-                  aif_audio, aif_frames, aif_channels, aif_rate, appl_sz) != 0) {
-        if (out_path_alloc) free(out_path);
-        free(wav_buf);
-        free(json_raw);
-        return 1;
+    int ret = write_aif(json_write_ptr, json_write_size, out_path, allow_overwrite,
+                        aif_audio, aif_frames, aif_channels, aif_rate, appl_sz);
+    if (ret == 0) {
+        uint32_t audio_bytes = aif_frames * aif_channels * (BIT_DEPTH / 8);
+        uint32_t ssnd_size   = 4 + 4 + audio_bytes;
+        printf("Wrote %s\n", out_path);
+        printf("  FVER : 0xA2805140 (AIFC standard)\n");
+        printf("  COMM : %u ch, %u frames, %u-bit, %u Hz, sowt\n",
+               aif_channels, aif_frames, BIT_DEPTH, aif_rate);
+        printf("  APPL : %u bytes  (%d bytes JSON + padding)\n",
+               appl_sz, json_write_size);
+        printf("  SSND : %u bytes  (%u frames, %s)\n", ssnd_size, aif_frames, audio_label);
     }
-
-    uint32_t audio_bytes = aif_frames * aif_channels * (BIT_DEPTH / 8);
-    uint32_t ssnd_size   = 4 + 4 + audio_bytes;
-    printf("Wrote %s\n", out_path);
-    printf("  FVER : 0xA2805140 (AIFC standard)\n");
-    printf("  COMM : %u ch, %u frames, %u-bit, %u Hz, sowt\n",
-           aif_channels, aif_frames, BIT_DEPTH, aif_rate);
-    printf("  APPL : %u bytes  (%d bytes JSON + padding)\n",
-           appl_sz, json_write_size);
-    printf("  SSND : %u bytes  (%u frames, %s)\n", ssnd_size, aif_frames, audio_label);
 
     if (out_path_alloc) free(out_path);
     free(wav_buf);
     free(json_raw);
-    return 0;
+    return ret;
+}
+
+/* =========================================================================
+ * DIRECTORY WALKER
+ * ========================================================================= */
+
+#ifdef _WIN32
+static void walk_dir(const char *dir, WalkStats *stats) {
+    char pattern[MAX_PATH];
+    snprintf(pattern, sizeof(pattern), "%s\\*", dir);
+
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+
+    do {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+            continue;
+
+        char child[MAX_PATH];
+        snprintf(child, sizeof(child), "%s\\%s", dir, fd.cFileName);
+
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            walk_dir(child, stats);
+        } else {
+            size_t len = strlen(fd.cFileName);
+            if (len > 5 && _stricmp(fd.cFileName + len - 5, ".json") == 0) {
+                if (process_json_file(child, 0, 1, NULL) == 0)
+                    stats->processed++;
+                else
+                    stats->failed++;
+            }
+        }
+    } while (FindNextFileA(h, &fd));
+
+    FindClose(h);
+}
+#endif
+
+/* =========================================================================
+ * MAIN
+ * ========================================================================= */
+
+int main(int argc, char *argv[]) {
+    int i;
+
+    /* -- explore subcommand -- */
+    if (argc >= 2 && strcmp(argv[1], "explore") == 0) {
+        int vel_dest_raw = 1024;  /* synth */
+        int vel_param    = 1024;
+        for (i = 2; i < argc - 1; i++) {
+            if (strcmp(argv[i], "-dest") == 0) {
+                const char *d = argv[++i];
+                if      (strcmp(d, "synth")    == 0) vel_dest_raw = 1024;
+                else if (strcmp(d, "envelope") == 0) vel_dest_raw = 5824;
+                else if (strcmp(d, "fx")       == 0) vel_dest_raw = 10144;
+                else if (strcmp(d, "mix")      == 0) vel_dest_raw = 15360;
+            } else if (strcmp(argv[i], "-param") == 0) {
+                vel_param = atoi(argv[++i]);
+            }
+        }
+        return run_explore(vel_dest_raw, vel_param);
+    }
+
+    /* -- directory mode -- */
+#ifdef _WIN32
+    if (argc == 2) {
+        DWORD attrs = GetFileAttributesA(argv[1]);
+        if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+            WalkStats stats = {0, 0};
+            clock_t t0 = clock();
+            walk_dir(argv[1], &stats);
+            double elapsed = (double)(clock() - t0) / CLOCKS_PER_SEC;
+            printf("\n=== Done: %d processed, %d failed  (%.2f sec) ===\n",
+                   stats.processed, stats.failed, elapsed);
+            return stats.failed ? 1 : 0;
+        }
+    }
+#endif
+
+    /* -- single-file subcommands: zero / max / pass-through -- */
+    int  mode      = 0;
+    int  arg_shift = 0;
+    if (argc >= 2) {
+        if      (strcmp(argv[1], "zero") == 0) { mode = 1; arg_shift = 1; }
+        else if (strcmp(argv[1], "max")  == 0) { mode = 2; arg_shift = 1; }
+    }
+    int    real_argc = argc - arg_shift;
+    char **real_argv = argv + arg_shift;
+
+    if (real_argc < 2 || real_argc > 3) {
+        fprintf(stderr,
+            "Usage:\n"
+            "  %s [zero|max] <patch.json> [output.aif]\n"
+            "  %s <directory>\n"
+            "  %s explore [-dest <synth|envelope|fx|mix>] [-param <N>]\n",
+            argv[0], argv[0], argv[0]);
+        return 1;
+    }
+
+    const char *json_path      = real_argv[1];
+    const char *out_path_override = (real_argc == 3) ? real_argv[2] : NULL;
+    return process_json_file(json_path, mode, 0, out_path_override);
 }

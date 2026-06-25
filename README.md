@@ -248,14 +248,16 @@ lfo.element PARAMETER selector for dbox differs from other 8-param synths:
 ### `op1dump.exe`
 
 Reads a `.aif` patch file, prints all synth metadata with named parameters,
-and writes a `.json` sidecar.
+and writes a `.json` sidecar. Pass a directory to process all `.aif` files recursively.
 
 ```
 op1dump.exe <file.aif>
+op1dump.exe <directory>
 ```
 
 ```
 op1dump.exe epiphany.aif         → prints metadata, writes epiphany.json
+op1dump.exe presets/             → dumps all .aif files recursively, prints stats
 ```
 
 - Reads `op1-params.json` from the **current working directory** (not the file's directory)
@@ -263,23 +265,17 @@ op1dump.exe epiphany.aif         → prints metadata, writes epiphany.json
 - Each parameter printed as `name : raw_value  (normalized)` where normalized = raw / 32767
 - Non-zero unnamed slots printed as `knob N [unknown]` — add them to `op1-params.json` once identified
 - Always writes a `.json` sidecar at the same path as the input file
-
-### `dump-all.bat`
-
-Runs `op1dump.exe` on every `.aif` in `presets/`.
-
-```
-dump-all.bat
-```
+- Directory mode prints a final summary: `=== Done: N processed, N failed (X.XX sec) ===`
 
 ### `json2aif.exe`
 
-Creates a valid OP-1 Field `.aif` from a `.json` patch file. Also generates all 756×2 boundary patches via the `explore` subcommand.
+Creates a valid OP-1 Field `.aif` from a `.json` patch file. Pass a directory to convert all `.json` files recursively. Also generates all 756×2 boundary patches via the `explore` subcommand.
 
 ```
 json2aif.exe <patch.json> [output.aif]
 json2aif.exe zero <patch.json> [output.aif]
 json2aif.exe max  <patch.json> [output.aif]
+json2aif.exe <directory>
 json2aif.exe explore [-dest <synth|envelope|fx|mix>] [-param <N>]
 ```
 
@@ -288,6 +284,7 @@ json2aif.exe mypatch.json                → writes mypatch.aif
 json2aif.exe mypatch.json out.aif        → writes out.aif
 json2aif.exe zero mypatch.json           → zeros knobs/fx_params/lfo_params
 json2aif.exe max  mypatch.json           → sets all three arrays to 32767
+json2aif.exe presets/                    → converts all .json files recursively
 json2aif.exe explore                     → generates all 3024 files in explore\
 json2aif.exe explore -dest fx            → min patches with dest = FX
 json2aif.exe explore -dest fx -param 5824
@@ -296,8 +293,9 @@ json2aif.exe explore -dest fx -param 5824
 - Output format: AIFC with FVER + COMM (mono, 16-bit, 22050 Hz, `sowt`, 28896 frames ~1.310 s) + APPL (1028 bytes) + SSND (silence)
 - JSON must be ≤ 1024 bytes; exits with an error message if too large
 - Automatically injects `"mtime":<unix_ts>.0` at write time
-- Refuses to overwrite an existing output file (single-file modes only)
+- Single-file mode refuses to overwrite an existing output file; directory mode overwrites
 - Strips UTF-8 BOM from input JSON if present
+- **Sampler patches:** looks for a `.wav` sidecar at the same path; embeds it if found, falls back to a 440 Hz sine tone if not
 
 **`explore` subcommand** — generates min and max boundary patches for all 15 × 9 × 6 = 810 synth/FX/LFO combinations (3240 files total):
 
@@ -306,6 +304,77 @@ json2aif.exe explore -dest fx -param 5824
 - **min** uses hardware minimums per parameter type; types with non-zero floors use explicit per-type values
 - **max** uses hardware maximums per type; types with ceilings below 32767 use explicit per-type values
 - ADSR is fixed to instant-attack / full-sustain values so every combination produces audible output
+
+### `rename-patch.exe`
+
+Renames the `"name"` field inside each `.json` patch to match the file's own filename (without extension). Edits in place.
+
+```
+rename-patch.exe <patch.json> [patch2.json ...]
+rename-patch.exe <directory>
+```
+
+```
+rename-patch.exe presets\epiphany.json         → sets name: "epiphany"
+rename-patch.exe collection\_anonymized-popular → renames all .json files recursively
+```
+
+- Useful for normalising a batch of anonymised or exported patches before loading them on device
+- Directory mode prints a final summary: `=== Done: N processed, N failed ===`
+
+### `sort-synths.exe`
+
+Moves `.json` and `.aif` patch pairs into a `synth/<engine>/` folder tree, organised by synth engine type. The `synth/` folder is created as a **sibling** of the directory passed in.
+
+```
+sort-synths.exe <patch.json>
+sort-synths.exe <directory>
+```
+
+```
+sort-synths.exe collection\_anonymized-popular
+  → collection\synth\cluster\patch (1).{json,aif}
+  → collection\synth\dimension\patch (2).{json,aif}
+  ...
+```
+
+- Skips any subdirectory named `synth` to avoid re-processing already-sorted files
+- Never overwrites an existing destination file — prints `skip (exists)` and moves on
+- `.aif` sidecars are moved alongside their `.json`; missing sidecars are silently skipped
+- Directory mode prints a final summary: `=== Done: N moved, N skipped, N failed ===`
+
+### `tag-patch.exe`
+
+Interprets OP-1 patch parameters and outputs a comma-separated list of musical descriptor tags (e.g. `pad`, `metallic`, `lush`, `percussive`). Also writes a `.tags` sidecar file alongside each `.json` for easy grepping.
+
+```
+tag-patch.exe <patch.json> [patch2.json ...]
+tag-patch.exe <directory>
+```
+
+```
+tag-patch.exe presets\epiphany.json
+  → epiphany: cluster, morphing, pad, lush, spacious, slow tremolo, ambient
+
+tag-patch.exe collection\synth\
+  → (tags every .json recursively, writes .tags sidecars, prints stats)
+```
+
+Tags are derived from six domains — engine type, envelope shape, FX character, LFO motion, octave register, and composite combinations:
+
+| Domain | Example tags |
+|--------|-------------|
+| Engine | `cluster`, `fm`, `dimension`, `morphing`, `wide`, `inharmonic` |
+| Envelope | `pad`, `percussive`, `sustained`, `swelling`, `tight`, `legato` |
+| FX | `lush`, `spacious`, `reverb-heavy`, `echo`, `chorus`, `vintage` |
+| LFO | `tremolo`, `vibrato`, `slow tremolo`, `animated`, `unpredictable` |
+| Octave | `low register`, `sub`, `upper register` |
+| Composite | `ambient`, `stab`, `cinematic`, `lead`, `bell` |
+
+The `.tags` sidecar is a single comma-separated line — grep-friendly:
+```
+grep "bell\|metallic" collection\synth\fm\*.tags
+```
 
 ### `summarize.exe`
 
@@ -381,10 +450,16 @@ explore-aif.exe epiphany.aif --parse-chunks --decode-comm --show-json
 
 ```
 te-op1/
-  op1dump.c          source — patch dumper
+  op1dump.c          source — patch dumper (file or directory)
   op1dump.exe        compiled dumper
-  json2aif.c         source — JSON to AIF writer + explore generator
+  json2aif.c         source — JSON to AIF writer + explore generator (file or directory)
   json2aif.exe       compiled writer/generator
+  rename-patch.c     source — rename "name" field to filename (file or directory)
+  rename-patch.exe   compiled renamer
+  sort-synths.c      source — sort patches into synth/<engine>/ folders (file or directory)
+  sort-synths.exe    compiled sorter
+  tag-patch.c        source — generate musical descriptor tags (file or directory)
+  tag-patch.exe      compiled tagger
   test_aif.c         source — AIF validator
   test_aif.exe       compiled validator
   diff-patches.c     source — patch diff tool
@@ -399,12 +474,13 @@ te-op1/
   op1-params.json    knob/param name database (edit freely, no recompile)
   op1-params-ok.json tracks which param indices have been mapped per type
   build.bat          recompile all tools (requires MSVC)
-  dump-all.bat       batch-process presets/ folder
   index.html         home — coverage overview and file format summary
   params.html        knob layout — all 31 types with named knob diagrams
   display.html       value mappings — raw-to-display mappings per parameter
   presets/           .aif patch files and their .json sidecars
   oracle/            reference exports from hardware (tracked in git, never regenerated)
+  collection/        patch collections — .aif, .json, and .tags sidecars per preset
+                     collection\synth\<engine>\*.{aif,json,tags}
   explore/           generated boundary patches — gitignored, recreate with: json2aif.exe explore
                      explore\aif\[min|max]\[synth]\[lfo]\*.aif
                      explore\json\[min|max]\[synth]\[lfo]\*.json

@@ -6,12 +6,17 @@
  *
  * Build: cl op1dump.c /Fe:op1dump.exe /D_CRT_SECURE_NO_WARNINGS
  * Usage: op1dump <file.aif>
+ *        op1dump <directory>   (recursively dumps all .aif files)
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#endif
 #include "op1_aif.h"
 
 #define PARAMS_FILE  "op1-params.json"
@@ -215,20 +220,15 @@ static int write_wav(const char *path,
 }
 
 /* =========================================================================
- * MAIN
+ * FILE PROCESSOR
  * ========================================================================= */
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <file.aif>\n", argv[0]);
-        return 1;
-    }
+typedef struct { int processed; int failed; } WalkStats;
 
-    load_params_file();
-
+static int dump_file(const char *path) {
     /* --- read file --- */
-    FILE *f = fopen(argv[1], "rb");
-    if (!f) { perror(argv[1]); return 1; }
+    FILE *f = fopen(path, "rb");
+    if (!f) { perror(path); return 1; }
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
     rewind(f);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
     uint8_t *buf = malloc(fsize);
     if (!buf) { fprintf(stderr, "out of memory\n"); return 1; }
     if (fread(buf, 1, fsize, f) != (size_t)fsize) {
-        fprintf(stderr, "read error\n"); return 1;
+        fprintf(stderr, "read error\n"); free(buf); return 1;
     }
     fclose(f);
 
@@ -245,23 +245,23 @@ int main(int argc, char *argv[]) {
         memcmp(buf,    "FORM", 4) != 0 ||
         (memcmp(buf+8, "AIFF", 4) != 0 &&
          memcmp(buf+8, "AIFC", 4) != 0)) {
-        fprintf(stderr, "Not a valid AIFF/AIFF-C file\n");
+        fprintf(stderr, "%s: not a valid AIFF/AIFF-C file\n", path);
         free(buf); return 1;
     }
 
     char form_type[5] = {0};
     memcpy(form_type, buf + 8, 4);
-    printf("File      : %s\n", argv[1]);
+    printf("File      : %s\n", path);
     printf("Container : FORM/%s  (%ld bytes)\n\n", form_type, fsize);
 
     /* --- walk IFF chunks --- */
     const char *json_str = NULL;
     char json_buf[2048] = {0};
 
-    uint16_t        comm_channels   = 0;
-    uint16_t        comm_bitdepth   = 0;
-    uint32_t        comm_rate       = 0;
-    const uint8_t  *ssnd_audio      = NULL;
+    uint16_t        comm_channels    = 0;
+    uint16_t        comm_bitdepth    = 0;
+    uint32_t        comm_rate        = 0;
+    const uint8_t  *ssnd_audio       = NULL;
     uint32_t        ssnd_audio_bytes = 0;
 
     uint32_t pos = 12;
@@ -311,7 +311,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!json_str) {
-        fprintf(stderr, "No 'op-1' APPL chunk found\n");
+        fprintf(stderr, "%s: no 'op-1' APPL chunk found\n", path);
         free(buf); return 1;
     }
 
@@ -385,11 +385,10 @@ int main(int argc, char *argv[]) {
     printf("\n--- raw JSON ---\n%s\n", json_str);
 
     /* --- write .json sidecar --- */
-    const char *input = argv[1];
-    size_t inlen = strlen(input);
+    size_t inlen = strlen(path);
     char *json_path = malloc(inlen + 6);
     if (!json_path) { fprintf(stderr, "out of memory\n"); free(buf); return 1; }
-    memcpy(json_path, input, inlen);
+    memcpy(json_path, path, inlen);
     json_path[inlen] = '\0';
     char *dot = strrchr(json_path, '.');
     char *sep = strrchr(json_path, '/');
@@ -415,7 +414,7 @@ int main(int argc, char *argv[]) {
     if (strcmp(synth_type, "sampler") == 0 && ssnd_audio && ssnd_audio_bytes > 0) {
         char *wav_path = malloc(inlen + 6);
         if (wav_path) {
-            memcpy(wav_path, input, inlen);
+            memcpy(wav_path, path, inlen);
             wav_path[inlen] = '\0';
             char *wdot = strrchr(wav_path, '.');
             char *wsep = strrchr(wav_path, '/');
@@ -432,7 +431,74 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    free(g_params_json);
     free(buf);
     return 0;
+}
+
+/* =========================================================================
+ * DIRECTORY WALKER
+ * ========================================================================= */
+
+#ifdef _WIN32
+static void walk_dir(const char *dir, WalkStats *stats) {
+    char pattern[MAX_PATH];
+    snprintf(pattern, sizeof(pattern), "%s\\*", dir);
+
+    WIN32_FIND_DATAA fd;
+    HANDLE h = FindFirstFileA(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+
+    do {
+        if (strcmp(fd.cFileName, ".") == 0 || strcmp(fd.cFileName, "..") == 0)
+            continue;
+
+        char child[MAX_PATH];
+        snprintf(child, sizeof(child), "%s\\%s", dir, fd.cFileName);
+
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+            walk_dir(child, stats);
+        } else {
+            size_t len = strlen(fd.cFileName);
+            if (len > 4 && _stricmp(fd.cFileName + len - 4, ".aif") == 0) {
+                if (dump_file(child) == 0)
+                    stats->processed++;
+                else
+                    stats->failed++;
+            }
+        }
+    } while (FindNextFileA(h, &fd));
+
+    FindClose(h);
+}
+#endif
+
+/* =========================================================================
+ * MAIN
+ * ========================================================================= */
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        fprintf(stderr, "Usage: %s <file.aif | directory>\n", argv[0]);
+        return 1;
+    }
+
+    load_params_file();
+
+#ifdef _WIN32
+    DWORD attrs = GetFileAttributesA(argv[1]);
+    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY)) {
+        WalkStats stats = {0, 0};
+        clock_t t0 = clock();
+        walk_dir(argv[1], &stats);
+        double elapsed = (double)(clock() - t0) / CLOCKS_PER_SEC;
+        printf("\n=== Done: %d processed, %d failed  (%.2f sec) ===\n",
+               stats.processed, stats.failed, elapsed);
+        free(g_params_json);
+        return stats.failed ? 1 : 0;
+    }
+#endif
+
+    int ret = dump_file(argv[1]);
+    free(g_params_json);
+    return ret;
 }
