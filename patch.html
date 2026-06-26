@@ -382,7 +382,7 @@ const DATA = [
   ['fx.terminal',0,'FREQUENCY','hz',[[0,'100 Hz'],[32767,'20000 Hz']]],['fx.terminal',1,'BITS','decimal',[[0,2],[32767,16]]],
   ['fx.terminal',2,'MODEL','decimal',[[0,1],[32767,6]]],['fx.terminal',3,'MIX','percent',[[14322,50],[32767,100]]],
   ['lfo.element',0,'SOURCE','selector',[[2000,'gravity sensor']]],['lfo.element',1,'AMOUNT','centered',[[-13743,-41],[6245,19],[8265,25],[32767,100]]],
-  ['lfo.element',2,'DESTINATION','selector',[[1024,'synth'],[7168,'mix']]],['lfo.element',3,'PARAMETER','selector',[[1024,'min'],[15360,'max']]],
+  ['lfo.element',2,'DESTINATION','selector',[[1024,'synth'],[5824,'envelope'],[10144,'fx'],[15360,'mix']]],['lfo.element',3,'PARAMETER','selector',[[1024,'min'],[15360,'max']]],
   ['lfo.midi',0,'PARAMETER 1','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],['lfo.midi',1,'PARAMETER 2','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],
   ['lfo.midi',2,'PARAMETER 3','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],['lfo.midi',3,'PARAMETER 4','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],
   ['lfo.midi',4,'DESTINATION 1','selector',[[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']]],['lfo.midi',5,'DESTINATION 2','selector',[[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']]],
@@ -398,7 +398,7 @@ const DATA = [
   ['lfo.value',3,'PARAMETER','selector',[[1024,'min'],[15360,'max']]],
   ['lfo.value',4,'LFO SHAPE','selector',[[0,'sine'],[9362,'square'],[18724,'sawtooth'],[28086,'reverse sawtooth']]],
   ['lfo.velocity',0,'AMP','percent',[[16381,50]]],['lfo.velocity',1,'VOLUME AMOUNT','centered',[[16694,'~51%']]],
-  ['lfo.velocity',2,'DESTINATION','selector',[[1024,'synth'],[7168,'mix']]],['lfo.velocity',3,'PARAMETER','selector',[[15360,'telematic']]],
+  ['lfo.velocity',2,'DESTINATION','selector',[[1024,'synth'],[5824,'envelope'],[10144,'fx'],[15360,'mix']]],['lfo.velocity',3,'PARAMETER','selector',[[15360,'telematic']]],
   ['adsr',0,'ATTACK','percent',[[64,'min'],[16320,'max']]],['adsr',1,'DECAY','percent',[[64,'min'],[16320,'max']]],
   ['adsr',2,'SUSTAIN','percent',[[0,'min'],[32767,'max']]],['adsr',3,'RELEASE','percent',[[64,'min'],[16320,'max']]],
   ['adsr',4,'PLAY MODE','selector',[[2048,'poly'],[6140,'mono'],[9209,'legato'],[14336,'unison']]],['adsr',5,'PORTAMENTO','percent',[[64,'min'],[16448,'max']]],
@@ -419,12 +419,12 @@ const RANGES = {
   'fx.phone': {0:[204,20480],1:[3072,17408],2:[1536,16896]},
   'fx.punch': {0:[1344,12480],2:[1536,25088]},
   'fx.spring': {0:[1344,16448],1:[7744,16448],2:[0,16384]},
-  'lfo.element': {0:[1024,7168],1:[-32767,32767],2:[1024,7168],3:[1024,15360]},
+  'lfo.element': {0:[1024,7168],1:[-32767,32767],2:[1024,15360],3:[1024,15360]},
   'lfo.midi': {0:[1024,15360],1:[1024,15360],2:[1024,15360],3:[1024,15360],4:[1024,7168],5:[1024,7168],6:[1024,7168],7:[1024,7168]},
   'lfo.random': {2:[1024,7168],4:[1024,15360]},
   'lfo.tremolo': {0:[0,32440],1:[-32767,32767],2:[-32767,32767],7:[0,32767]},
   'lfo.value': {0:[0,16384],1:[-32767,32767],2:[1024,11264],3:[1024,15360],4:[0,28086]},
-  'lfo.velocity': {2:[1024,7168],3:[1024,15360]},
+  'lfo.velocity': {2:[1024,15360],3:[1024,15360]},
   'adsr': {0:[64,16320],1:[64,16320],3:[64,16320],5:[64,16448]},
 };
 function getRange(eng, idx) {
@@ -644,17 +644,59 @@ function applyHandle(h, x, y) {
   syncEditor();
 }
 
+/* ── LFO PARAMETER selector (context-dependent on DESTINATION) ──
+   The PARAMETER knob picks which knob of the DESTINATION the LFO modulates,
+   so its options are that destination's parameter names. Raw encodings
+   (from oracle captures + display-notes.md):
+     4-param targets : 1024 / 4864 / 8704 / 15360
+     8-param synths  : 1024 / 2944 / 4384 / 6304 / 8224 / 10624 / 13024 / 15360
+     dbox synth      : 1024 / 2464 / 4384 / 6304 / 8224 / 10624 / 12544 / 14464
+   DESTINATION resolves to the synth/fx engine's knobs, the envelope
+   (ADSR — or the dbox dynamic envelope), or the mix bus. */
+const PARAM_STEPS_4 = [1024, 4864, 8704, 15360];
+const PARAM_STEPS_8 = [1024, 2944, 4384, 6304, 8224, 10624, 13024, 15360];
+const PARAM_STEPS_DBOX = [1024, 2464, 4384, 6304, 8224, 10624, 12544, 14464];
+const DEST_ENVELOPE = ['ATTACK', 'DECAY', 'SUSTAIN', 'RELEASE'];
+const DEST_ENVELOPE_DBOX = ['ATTACK', 'GAIN', 'RELEASE', 'SMOOTH'];
+const DEST_MIX = ['VOLUME', 'PITCH', 'PAN', null];
+const LFO_DEST_PARAM = { element: { d: 2, p: 3 }, value: { d: 2, p: 3 }, velocity: { d: 2, p: 3 } };
+function destNames(label) {
+  if (label == null) return null;
+  const base = String(label).replace(' free', '');
+  if (base === 'synth') return PARAM_NAMES['synth.' + state.type] || null;
+  if (base === 'fx') return PARAM_NAMES['fx.' + state.fx_type] || null;
+  if (base === 'envelope') return isDbox() ? DEST_ENVELOPE_DBOX : DEST_ENVELOPE;
+  if (base === 'mix' || base === 'sound output') return DEST_MIX;
+  return null;
+}
+function lfoParamSamples(lfoType, idx) {
+  const cfg = LFO_DEST_PARAM[lfoType];
+  if (!cfg || idx !== cfg.p) return null;
+  const destEntry = LOOKUP['lfo.' + lfoType + '|' + cfg.d];
+  if (!destEntry) return null;
+  const label = nearestSample(destEntry.samples, state.lfo_params[cfg.d]);
+  const names = destNames(label);
+  if (!names) return null;
+  const active = names.map((n, i) => n === null ? -1 : i).filter(i => i >= 0);
+  const synthDbox = state.type === 'dbox' && label != null && String(label).replace(' free', '') === 'synth';
+  const steps = synthDbox ? PARAM_STEPS_DBOX : (active.length > 4 ? PARAM_STEPS_8 : PARAM_STEPS_4);
+  return active.map((pi, k) => [steps[k] != null ? steps[k] : 15360, names[pi]]);
+}
+
 /* ── Parameter rows ──────────────────────────────────────── */
 function rowHtml(grp, eng, idx, raw) {
   const name = PARAM_NAMES[eng][idx];
   const [min, max] = getRange(eng, idx);
   const e = LOOKUP[eng + '|' + idx];
-  const valLbl = fmtValue(eng, idx, raw);
+  let samples = e ? e.samples : null;
+  if (grp === 'lfo') { const dyn = lfoParamSamples(state.lfo_type, idx); if (dyn) samples = dyn; }
+  const isSel = !!(e && e.scale === 'selector' && samples);
+  const valLbl = isSel ? nearestSample(samples, raw) : fmtValue(eng, idx, raw);
   // selector → dropdown of known options
   let ctl;
-  if (e && e.scale === 'selector' && e.samples.length > 1) {
-    const opts = e.samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv} (${rv})</option>`).join('');
-    const exact = e.samples.some(s => s[0] === raw);
+  if (isSel && samples.length > 1) {
+    const opts = samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv} (${rv})</option>`).join('');
+    const exact = samples.some(s => s[0] === raw);
     ctl = `<select class="pselect asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>${raw} (custom)</option>`}</select>`;
   } else {
     ctl = `<input type="range" class="ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">
@@ -863,8 +905,9 @@ viz.addEventListener('change', e => {
   } else if (t.classList.contains('asel')) {     // selector dropdown
     const grp = t.dataset.grp, idx = +t.dataset.idx;
     arrFor(grp)[idx] = parseInt(t.value, 10);
-    refreshRow(grp, idx);
     syncEditor();
+    // LFO DESTINATION drives the PARAMETER options/labels → rebuild the group
+    if (grp === 'lfo') render(); else refreshRow(grp, idx);
   } else if (t.classList.contains('actv')) {     // fx/lfo active toggle
     state[t.dataset.key] = t.checked;
     syncEditor(); render();
