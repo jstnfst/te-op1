@@ -269,6 +269,7 @@ static int dump_file(const char *path) {
     uint16_t        comm_channels    = 0;
     uint16_t        comm_bitdepth    = 0;
     uint32_t        comm_rate        = 0;
+    int             comm_le          = 0;   /* samples little-endian? ('sowt') */
     const uint8_t  *ssnd_audio       = NULL;
     uint32_t        ssnd_audio_bytes = 0;
 
@@ -279,13 +280,17 @@ static int dump_file(const char *path) {
         uint32_t size = u32be(buf + pos + 4);
         uint32_t data = pos + 8;
 
-        if (strcmp(id, "COMM") == 0 && size >= 26) {
+        /* COMM is 18 bytes for plain AIFF; AIFF-C adds a 4-byte compression
+           type (+ pascal string). Earlier this gated on >=26 and so skipped
+           plain-AIFF patches, leaving channels/rate/bits at 0. */
+        if (strcmp(id, "COMM") == 0 && size >= 18) {
             uint16_t ch  = u16be(buf + data);
             uint32_t fr  = u32be(buf + data + 2);
             uint16_t bd  = u16be(buf + data + 6);
             uint32_t hz  = read_80bit_ext(buf + data + 8);
-            char comp[5] = {0};
-            memcpy(comp, buf + data + 18, 4);
+            char comp[5] = "NONE";                 /* plain AIFF: PCM, big-endian */
+            if (size >= 22) { memcpy(comp, buf + data + 18, 4); comp[4] = '\0'; }
+            comm_le = (memcmp(comp, "sowt", 4) == 0);   /* sowt = little-endian */
             printf("Audio     : %u ch, %u frames, %u-bit, %u Hz, %s\n",
                    ch, fr, bd, hz, comp);
             printf("Duration  : %.3f sec\n", hz ? (double)fr / hz : 0.0);
@@ -432,9 +437,24 @@ static int dump_file(const char *path) {
 #endif
             if (wdot && (!wsep || wdot > wsep)) strcpy(wdot, ".wav");
             else strcpy(wav_path + inlen, ".wav");
-            if (write_wav(wav_path, ssnd_audio, ssnd_audio_bytes,
+            /* WAV is little-endian; plain-AIFF samples are big-endian, so swap
+               unless the source is already little-endian ('sowt'). */
+            const uint8_t *wav_audio = ssnd_audio;
+            uint8_t *swapped = NULL;
+            if (!comm_le && comm_bitdepth == 16) {
+                swapped = malloc(ssnd_audio_bytes);
+                if (swapped) {
+                    for (uint32_t i = 0; i + 1 < ssnd_audio_bytes; i += 2) {
+                        swapped[i]     = ssnd_audio[i + 1];
+                        swapped[i + 1] = ssnd_audio[i];
+                    }
+                    wav_audio = swapped;
+                }
+            }
+            if (write_wav(wav_path, wav_audio, ssnd_audio_bytes,
                           comm_channels, comm_rate, comm_bitdepth) == 0)
                 printf("Wrote %s\n", wav_path);
+            free(swapped);
             free(wav_path);
         }
     }
