@@ -11,9 +11,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #EEEDE9; --surface: #FFFFFF; --border: #E0DDD7;
-      --text: #1C1C1C; --muted: #9B9791; --header-bg: #1A1A1A;
-      --knob-null: #C8C5BF; --orange: #FF4800; --blue: #0E8FE8;
+      --bg: #15161A; --surface: #1F2127; --border: #31343C;
+      --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
+      --knob-null: #4A4E57; --orange: #FF4800; --blue: #3B9EEA;
       --purple: #8B5CF6; --green: #22C55E;
     }
     body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -47,14 +47,14 @@
     /* ── GRID + CARD ── */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 10px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 16px 18px 14px; transition: box-shadow .18s, transform .18s; }
-    .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.09); transform: translateY(-2px); }
+    .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.5); transform: translateY(-2px); }
     .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
     .g-badge { font-size: 8px; font-weight: 700; letter-spacing: .18em; padding: 2px 6px 1px; border-radius: 2px; }
-    .g-badge.synth { background: rgba(255,72,0,.1);    color: var(--orange); }
-    .g-badge.fx    { background: rgba(14,143,232,.1);  color: var(--blue);   }
-    .g-badge.lfo   { background: rgba(139,92,246,.1);  color: var(--purple); }
-    .g-badge.adsr  { background: rgba(34,197,94,.1);   color: var(--green);  }
-    .g-badge.dbox  { background: rgba(255,72,0,.1);   color: var(--orange); }
+    .g-badge.synth { background: rgba(255,72,0,.18);    color: var(--orange); }
+    .g-badge.fx    { background: rgba(59,158,234,.18);  color: var(--blue);   }
+    .g-badge.lfo   { background: rgba(139,92,246,.18);  color: var(--purple); }
+    .g-badge.adsr  { background: rgba(34,197,94,.18);   color: var(--green);  }
+    .g-badge.dbox  { background: rgba(255,72,0,.18);   color: var(--orange); }
     .card-type { font-size: 18px; font-weight: 700; letter-spacing: .01em; margin-bottom: 12px; }
     .knob-strip { margin-bottom: 12px; }
     .knob-strip svg { display: block; overflow: visible; }
@@ -62,7 +62,7 @@
     .card:hover .knob-tick { transform: rotate(45deg); transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
     .param-list { list-style: none; }
     .param-item { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
-    .param-item + .param-item { border-top: 1px solid #F3F1EE; }
+    .param-item + .param-item { border-top: 1px solid #24262C; }
     .p-idx { font-size: 9px; font-weight: 300; color: var(--knob-null); width: 14px; flex-shrink: 0; text-align: right; }
     .p-name { font-size: 11px; font-weight: 400; letter-spacing: .03em; }
 
@@ -176,7 +176,7 @@
       return name !== null
         ? `<g transform="translate(${cx},${cy})"><circle r="${R}" fill="#FF4800"/>` +
           `<line class="knob-tick" x1="0" y1="0" x2="0" y2="${-(R-2)}" stroke="white" stroke-width="1.5" stroke-linecap="round"/></g>`
-        : `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#C8C5BF" stroke-width="1.5"/>`;
+        : `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#4A4E57" stroke-width="1.5"/>`;
     }).join('');
     return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${circles}</svg>`;
   }

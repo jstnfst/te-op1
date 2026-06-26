@@ -11,9 +11,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #EEEDE9; --surface: #FFFFFF; --border: #E0DDD7;
-      --text: #1C1C1C; --muted: #9B9791; --header-bg: #1A1A1A;
-      --orange: #FF4800; --blue: #0E8FE8; --purple: #8B5CF6; --green: #22C55E;
+      --bg: #15161A; --surface: #1F2127; --border: #31343C;
+      --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
+      --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
     }
     body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
 
@@ -53,7 +53,7 @@
     .pages-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 48px; }
     @media (max-width: 600px) { .pages-grid { grid-template-columns: 1fr; } }
     .page-card { display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 24px 26px 22px; transition: box-shadow .18s, transform .18s, border-color .18s; }
-    .page-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.1); transform: translateY(-2px); border-color: #CCC9C3; }
+    .page-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474B54; }
     .page-card-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: var(--muted); margin-bottom: 8px; }
     .page-card-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
     .page-card-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.7; }
@@ -64,9 +64,9 @@
     h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted); margin-bottom: 14px; }
     .status-table { width: 100%; border-collapse: collapse; margin-bottom: 48px; }
     .status-table th { font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--muted); text-align: left; padding: 6px 12px 5px; border-bottom: 2px solid var(--border); }
-    .status-table td { font-size: 12px; font-weight: 400; padding: 7px 12px; border-bottom: 1px solid #F0EEE9; }
+    .status-table td { font-size: 12px; font-weight: 400; padding: 7px 12px; border-bottom: 1px solid #24262C; }
     .status-table tr:last-child td { border-bottom: none; }
-    .status-table tr:hover td { background: #F8F7F4; }
+    .status-table tr:hover td { background: #24262C; }
     .types-list { font-size: 10px; font-weight: 300; color: var(--muted); }
 
     /* ── FORMAT SUMMARY ── */

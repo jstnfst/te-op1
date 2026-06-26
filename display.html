@@ -11,9 +11,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #EEEDE9; --surface: #FFFFFF; --border: #E0DDD7;
-      --text: #1C1C1C; --muted: #9B9791; --header-bg: #1A1A1A;
-      --orange: #FF4800; --blue: #0E8FE8; --purple: #8B5CF6; --green: #22C55E;
+      --bg: #15161A; --surface: #1F2127; --border: #31343C;
+      --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
+      --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
 
       /* Scale type colors */
       --c-percent:   #5B8DEF;
@@ -69,22 +69,22 @@
     .t-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
     .param-table { width: 100%; border-collapse: collapse; }
     .param-table th { font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--muted); text-align: left; padding: 6px 10px 5px; border-bottom: 2px solid var(--border); }
-    .param-table td { font-size: 11px; font-weight: 400; padding: 6px 10px; border-bottom: 1px solid #F0EEE9; vertical-align: top; }
+    .param-table td { font-size: 11px; font-weight: 400; padding: 6px 10px; border-bottom: 1px solid #24262C; vertical-align: top; }
     .param-table tr:last-child td { border-bottom: none; }
-    .param-table tr:hover td { background: #F8F7F4; }
+    .param-table tr:hover td { background: #24262C; }
     .engine-cell { font-weight: 700; white-space: nowrap; }
     .idx-cell { color: var(--muted); font-size: 10px; text-align: right; width: 28px; }
     .scale-chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; white-space: nowrap; }
     .samples-cell { font-size: 10px; font-weight: 300; color: var(--muted); }
     .sample-pair { display: inline-block; margin-right: 8px; white-space: nowrap; }
-    .sample-pair .raw { color: #9B9791; }
+    .sample-pair .raw { color: var(--muted); }
     .sample-pair .arrow { margin: 0 2px; }
     .sample-pair .disp { color: var(--text); font-weight: 700; }
     .info-cell { font-size: 10px; font-weight: 300; color: var(--muted); max-width: 240px; }
 
     /* ── ENGINE GROUP HEADER ROWS ── */
     .engine-group-row td {
-      background: #EBEAE5;
+      background: #24262C;
       padding: 5px 10px 4px;
       border-bottom: 1px solid var(--border);
       border-top: 2px solid var(--border);
@@ -96,14 +96,14 @@
     }
 
     /* ── SCALE TYPE CHIP COLORS ── */
-    .chip-percent   { background: rgba(91,141,239,.1);  color: var(--c-percent); }
-    .chip-centered  { background: rgba(167,139,250,.1); color: var(--c-centered); }
-    .chip-discrete  { background: rgba(52,211,153,.1);  color: var(--c-discrete); }
-    .chip-selector  { background: rgba(245,158,11,.1);  color: var(--c-selector); }
-    .chip-hz        { background: rgba(249,115,22,.1);  color: var(--c-hz); }
-    .chip-tempo     { background: rgba(236,72,153,.1);  color: var(--c-tempo); }
-    .chip-inverse   { background: rgba(20,184,166,.1);  color: var(--c-inverse); }
-    .chip-decimal   { background: rgba(6,182,212,.1);   color: var(--c-decimal); }
+    .chip-percent   { background: rgba(91,141,239,.18);  color: var(--c-percent); }
+    .chip-centered  { background: rgba(167,139,250,.18); color: var(--c-centered); }
+    .chip-discrete  { background: rgba(52,211,153,.18);  color: var(--c-discrete); }
+    .chip-selector  { background: rgba(245,158,11,.18);  color: var(--c-selector); }
+    .chip-hz        { background: rgba(249,115,22,.18);  color: var(--c-hz); }
+    .chip-tempo     { background: rgba(236,72,153,.18);  color: var(--c-tempo); }
+    .chip-inverse   { background: rgba(20,184,166,.18);  color: var(--c-inverse); }
+    .chip-decimal   { background: rgba(6,182,212,.18);   color: var(--c-decimal); }
 
     /* ── MINI BAR (inline % visualization for percent/centered) ── */
     .mini-bar-wrap { display: flex; align-items: center; gap: 6px; }
@@ -419,7 +419,7 @@
   }
 
   function samplesHtml(samples) {
-    if (!samples.length) return '<span style="color:#C8C5BF">—</span>';
+    if (!samples.length) return '<span style="color:#5A5E66">—</span>';
     return samples.map(([raw, disp]) =>
       `<span class="sample-pair"><span class="raw">${raw}</span><span class="arrow">→</span><span class="disp">${disp}</span></span>`
     ).join('');

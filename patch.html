@@ -11,9 +11,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg: #EEEDE9; --surface: #FFFFFF; --border: #E0DDD7;
-      --text: #1C1C1C; --muted: #9B9791; --header-bg: #1A1A1A;
-      --orange: #FF4800; --blue: #0E8FE8; --purple: #8B5CF6; --green: #22C55E;
+      --bg: #15161A; --surface: #1F2127; --border: #31343C;
+      --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
+      --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
 
       --c-percent:   #5B8DEF;
       --c-centered:  #A78BFA;
@@ -24,9 +24,9 @@
       --c-inverse:   #14B8A6;
       --c-decimal:   #06B6D4;
 
-      /* JSON token colors */
-      --tok-key: #C2410C; --tok-str: #15803D; --tok-num: #1D4ED8;
-      --tok-bool: #9333EA; --tok-punct: #9B9791;
+      /* JSON token colors (tuned for the dark editor) */
+      --tok-key: #E0973D; --tok-str: #6FCB7F; --tok-num: #6AA8FF;
+      --tok-bool: #C58BF5; --tok-punct: #6B6E74;
     }
     body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
 
@@ -52,15 +52,15 @@
       outline: 2px solid var(--orange); outline-offset: 2px;
     }
 
-    /* ── IDENTITY STRIP ── */
-    .identity { display: flex; align-items: center; gap: 22px; padding: 18px 22px; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 6px; margin-bottom: 18px; }
-    .id-art { width: 120px; height: 72px; flex-shrink: 0; color: var(--text); }
+    /* ── IDENTITY (inside the editor panel) ── */
+    .identity { display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
+      padding-bottom: 14px; border-bottom: 1px solid var(--border); }
+    .id-art { width: 84px; height: 50px; flex-shrink: 0; color: var(--text); }
     .engine-svg { width: 100%; height: 100%; }
     .engine-svg .ac { stroke: var(--orange); }
     .engine-svg .acf { fill: var(--orange); }
-    .id-fields { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
-    .id-name { font-size: 26px; font-weight: 800; letter-spacing: .01em; color: var(--text); background: transparent;
+    .id-fields { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
+    .id-name { font-size: 19px; font-weight: 800; letter-spacing: .01em; color: var(--text); background: transparent;
       border: none; border-bottom: 2px dashed transparent; font-family: inherit; width: 100%; padding: 2px 0; }
     .id-name:hover { border-bottom-color: var(--border); }
     .id-name:focus { outline: none; border-bottom-color: var(--orange); }
@@ -84,7 +84,7 @@
     }
     .btn:hover, .editor-toolbar select:hover { border-color: var(--text); }
     .btn { text-transform: uppercase; }
-    .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #FBFAF7; }
+    .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #131418; }
     .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px rgba(255,72,0,.25); }
     .code-layer {
       position: absolute; inset: 0; margin: 0; border: 0;
@@ -138,21 +138,21 @@
     .toggle input { accent-color: var(--orange); cursor: pointer; }
     .pgroup.off { opacity: .45; }
 
-    .prow { padding: 9px 0; border-bottom: 1px solid #F0EEE9; }
+    .prow { padding: 9px 0; border-bottom: 1px solid #24262C; }
     .prow:last-child { border-bottom: none; }
     .prow-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
     .pname { font-size: 11px; font-weight: 700; letter-spacing: .02em; }
     .pidx { font-size: 9px; color: var(--muted); }
     .pval { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--text); }
     .scale-chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; white-space: nowrap; }
-    .chip-percent { background: rgba(91,141,239,.12); color: var(--c-percent); }
-    .chip-centered { background: rgba(167,139,250,.12); color: var(--c-centered); }
-    .chip-discrete { background: rgba(52,211,153,.12); color: var(--c-discrete); }
-    .chip-selector { background: rgba(245,158,11,.12); color: var(--c-selector); }
-    .chip-hz { background: rgba(249,115,22,.12); color: var(--c-hz); }
-    .chip-tempo { background: rgba(236,72,153,.12); color: var(--c-tempo); }
-    .chip-inverse { background: rgba(20,184,166,.12); color: var(--c-inverse); }
-    .chip-decimal { background: rgba(6,182,212,.12); color: var(--c-decimal); }
+    .chip-percent { background: rgba(91,141,239,.18); color: var(--c-percent); }
+    .chip-centered { background: rgba(167,139,250,.18); color: var(--c-centered); }
+    .chip-discrete { background: rgba(52,211,153,.18); color: var(--c-discrete); }
+    .chip-selector { background: rgba(245,158,11,.18); color: var(--c-selector); }
+    .chip-hz { background: rgba(249,115,22,.18); color: var(--c-hz); }
+    .chip-tempo { background: rgba(236,72,153,.18); color: var(--c-tempo); }
+    .chip-inverse { background: rgba(20,184,166,.18); color: var(--c-inverse); }
+    .chip-decimal { background: rgba(6,182,212,.18); color: var(--c-decimal); }
     .prow-ctl { display: flex; align-items: center; gap: 12px; }
     .prow-ctl input[type=range] { flex: 1; accent-color: var(--orange); height: 4px; cursor: pointer; min-width: 0; }
     .rawin { width: 78px; font-family: inherit; font-size: 11px; font-weight: 700; text-align: right; color: var(--text);
@@ -162,8 +162,8 @@
       background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; cursor: pointer; }
 
     /* ── DBOX SUMMARY ── */
-    .dbox-note { background: #FFF6F0; border: 1px solid #F4D9C8; border-radius: 6px; padding: 14px 16px;
-      font-size: 11px; font-weight: 300; color: #8A4B2A; line-height: 1.6; }
+    .dbox-note { background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; padding: 14px 16px;
+      font-size: 11px; font-weight: 300; color: #E3A87E; line-height: 1.6; }
     .dbox-note b { font-weight: 700; }
     .dyna-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
     .dyna-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
@@ -218,27 +218,26 @@
 </header>
 
 <main>
-  <!-- IDENTITY STRIP -->
-  <section class="identity">
-    <div class="id-art" id="idArt" aria-hidden="true"></div>
-    <div class="id-fields">
-      <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
-      <div class="id-meta">
-        <span class="id-engine" id="idEngine">—</span>
-        <span class="lbl">octave</span>
-        <select id="octSel" aria-label="Octave">
-          <option value="-4">-4</option><option value="-3">-3</option>
-          <option value="-2">-2</option><option value="-1">-1</option>
-          <option value="0">0</option><option value="1">+1</option>
-          <option value="2">+2</option><option value="3">+3</option><option value="4">+4</option>
-        </select>
-      </div>
-    </div>
-  </section>
-
   <div class="workspace">
     <!-- LEFT: JSON EDITOR -->
     <section class="panel" aria-label="Preset JSON editor">
+      <!-- patch identity -->
+      <div class="identity">
+        <div class="id-art" id="idArt" aria-hidden="true"></div>
+        <div class="id-fields">
+          <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
+          <div class="id-meta">
+            <span class="id-engine" id="idEngine">—</span>
+            <span class="lbl">octave</span>
+            <select id="octSel" aria-label="Octave">
+              <option value="-4">-4</option><option value="-3">-3</option>
+              <option value="-2">-2</option><option value="-1">-1</option>
+              <option value="0">0</option><option value="1">+1</option>
+              <option value="2">+2</option><option value="3">+3</option><option value="4">+4</option>
+            </select>
+          </div>
+        </div>
+      </div>
       <div class="editor-toolbar">
         <select id="sampleSel" aria-label="Load a sample preset"></select>
         <button class="btn" id="openBtn" type="button">Open .json</button>
@@ -729,7 +728,7 @@ function groupHtml(grp, label, arrKey, engPrefix, typeKey, typeList) {
 }
 function adsrExtrasHtml() {
   const rows = [4, 5, 6, 7].map(i => rowHtml('adsr', 'adsr', i, state.adsr[i] != null ? state.adsr[i] : 0)).join('');
-  return `<div class="pgroup"><div class="pgroup-head"><h2>Keyboard / ADSR</h2></div>${rows}</div>`;
+  return `<div class="pgroup"><div class="pgroup-head"><h2>Keyboard</h2></div>${rows}</div>`;
 }
 function dboxHtml() {
   const dyna = state.dyna_env || [0,0,0,0,0,0,0,0];
@@ -908,8 +907,9 @@ viz.addEventListener('change', e => {
     const grp = t.dataset.grp, idx = +t.dataset.idx;
     arrFor(grp)[idx] = parseInt(t.value, 10);
     syncEditor();
-    // LFO DESTINATION drives the PARAMETER options/labels → rebuild the group
-    if (grp === 'lfo') render(); else refreshRow(grp, idx);
+    // Re-render so the dropdown rebuilds: drops the stale off-grid (~)
+    // option once a valid step is chosen, and refreshes LFO PARAMETER options.
+    render();
   } else if (t.classList.contains('actv')) {     // fx/lfo active toggle
     state[t.dataset.key] = t.checked;
     syncEditor(); render();
