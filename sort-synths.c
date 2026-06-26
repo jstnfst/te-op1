@@ -1,17 +1,18 @@
 /*
- * sort-synths.c — organize OP-1 patch files by synth engine type
+ * sort-synths.c — organize OP-1 preset files by synth engine type
  *
- * Reads each .json patch, extracts the "type" field, and moves the .json
- * together with any audio sidecar (.aif, .aiff, or .wav) into:
+ * Reads each .aif preset, extracts the "type" field from its embedded op-1
+ * metadata, and moves the .aif into:
  *
- *   <parent-of-input>/synth/<type>/<filename>.{json,aif}
+ *   <parent-of-input>/synth/<type>/<filename>.aif
  *
+ * Only the .aif preset is moved; any .json/.wav sidecars are left in place.
  * The synth/ directory is a sibling of the input directory.
  * Skips any directory named "synth" during recursive walks.
  * Never overwrites an existing destination file.
  *
  * Build: cl sort-synths.c /Fe:sort-synths.exe /W3 /D_CRT_SECURE_NO_WARNINGS
- * Usage: sort-synths <patch.json>
+ * Usage: sort-synths <patch.aif>
  *        sort-synths <directory>
  */
 
@@ -115,12 +116,22 @@ static int move_one(const char *src, const char *dst) {
     return 0;
 }
 
-/* ---- process one .json file ---------------------------------------------- */
+/* Find the 4-byte "op-1" APPL signature in a binary buffer. strstr is unsafe
+   here because AIFF chunks (COMM, audio) contain NUL bytes; scan manually.
+   Returns a pointer just past the signature (start of the JSON), or NULL. */
+static const char *find_op1_json(const char *buf, long sz) {
+    for (long i = 0; i + 4 <= sz; i++)
+        if (buf[i] == 'o' && buf[i+1] == 'p' && buf[i+2] == '-' && buf[i+3] == '1')
+            return buf + i + 4;
+    return NULL;
+}
 
-static void process_file(const char *json_path, const char *synth_base, Stats *st) {
-    /* read JSON */
-    FILE *f = fopen(json_path, "rb");
-    if (!f) { perror(json_path); st->failed++; return; }
+/* ---- process one .aif preset --------------------------------------------- */
+
+static void process_file(const char *aif_path, const char *synth_base, Stats *st) {
+    /* read the .aif and pull "type" from its embedded op-1 JSON */
+    FILE *f = fopen(aif_path, "rb");
+    if (!f) { perror(aif_path); st->failed++; return; }
     fseek(f, 0, SEEK_END);
     long sz = ftell(f); rewind(f);
     char *buf = malloc((size_t)sz + 1);
@@ -130,9 +141,10 @@ static void process_file(const char *json_path, const char *synth_base, Stats *s
     buf[sz] = '\0';
 
     char synth_type[64];
-    if (!get_synth_type(buf, synth_type, sizeof(synth_type))) {
-        fprintf(stderr, "no \"type\" field: %s\n", json_path);
-        free(buf); st->failed++; return;
+    const char *json = find_op1_json(buf, sz);
+    if (!json || !get_synth_type(json, synth_type, sizeof(synth_type))) {
+        fprintf(stderr, "skip (no op-1 metadata): %s\n", aif_path);
+        free(buf); st->skipped++; return;
     }
     free(buf);
 
@@ -141,43 +153,20 @@ static void process_file(const char *json_path, const char *synth_base, Stats *s
     snprintf(dest_dir, sizeof(dest_dir), "%s\\%s", synth_base, synth_type);
     make_dirs(dest_dir);
 
-    /* derive basename (no ext) */
+    /* keep the original filename and extension (.aif / .aiff) */
     char base[256];
-    basename_no_ext(json_path, base, sizeof(base));
+    basename_no_ext(aif_path, base, sizeof(base));
+    const char *dot = strrchr(aif_path, '.');
+    const char *sep = strrchr(aif_path, '\\');
+    const char *ext = (dot && (!sep || dot > sep)) ? dot : ".aif";
 
-    /* source stem = json path without its extension */
-    char stem[MAX_PATH];
-    const char *dot = strrchr(json_path, '.');
-    const char *sep = strrchr(json_path, '\\');
-    if (dot && (!sep || dot > sep)) {
-        size_t prefix = (size_t)(dot - json_path);
-        memcpy(stem, json_path, prefix);
-        stem[prefix] = '\0';
-    } else {
-        strncpy(stem, json_path, sizeof(stem) - 1);
-        stem[sizeof(stem) - 1] = '\0';
-    }
+    char dst[MAX_PATH];
+    snprintf(dst, sizeof(dst), "%s\\%s%s", dest_dir, base, ext);
+    printf("%s%s  ->  %s\\\n", base, ext, dest_dir);
 
-    /* move the .json */
-    char json_dst[MAX_PATH];
-    snprintf(json_dst, sizeof(json_dst), "%s\\%s.json", dest_dir, base);
-    printf("%s  ->  %s\\\n", base, dest_dir);
-    int r_json = move_one(json_path, json_dst);
-
-    /* move any audio sidecar that exists (.aif / .aiff / .wav) */
-    static const char *AUDIO_EXTS[] = { ".aif", ".aiff", ".wav" };
-    int audio_failed = 0, audio_moved = 0;
-    for (int e = 0; e < (int)(sizeof(AUDIO_EXTS) / sizeof(AUDIO_EXTS[0])); e++) {
-        char a_src[MAX_PATH], a_dst[MAX_PATH];
-        snprintf(a_src, sizeof(a_src), "%s%s", stem, AUDIO_EXTS[e]);
-        snprintf(a_dst, sizeof(a_dst), "%s\\%s%s", dest_dir, base, AUDIO_EXTS[e]);
-        int r = move_one(a_src, a_dst);
-        if (r == 1) audio_failed = 1;
-        else if (r == 0) audio_moved = 1;
-    }
-
-    if (r_json == 1 || audio_failed) st->failed++;
-    else if (r_json == 0 || audio_moved) st->moved++;
+    int r = move_one(aif_path, dst);
+    if (r == 1) st->failed++;
+    else if (r == 0) st->moved++;
     else st->skipped++;
 }
 
@@ -205,7 +194,8 @@ static void walk_dir(const char *dir, const char *synth_base, Stats *st) {
             walk_dir(child, synth_base, st);
         } else {
             size_t len = strlen(fd.cFileName);
-            if (len > 5 && _stricmp(fd.cFileName + len - 5, ".json") == 0)
+            if ((len > 4 && _stricmp(fd.cFileName + len - 4, ".aif") == 0) ||
+                (len > 5 && _stricmp(fd.cFileName + len - 5, ".aiff") == 0))
                 process_file(child, synth_base, st);
         }
     } while (FindNextFileA(h, &fd));
@@ -217,7 +207,7 @@ static void walk_dir(const char *dir, const char *synth_base, Stats *st) {
 
 int main(int argc, char *argv[]) {
     if (argc != 2) {
-        fprintf(stderr, "Usage: %s <patch.json | directory>\n", argv[0]);
+        fprintf(stderr, "Usage: %s <patch.aif | directory>\n", argv[0]);
         return 1;
     }
 
