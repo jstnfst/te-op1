@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive OP-1 Field patch viewer. Load a preset JSON and explore its synth engine, ADSR envelope, and every knob, FX, and LFO parameter — edited live in both directions.">
+  <title>OP-1 Field — Patch</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #EEEDE9; --surface: #FFFFFF; --border: #E0DDD7;
+      --text: #1C1C1C; --muted: #9B9791; --header-bg: #1A1A1A;
+      --orange: #FF4800; --blue: #0E8FE8; --purple: #8B5CF6; --green: #22C55E;
+
+      --c-percent:   #5B8DEF;
+      --c-centered:  #A78BFA;
+      --c-discrete:  #34D399;
+      --c-selector:  #F59E0B;
+      --c-hz:        #F97316;
+      --c-tempo:     #EC4899;
+      --c-inverse:   #14B8A6;
+      --c-decimal:   #06B6D4;
+
+      /* JSON token colors */
+      --tok-key: #C2410C; --tok-str: #15803D; --tok-num: #1D4ED8;
+      --tok-bool: #9333EA; --tok-punct: #9B9791;
+    }
+    body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header { background: var(--header-bg); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
+    .header-row { display: flex; align-items: center; gap: 10px; padding: 16px 32px 10px; }
+    .site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
+    .site-title:hover { color: rgba(255,255,255,.8); }
+    .site-sep { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.2); }
+    .site-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.42); letter-spacing: .03em; }
+    .fw-tag { margin-left: auto; font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; }
+    .page-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.06); gap: 2px; }
+    .nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px; text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
+    .nav-btn:hover { color: rgba(255,255,255,.72); }
+    .nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
+
+    /* ── MAIN ── (full-width workspace, unlike the centered reference pages) */
+    main { max-width: none; margin: 0; padding: 24px 32px 80px; }
+    h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+
+    a:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible,
+    textarea:focus-visible, [tabindex]:focus-visible {
+      outline: 2px solid var(--orange); outline-offset: 2px;
+    }
+
+    /* ── IDENTITY STRIP ── */
+    .identity { display: flex; align-items: center; gap: 22px; padding: 18px 22px; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 6px; margin-bottom: 18px; }
+    .id-art { width: 120px; height: 72px; flex-shrink: 0; color: var(--text); }
+    .engine-svg { width: 100%; height: 100%; }
+    .engine-svg .ac { stroke: var(--orange); }
+    .engine-svg .acf { fill: var(--orange); }
+    .id-fields { display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 0; }
+    .id-name { font-size: 26px; font-weight: 800; letter-spacing: .01em; color: var(--text); background: transparent;
+      border: none; border-bottom: 2px dashed transparent; font-family: inherit; width: 100%; padding: 2px 0; }
+    .id-name:hover { border-bottom-color: var(--border); }
+    .id-name:focus { outline: none; border-bottom-color: var(--orange); }
+    .id-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 11px; color: var(--muted); }
+    .id-engine { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); font-size: 12px; }
+    .id-meta select { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
+    .id-meta .lbl { letter-spacing: .12em; text-transform: uppercase; font-weight: 700; font-size: 9px; }
+
+    /* ── WORKSPACE ── */
+    /* Widest: 4 columns — editor | (ADSR + synth) | (effect + LFO) | keyboard */
+    .workspace { display: grid; grid-template-columns: minmax(340px, 0.85fr) minmax(0, 2.6fr); gap: 22px; align-items: start; }
+
+    .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px; }
+
+    /* ── EDITOR ── */
+    .editor-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+    .editor-toolbar select, .btn {
+      font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 10px; cursor: pointer;
+    }
+    .btn:hover, .editor-toolbar select:hover { border-color: var(--text); }
+    .btn { text-transform: uppercase; }
+    .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #FBFAF7; }
+    .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px rgba(255,72,0,.25); }
+    .code-layer {
+      position: absolute; inset: 0; margin: 0; border: 0;
+      font-family: 'JetBrains Mono','Courier New',monospace; font-size: 12.5px; line-height: 1.55;
+      letter-spacing: 0; tab-size: 2; padding: 14px 16px;
+      white-space: pre; overflow: auto; word-wrap: normal;
+    }
+    #jsonHighlight { color: var(--text); pointer-events: none; z-index: 1; }
+    #jsonInput { z-index: 2; resize: none; background: transparent; color: transparent; caret-color: var(--orange); outline: none; }
+    #jsonInput::selection { background: rgba(255,72,0,.18); }
+    .tok-key { color: var(--tok-key); } .tok-str { color: var(--tok-str); }
+    .tok-num { color: var(--tok-num); } .tok-bool { color: var(--tok-bool); }
+    .tok-punct { color: var(--tok-punct); }
+    .editor-status { margin-top: 10px; font-size: 11px; font-weight: 400; min-height: 16px; }
+    .editor-status.ok { color: var(--green); } .editor-status.err { color: var(--orange); }
+    .editor-hint { margin-top: 6px; font-size: 10px; font-weight: 300; color: var(--muted); }
+
+    /* ── VIZ PANEL ── (3 inner columns → 4 total with the editor) */
+    .viz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: start; }
+    .viz-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+    /* ── ADSR SCOPE (signature) ── */
+    .scope-card { background: var(--header-bg); border-radius: 6px; padding: 16px 16px 12px; border: 1px solid #000; }
+    .scope-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+    .scope-title { font-size: 10px; font-weight: 700; letter-spacing: .2em; color: rgba(255,255,255,.5); text-transform: uppercase; }
+    .scope-sub { font-size: 9px; font-weight: 300; color: rgba(255,255,255,.32); letter-spacing: .05em; }
+    .scope-svg { width: 100%; aspect-ratio: 560 / 200; display: block; touch-action: none; }
+    .env-grid { stroke: rgba(255,255,255,.07); stroke-width: 1; }
+    .env-fill { fill: rgba(255,72,0,.12); stroke: none; }
+    .env-line { fill: none; stroke: var(--orange); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
+      filter: drop-shadow(0 0 5px rgba(255,72,0,.6)); }
+    .env-glow { animation: envpulse 2.6s ease-in-out infinite; }
+    @keyframes envpulse { 0%,100% { opacity: 1; } 50% { opacity: .82; } }
+    .handle { fill: var(--header-bg); stroke: var(--orange); stroke-width: 2.5; cursor: grab; transition: r .12s; }
+    .handle:hover, .handle:focus-visible { r: 9; fill: var(--orange); outline: none; }
+    .handle:active { cursor: grabbing; }
+    .scope-readout { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
+    .ro { font-size: 9px; letter-spacing: .04em; color: rgba(255,255,255,.4); }
+    .ro b { display: block; font-size: 11px; color: #fff; font-weight: 700; letter-spacing: 0; margin-top: 1px; }
+    .ro .rd { color: var(--orange); }
+
+    /* ── PARAM GROUPS ── */
+    .pgroup { } /* spacing handled by the .viz-col flex gap */
+    .pgroup-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .pgroup-head h2 { margin: 0; }
+    .pgroup-engine { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--text); }
+    .pgroup-head select { font-family: inherit; font-size: 10px; font-weight: 700; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
+    .toggle { margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; user-select: none; }
+    .toggle input { accent-color: var(--orange); cursor: pointer; }
+    .pgroup.off { opacity: .45; }
+
+    .prow { padding: 9px 0; border-bottom: 1px solid #F0EEE9; }
+    .prow:last-child { border-bottom: none; }
+    .prow-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .pname { font-size: 11px; font-weight: 700; letter-spacing: .02em; }
+    .pidx { font-size: 9px; color: var(--muted); }
+    .pval { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--text); }
+    .scale-chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; white-space: nowrap; }
+    .chip-percent { background: rgba(91,141,239,.12); color: var(--c-percent); }
+    .chip-centered { background: rgba(167,139,250,.12); color: var(--c-centered); }
+    .chip-discrete { background: rgba(52,211,153,.12); color: var(--c-discrete); }
+    .chip-selector { background: rgba(245,158,11,.12); color: var(--c-selector); }
+    .chip-hz { background: rgba(249,115,22,.12); color: var(--c-hz); }
+    .chip-tempo { background: rgba(236,72,153,.12); color: var(--c-tempo); }
+    .chip-inverse { background: rgba(20,184,166,.12); color: var(--c-inverse); }
+    .chip-decimal { background: rgba(6,182,212,.12); color: var(--c-decimal); }
+    .prow-ctl { display: flex; align-items: center; gap: 12px; }
+    .prow-ctl input[type=range] { flex: 1; accent-color: var(--orange); height: 4px; cursor: pointer; min-width: 0; }
+    .rawin { width: 78px; font-family: inherit; font-size: 11px; font-weight: 700; text-align: right; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; }
+    .rawin:focus { outline: none; border-color: var(--orange); }
+    .pselect { width: 100%; font-family: inherit; font-size: 11px; font-weight: 700; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; cursor: pointer; }
+
+    /* ── DBOX SUMMARY ── */
+    .dbox-note { background: #FFF6F0; border: 1px solid #F4D9C8; border-radius: 6px; padding: 14px 16px;
+      font-size: 11px; font-weight: 300; color: #8A4B2A; line-height: 1.6; }
+    .dbox-note b { font-weight: 700; }
+    .dyna-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
+    .dyna-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
+    .dyna-cell .dn { font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
+    .dyna-cell .dv { font-size: 16px; font-weight: 800; color: var(--text); margin-top: 3px; }
+    .dyna-cell .dr { font-size: 9px; color: var(--muted); margin-top: 2px; }
+
+    /* ── FOOTER ── */
+    footer { text-align: center; padding: 32px; font-size: 11px; font-weight: 300; color: var(--muted); letter-spacing: .04em; }
+    footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
+    footer a:hover { color: var(--text); }
+
+    /* Large: 3 columns — editor | viz(2 cols, groups wrap) */
+    @media (max-width: 1500px) {
+      .viz { grid-template-columns: 1fr 1fr; }
+    }
+    /* Medium: 2 columns — editor | stacked viz */
+    @media (max-width: 1180px) {
+      .workspace { grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.7fr); }
+      .viz { grid-template-columns: 1fr; }
+    }
+    /* Narrow: single column, editor on top */
+    @media (max-width: 920px) {
+      .workspace { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 640px) {
+      .header-row { padding: 12px 16px 8px; }
+      .site-sub { display: none; }
+      main { padding: 18px 16px 60px; }
+      .identity { flex-direction: column; align-items: flex-start; gap: 14px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .env-glow { animation: none; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <a href="index.html" class="site-title">OP-1 FIELD</a>
+    <span class="site-sep">//</span>
+    <span class="site-sub">patch</span>
+    <span class="fw-tag" id="fw-tag"></span>
+  </div>
+  <nav class="page-nav" aria-label="Site navigation">
+    <a href="index.html" class="nav-btn">HOME</a>
+    <a href="params.html" class="nav-btn">LAYOUT</a>
+    <a href="display.html" class="nav-btn">MAPPINGS</a>
+    <a href="patch.html" class="nav-btn active">PATCH</a>
+  </nav>
+</header>
+
+<main>
+  <!-- IDENTITY STRIP -->
+  <section class="identity">
+    <div class="id-art" id="idArt" aria-hidden="true"></div>
+    <div class="id-fields">
+      <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
+      <div class="id-meta">
+        <span class="id-engine" id="idEngine">—</span>
+        <span class="lbl">octave</span>
+        <select id="octSel" aria-label="Octave">
+          <option value="-4">-4</option><option value="-3">-3</option>
+          <option value="-2">-2</option><option value="-1">-1</option>
+          <option value="0">0</option><option value="1">+1</option>
+          <option value="2">+2</option><option value="3">+3</option><option value="4">+4</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <div class="workspace">
+    <!-- LEFT: JSON EDITOR -->
+    <section class="panel" aria-label="Preset JSON editor">
+      <div class="editor-toolbar">
+        <select id="sampleSel" aria-label="Load a sample preset"></select>
+        <button class="btn" id="openBtn" type="button">Open .json</button>
+        <input type="file" id="fileInput" accept=".json,application/json" hidden>
+      </div>
+      <div class="editor-wrap" id="editorWrap">
+        <pre class="code-layer" id="jsonHighlight" aria-hidden="true"><code></code></pre>
+        <textarea class="code-layer" id="jsonInput" spellcheck="false" autocomplete="off"
+          autocorrect="off" autocapitalize="off" wrap="off" aria-label="Preset JSON"></textarea>
+      </div>
+      <div class="editor-status" id="status"></div>
+      <div class="editor-hint">Edit the JSON directly, drop a <b>.json</b> file here, or pick a sample. Changes sync live with the controls. Keys are re-sorted alphabetically as the OP-1 firmware requires.</div>
+    </section>
+
+    <!-- RIGHT: VISUALIZATION -->
+    <section class="viz" id="viz" aria-label="Patch visualization"></section>
+  </div>
+</main>
+
+<footer id="footer"></footer>
+
+<script>
+/* ===================================================================
+   OP-1 Field — Patch page
+   Standalone. Data baked inline (matches the rest of the site).
+   =================================================================== */
+const FW = '1.7.3';
+document.getElementById('fw-tag').textContent = 'fw ' + FW;
+document.getElementById('footer').innerHTML =
+  'OP-1 Field firmware&nbsp;' + FW +
+  ' &middot; <a href="https://github.com/jstnfst/te-op1">github.com/jstnfst/te-op1</a>';
+
+/* ── Engine catalogues ───────────────────────────────────── */
+const SYNTH_TYPES = ['amp','cluster','dbox','digital','dimension','dna','drwave','dsynth','fm','phase','pulse','sampler','string','vocoder','voltage'];
+const FX_TYPES   = ['cwo','delay','grid','mother','nitro','phone','punch','spring','terminal'];
+const LFO_TYPES  = ['element','midi','random','tremolo','value','velocity'];
+
+/* ── Parameter name map (from op1-params.json) ───────────── */
+const PARAM_NAMES = {
+  'adsr': ['ATTACK','DECAY','SUSTAIN','RELEASE','PLAY MODE','PORTAMENTO','BEND RANGE','VOLUME'],
+  'synth.amp':       ['VOLUME','COMPRESSOR','TONE','DRIVE'],
+  'synth.cluster':   ['WAVE NUMBER','WAVE ENV','SPREAD','UNITOR'],
+  'synth.dbox':      ['ENVELOPE CROSSFADER','WAVEFORM 1','ENVELOPE 1','CROSS MODULATION','FREQUENCY','WAVEFORM 2','ENVELOPE 2','CUTOFF'],
+  'synth.digital':   ['WAVE SHAPER','OCTAVE','DETUNE+RINGMOD','DIGITALNESS'],
+  'synth.dimension': ['WAVEFORM','STEREO','FILTER CUTOFF FREQ','RESONANCE'],
+  'synth.dna':       ['FILTER','WAVE NUMBER','WAVE MODIFIER','NOISE'],
+  'synth.drwave':    ['WAVE TYPE AND LENGTH','FILTER','PHASE','CHORUS'],
+  'synth.dsynth':    ['ENVELOPE CROSSFADER','WAVEFORM 1','ENVELOPE 1','CROSS MODULATION','FREQUENCY','WAVEFORM 2','ENVELOPE 2','CUTOFF'],
+  'synth.fm':        ['FM AMOUNT','FREQUENCY','TOPOLOGY','DETUNE'],
+  'synth.phase':     ['PHASE SHIFT','DISTORTION AMOUNT','PHASE FILTER','PHASE TILT'],
+  'synth.pulse':     ['FILTER','AMPLITUDE','PULSE TWO','MODULATION'],
+  'synth.sampler':   ['START','LOOP IN','LOOP OUT','END','DIRECTION','FINE TUNE','LOOP FADE','GAIN'],
+  'synth.string':    ['TENSION','DECAY','DETUNE','IMPULSE TYPE'],
+  'synth.vocoder':   ['WAVEFORM','FORMANT','BANDS','MIX'],
+  'synth.voltage':   ['AMPERE MODULATION','GROUND NOISE','PHASE FILTER','VOLTAGE DETUNE'],
+  'fx.cwo':          ['FREQUENCY','DELAY','FEEDBACK','SIDEBAND'],
+  'fx.delay':        ['RANGE','SPEED','FEEDBACK','LEVEL'],
+  'fx.grid':         ['X SIZE','Y SIZE','Z FEEDBACK','MIX'],
+  'fx.mother':       ['DISTANCE','GATE','COLOR','MIX'],
+  'fx.nitro':        ['FREQUENCY LOWS','FILTER FOLLOW','FEEDBACK','FREQUENCY HIGHS'],
+  'fx.phone':        ['TONE','GSM','BAUD','TELEMATIC'],
+  'fx.punch':        ['FREQUENCY','PUNCH','ROUNDS','POWER'],
+  'fx.spring':       ['TONE','TURNS','DAMPING','MIX'],
+  'fx.terminal':     ['FREQUENCY','BITS','MODEL','MIX'],
+  'lfo.element':     ['SOURCE','AMOUNT','DESTINATION','PARAMETER'],
+  'lfo.midi':        ['PARAMETER 1','PARAMETER 2','PARAMETER 3','PARAMETER 4','DESTINATION 1','DESTINATION 2','DESTINATION 3','DESTINATION 4'],
+  'lfo.random':      ['SPEED','AMOUNT','DESTINATION','ENVELOPE','PARAMETER'],
+  'lfo.tremolo':     ['SPEED','PITCH AMOUNT','VOLUME LEVEL','PITCH ENVELOPE',null,null,null,'LFO SHAPE'],
+  'lfo.value':       ['SPEED','AMOUNT','DESTINATION','PARAMETER','LFO SHAPE'],
+  'lfo.velocity':    ['AMP','VOLUME AMOUNT','DESTINATION','PARAMETER'],
+};
+
+/* ── Scale-type metadata (from display.html) ─────────────── */
+const SCALE_META = {
+  percent:  { label: '%',          color: '#5B8DEF' },
+  centered: { label: 'centered %', color: '#A78BFA' },
+  discrete: { label: 'discrete',   color: '#34D399' },
+  selector: { label: 'selector',   color: '#F59E0B' },
+  hz:       { label: 'hz (log)',   color: '#F97316' },
+  tempo:    { label: 'tempo dial', color: '#EC4899' },
+  inverse:  { label: 'ms inverse', color: '#14B8A6' },
+  decimal:  { label: 'decimal',    color: '#06B6D4' },
+};
+
+/* ── Raw→display sample table (from display.html) ────────── */
+const DATA = [
+  ['synth.amp', 0, 'VOLUME','percent',[[16415,50]]], ['synth.amp',1,'COMPRESSOR','percent',[[16416,50]]],
+  ['synth.amp', 2, 'TONE','percent',[[16704,51]]], ['synth.amp',3,'DRIVE','percent',[[16384,50]]],
+  ['synth.cluster',0,'WAVE NUMBER','percent',[[3072,'min'],[17408,'max']]],['synth.cluster',1,'WAVE ENV','percent',[[0,'min'],[32767,'max']]],
+  ['synth.cluster',2,'SPREAD','percent',[[512,'min'],[24064,'max']]],['synth.cluster',3,'UNITOR','percent',[[3,0],[1638,100]]],
+  ['synth.dbox',0,'ENVELOPE CROSSFADER','percent',[[0,'min'],[24832,'max']]],['synth.dbox',1,'WAVEFORM 1','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dbox',2,'ENVELOPE 1','percent',[[0,'min'],[32767,'max']]],['synth.dbox',3,'CROSS MODULATION','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dbox',4,'FREQUENCY','percent',[[0,'min'],[32767,'max']]],['synth.dbox',5,'WAVEFORM 2','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dbox',6,'ENVELOPE 2','percent',[[0,'min'],[32767,'max']]],['synth.dbox',7,'CUTOFF','percent',[[0,'min'],[32767,'max']]],
+  ['dbox.dyna_env',0,'ATTACK','centered',[[-32768,'min'],[32767,'max']]],['dbox.dyna_env',1,'GAIN','percent',[[0,'min'],[8192,'max']]],
+  ['dbox.dyna_env',2,'RELEASE','centered',[[-32768,'min'],[32767,'max']]],['dbox.dyna_env',3,'SMOOTH','percent',[[0,'min'],[32767,'max']]],
+  ['synth.digital',0,'WAVE SHAPER','percent',[[0,'min'],[32767,'max']]],['synth.digital',1,'OCTAVE','discrete',[[2048,0],[19712,4],[26624,6]]],
+  ['synth.digital',2,'DETUNE+RINGMOD','centered',[[-32768,'min'],[-10369,33]]],['synth.digital',3,'DIGITALNESS','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dimension',0,'WAVEFORM','percent',[[0,'min'],[32767,'max']]],['synth.dimension',1,'STEREO','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dimension',2,'FILTER CUTOFF FREQ','hz',[[13742,'1320 Hz']]],['synth.dimension',3,'RESONANCE','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dna',0,'FILTER','centered',[[-29491,-90],[32767,100]]],['synth.dna',1,'WAVE NUMBER','percent',[[4608,'min'],[12800,'max']]],
+  ['synth.dna',2,'WAVE MODIFIER','percent',[[32767,'max']]],['synth.dna',3,'NOISE','percent',[[0,'min'],[32767,'max']]],
+  ['synth.drwave',0,'WAVE TYPE AND LENGTH','discrete',[[14209,57],[24568,98]]],['synth.drwave',1,'FILTER','discrete',[[11735,70],[16379,98]]],
+  ['synth.drwave',2,'PHASE','discrete',[[8199,49],[16377,98]]],['synth.drwave',3,'CHORUS','discrete',[[0,0],[32767,99]]],
+  ['synth.dsynth',0,'ENVELOPE CROSSFADER','percent',[[0,'min'],[32767,'max']]],['synth.dsynth',1,'WAVEFORM 1','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dsynth',2,'ENVELOPE 1','percent',[[0,'min'],[32767,'max']]],['synth.dsynth',3,'CROSS MODULATION','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dsynth',4,'FREQUENCY','percent',[[0,'min'],[32767,'max']]],['synth.dsynth',5,'WAVEFORM 2','percent',[[0,'min'],[32767,'max']]],
+  ['synth.dsynth',6,'ENVELOPE 2','percent',[[0,'min'],[32767,'max']]],['synth.dsynth',7,'CUTOFF','percent',[[0,'min'],[32767,'max']]],
+  ['synth.fm',0,'FM AMOUNT','discrete',[[31743,95]]],['synth.fm',1,'FREQUENCY','discrete',[[17352,52]]],
+  ['synth.fm',2,'TOPOLOGY','selector',[[1024,'min'],[13312,6],[17408,'max']]],['synth.fm',3,'DETUNE','discrete',[[0,0]]],
+  ['synth.phase',0,'PHASE SHIFT','percent',[[0,0],[32767,'max']]],['synth.phase',1,'DISTORTION AMOUNT','percent',[[14310,44],[29491,90]]],
+  ['synth.phase',2,'PHASE FILTER','percent',[[0,0],[32767,'max']]],['synth.phase',3,'PHASE TILT','percent',[[0,0],[32767,'max']]],
+  ['synth.pulse',0,'FILTER','percent',[[18848,57]]],['synth.pulse',1,'AMPLITUDE','percent',[[3984,12]]],
+  ['synth.pulse',2,'PULSE TWO','percent',[[10752,33]]],['synth.pulse',3,'MODULATION','centered',[[-16384,-100],[-6144,-38],[16384,100]]],
+  ['synth.sampler',0,'START','percent',[[0,'min'],[32766,'max']]],['synth.sampler',1,'LOOP IN','percent',[[0,'min'],[9821,30],[32767,'max']]],
+  ['synth.sampler',2,'LOOP OUT','percent',[[0,'min'],[18033,55],[32767,'max']]],['synth.sampler',3,'END','percent',[[0,'min'],[31301,96],[32767,'max']]],
+  ['synth.sampler',4,'DIRECTION','selector',[[8192,'min'],[12000,'forward']]],['synth.sampler',5,'FINE TUNE','percent',[[0,'min'],[30195,92],[32767,'max']]],
+  ['synth.sampler',6,'LOOP FADE','percent',[[0,'min'],[9103,28],[32767,'max']]],['synth.sampler',7,'GAIN','percent',[[0,'min'],[8192,25],[32767,'max']]],
+  ['synth.string',0,'TENSION','percent',[[64,'min'],[3392,10],[8256,'max']]],['synth.string',1,'DECAY','percent',[[24064,'max']]],
+  ['synth.string',2,'DETUNE','percent',[[16384,50]]],['synth.string',3,'IMPULSE TYPE','percent',[[8256,0],[16448,100]]],
+  ['synth.vocoder',0,'WAVEFORM','selector',[[0,'S']]],['synth.vocoder',1,'FORMANT','discrete',[[0,-4]]],
+  ['synth.vocoder',2,'BANDS','discrete',[[0,0]]],['synth.vocoder',3,'MIX','percent',[[0,0],[32767,'max']]],
+  ['synth.voltage',0,'AMPERE MODULATION','percent',[[16383,50],[26623,81]]],['synth.voltage',1,'GROUND NOISE','percent',[[14336,44],[26623,81]]],
+  ['synth.voltage',2,'PHASE FILTER','percent',[[20992,64],[29183,89]]],['synth.voltage',3,'VOLTAGE DETUNE','percent',[[16384,50],[26112,80]]],
+  ['fx.cwo',0,'FREQUENCY','percent',[[16366,50]]],['fx.cwo',1,'DELAY','percent',[[16677,50]]],
+  ['fx.cwo',2,'FEEDBACK','percent',[[16610,50]]],['fx.cwo',3,'SIDEBAND','percent',[[15345,50]]],
+  ['fx.delay',0,'RANGE','inverse',[[8000,'125 ms']]],['fx.delay',1,'SPEED','discrete',[[10624,25]]],
+  ['fx.delay',2,'FEEDBACK','discrete',[[8328,50]]],['fx.delay',3,'LEVEL','percent',[[0,'min'],[32767,'max']]],
+  ['fx.grid',0,'X SIZE','discrete',[[9064,50]]],['fx.grid',1,'Y SIZE','discrete',[[6032,30]]],
+  ['fx.grid',2,'Z FEEDBACK','discrete',[[23248,72]]],['fx.grid',3,'MIX','percent',[[0,'min'],[32767,'max']]],
+  ['fx.mother',0,'DISTANCE','percent',[[19041,58]]],['fx.mother',1,'GATE','percent',[[0,0]]],
+  ['fx.mother',2,'COLOR','percent',[[9832,30]]],['fx.mother',3,'MIX','percent',[[10826,33]]],
+  ['fx.nitro',0,'FREQUENCY LOWS','percent',[[64,'min'],[16448,'max']]],['fx.nitro',1,'FILTER FOLLOW','centered',[[-32768,'min'],[0,0],[32767,'max']]],
+  ['fx.nitro',2,'FEEDBACK','percent',[[0,'min'],[20643,'max']]],['fx.nitro',3,'FREQUENCY HIGHS','percent',[[64,'min'],[16448,'max']]],
+  ['fx.phone',0,'TONE','percent',[[204,'min'],[5458,26],[10522,51],[20480,'max']]],['fx.phone',1,'GSM','percent',[[3072,'min'],[6712,26],[10352,51],[17408,'max']]],
+  ['fx.phone',2,'BAUD','percent',[[1536,'min'],[5466,26],[9426,52],[16896,'max']]],['fx.phone',3,'TELEMATIC','percent',[[0,0],[8441,26],[16876,52],[32767,'max']]],
+  ['fx.punch',0,'FREQUENCY','percent',[[1344,'min'],[12480,'max']]],['fx.punch',1,'PUNCH','percent',[[24512,74]]],
+  ['fx.punch',2,'ROUNDS','discrete',[[3744,3],[11904,11]]],['fx.punch',3,'POWER','percent',[[29159,88],[31783,96]]],
+  ['fx.spring',0,'TONE','percent',[[16448,50]]],['fx.spring',1,'TURNS','percent',[[14544,44]]],
+  ['fx.spring',2,'DAMPING','percent',[[4096,12]]],['fx.spring',3,'MIX','percent',[[32767,100]]],
+  ['fx.terminal',0,'FREQUENCY','hz',[[0,'100 Hz'],[32767,'20000 Hz']]],['fx.terminal',1,'BITS','decimal',[[0,2],[32767,16]]],
+  ['fx.terminal',2,'MODEL','decimal',[[0,1],[32767,6]]],['fx.terminal',3,'MIX','percent',[[14322,50],[32767,100]]],
+  ['lfo.element',0,'SOURCE','selector',[[2000,'gravity sensor']]],['lfo.element',1,'AMOUNT','centered',[[-13743,-41],[6245,19],[8265,25],[32767,100]]],
+  ['lfo.element',2,'DESTINATION','selector',[[1024,'synth'],[7168,'mix']]],['lfo.element',3,'PARAMETER','selector',[[1024,'min'],[15360,'max']]],
+  ['lfo.midi',0,'PARAMETER 1','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],['lfo.midi',1,'PARAMETER 2','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],
+  ['lfo.midi',2,'PARAMETER 3','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],['lfo.midi',3,'PARAMETER 4','selector',[[1024,1],[4384,2],[8224,3],[15360,4]]],
+  ['lfo.midi',4,'DESTINATION 1','selector',[[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']]],['lfo.midi',5,'DESTINATION 2','selector',[[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']]],
+  ['lfo.midi',6,'DESTINATION 3','selector',[[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']]],['lfo.midi',7,'DESTINATION 4','selector',[[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']]],
+  ['lfo.random',0,'SPEED','tempo',[[4952,6]]],['lfo.random',1,'AMOUNT','discrete',[[7167,21]]],
+  ['lfo.random',2,'DESTINATION','selector',[[4952,'fx']]],['lfo.random',3,'ENVELOPE','percent',[[28925,88]]],
+  ['lfo.random',4,'PARAMETER','selector',[[0,'freq']]],
+  ['lfo.tremolo',0,'SPEED','tempo',[[0,'min'],[32440,'max']]],['lfo.tremolo',1,'PITCH AMOUNT','centered',[[985,'~3%'],[2264,'~7%']]],
+  ['lfo.tremolo',2,'VOLUME LEVEL','centered',[[-12759,-38]]],['lfo.tremolo',3,'PITCH ENVELOPE','percent',[[4592,14],[12136,37]]],
+  ['lfo.tremolo',7,'LFO SHAPE','selector',[[0,'default'],[19456,'exponential'],[32767,'max']]],
+  ['lfo.value',0,'SPEED','tempo',[[0,'min'],[16384,'max']]],['lfo.value',1,'AMOUNT','centered',[[23255,'~71%']]],
+  ['lfo.value',2,'DESTINATION','selector',[[1024,'synth'],[2080,'synth free'],[4192,'envelope'],[6304,'envelope free'],[8416,'fx'],[10528,'fx free']]],
+  ['lfo.value',3,'PARAMETER','selector',[[1024,'min'],[15360,'max']]],
+  ['lfo.value',4,'LFO SHAPE','selector',[[0,'sine'],[9362,'square'],[18724,'sawtooth'],[28086,'reverse sawtooth']]],
+  ['lfo.velocity',0,'AMP','percent',[[16381,50]]],['lfo.velocity',1,'VOLUME AMOUNT','centered',[[16694,'~51%']]],
+  ['lfo.velocity',2,'DESTINATION','selector',[[1024,'synth'],[7168,'mix']]],['lfo.velocity',3,'PARAMETER','selector',[[15360,'telematic']]],
+  ['adsr',0,'ATTACK','percent',[[64,'min'],[16320,'max']]],['adsr',1,'DECAY','percent',[[64,'min'],[16320,'max']]],
+  ['adsr',2,'SUSTAIN','percent',[[0,'min'],[32767,'max']]],['adsr',3,'RELEASE','percent',[[64,'min'],[16320,'max']]],
+  ['adsr',4,'PLAY MODE','selector',[[2048,'poly'],[6140,'mono'],[9209,'legato'],[14336,'unison']]],['adsr',5,'PORTAMENTO','percent',[[64,'min'],[16448,'max']]],
+  ['adsr',6,'BEND RANGE','selector',[[2048,'1 st'],[5117,'2 st'],[9209,'4 st'],[13301,'7 st'],[18432,'oct']]],['adsr',7,'VOLUME','discrete',[[3276,10],[32767,100]]],
+];
+const LOOKUP = {};
+DATA.forEach(([eng, idx, name, scale, samples]) => { LOOKUP[eng + '|' + idx] = { name, scale, samples }; });
+
+/* ── Control ranges (from json2aif.c) ────────────────────── */
+const RANGES = {
+  'synth.cluster': {0:[3072,17408],2:[512,24064],3:[3,1638]},
+  'synth.dna': {0:[-29491,32767]},
+  'synth.dsynth': {4:[0,15000],5:[0,0],6:[0,100],7:[0,1500]},
+  'synth.sampler': {0:[0,32766],4:[8192,32767]},
+  'fx.delay': {0:[1024,11264],1:[3276,32767],2:[0,16384]},
+  'fx.grid': {0:[1344,16704],1:[1344,16704]},
+  'fx.nitro': {0:[64,16448],1:[-32768,32767],2:[0,20643],3:[64,16448]},
+  'fx.phone': {0:[204,20480],1:[3072,17408],2:[1536,16896]},
+  'fx.punch': {0:[1344,12480],2:[1536,25088]},
+  'fx.spring': {0:[1344,16448],1:[7744,16448],2:[0,16384]},
+  'lfo.element': {0:[1024,7168],1:[-32767,32767],2:[1024,7168],3:[1024,15360]},
+  'lfo.midi': {0:[1024,15360],1:[1024,15360],2:[1024,15360],3:[1024,15360],4:[1024,7168],5:[1024,7168],6:[1024,7168],7:[1024,7168]},
+  'lfo.random': {2:[1024,7168],4:[1024,15360]},
+  'lfo.tremolo': {0:[0,32440],1:[-32767,32767],2:[-32767,32767],7:[0,32767]},
+  'lfo.value': {0:[0,16384],1:[-32767,32767],2:[1024,11264],3:[1024,15360],4:[0,28086]},
+  'lfo.velocity': {2:[1024,7168],3:[1024,15360]},
+  'adsr': {0:[64,16320],1:[64,16320],3:[64,16320],5:[64,16448]},
+};
+function getRange(eng, idx) {
+  const r = RANGES[eng] && RANGES[eng][idx];
+  if (r) return r;
+  const e = LOOKUP[eng + '|' + idx];
+  if (e && e.scale === 'centered') return [-32767, 32767];
+  return [0, 32767];
+}
+
+/* ── Sample presets (baked in) ───────────────────────────── */
+const SAMPLES = {
+  'cluster — cluster pad': {"adsr":[1600,10688,32767,14272,2048,4160,4000,4000],"fx_active":false,"fx_params":[4132,13409,2048,16392,8000,8000,8000,8000],"fx_type":"delay","knobs":[15616,30271,12288,309,0,0,0,0],"lfo_active":false,"lfo_params":[7168,32767,1024,11040,0,0,0,0],"lfo_type":"element","mtime":1782342081.0,"name":"cluster pad","octave":0,"synth_version":2,"type":"cluster"},
+  'digital — digital': {"adsr":[2112,8128,0,7232,2048,6464,4000,4000],"fx_active":true,"fx_params":[8000,11447,10660,18368,0,0,0,0],"fx_type":"delay","knobs":[31743,7424,-25088,0,0,0,0,0],"lfo_active":true,"lfo_params":[5808,-21615,4480,15360,0,0,0,0],"lfo_type":"element","name":"digital","octave":0,"synth_version":2,"type":"digital"},
+  'dimension — kaini': {"adsr":[64,5440,22016,4672,6144,5440,18432,21093],"fx_active":true,"fx_params":[17059,0,17704,15325,0,0,0,0],"fx_type":"mother","knobs":[9309,0,10560,26609,0,0,0,0],"lfo_active":true,"lfo_params":[7680,2617,2816,10560,0,0,0,0],"lfo_type":"value","mtime":1657634875.0,"name":"kaini","octave":0,"synth_version":3,"type":"dimension"},
+  'dna — 20130528_1601': {"adsr":[64,64,21504,7616,2048,6432,4000,4000],"fx_active":true,"fx_params":[5184,17408,7095,9856,0,0,0,0],"fx_type":"nitro","knobs":[-14131,10608,0,30720,0,0,0,0],"lfo_active":true,"lfo_params":[1024,19744,4928,15360,0,0,0,0],"lfo_type":"element","name":"20130528_1601","octave":1,"synth_version":1,"type":"dna"},
+  'drwave — 8bit water level': {"adsr":[2112,4544,0,15296,2048,4544,4000,4000],"fx_active":false,"fx_params":[5620,0,10500,11392,0,0,0,0],"fx_type":"nitro","knobs":[16409,204,8167,0,32767,0,0,0],"lfo_active":true,"lfo_params":[23168,1604,4534,14068,0,0,0,0],"lfo_type":"tremolo","name":"8bit water level dr wave","octave":1,"synth_version":2,"type":"drwave"},
+  'dsynth — 20181230_0340': {"adsr":[8768,16320,10240,4160,8192,8896,4000,4000],"fx_active":true,"fx_params":[8000,10624,8328,10168,0,0,0,0],"fx_type":"delay","knobs":[5576,0,32767,32767,23255,0,0,15743],"lfo_active":true,"lfo_params":[4912,8265,2000,2000,0,0,0,0],"lfo_type":"element","name":"20181230_0340","octave":2,"synth_version":2,"type":"dsynth"},
+  'fm — 20180804_0241': {"adsr":[64,9664,0,2112,4077,64,4000,4000],"fx_active":true,"fx_params":[12720,10668,2000,12801,8000,8000,8000,8000],"fx_type":"spring","knobs":[25600,28505,12800,0,15000,0,100,1500],"lfo_active":true,"lfo_params":[19914,1953,0,10742,0,0,0,0],"lfo_type":"tremolo","name":"20180804_0241","octave":0,"synth_version":2,"type":"fm"},
+  'phase — blade_bubbles': {"adsr":[2959,8104,31066,206,2048,3591,4000,4000],"fx_active":true,"fx_params":[667,256,29784,10744,0,0,0,0],"fx_type":"cwo","knobs":[9291,18038,17567,30729,0,0,0,0],"lfo_active":true,"lfo_params":[1783,29728,1517,31953,0,0,0,0],"lfo_type":"random","name":"blade_bubbles","octave":-4,"synth_version":2,"type":"phase"},
+  'pulse — 20200216_1415': {"adsr":[12224,16320,0,64,2048,64,4000,4000],"fx_active":true,"fx_params":[7168,15360,22527,13312,0,0,0,0],"fx_type":"cwo","knobs":[19328,13904,7584,-8192,0,0,0,0],"lfo_active":true,"lfo_params":[0,12825,9744,4320,0,0,0,0],"lfo_type":"value","name":"20200216_1415","octave":-1,"synth_version":2,"type":"pulse"},
+  'string — acguitar': {"adsr":[3648,64,32767,3008,4000,6464,4000,4000],"fx_active":true,"fx_params":[4608,7493,4497,8494,8000,8000,8000,8000],"fx_type":"delay","knobs":[3648,4192,8192,11328,0,0,0,0],"lfo_active":true,"lfo_params":[6120,15184,1648,12960,0,0,0,0],"lfo_type":"value","name":"acguitar","octave":0,"synth_version":1,"type":"string"},
+  'voltage — arp1lead': {"adsr":[4672,9664,7168,7744,5120,64,4000,4000],"fx_active":true,"fx_params":[3136,-15360,13545,10048,0,0,0,0],"fx_type":"nitro","knobs":[6336,0,22527,0,0,0,0,0],"lfo_active":true,"lfo_params":[10728,6952,10208,13984,0,0,0,0],"lfo_type":"value","name":"arp1lead","octave":0,"synth_version":2,"type":"voltage"},
+};
+
+/* ── State ───────────────────────────────────────────────── */
+let state = {};
+function clone(o) { return JSON.parse(JSON.stringify(o)); }
+function normalize(o) {
+  o = o || {};
+  if (!Array.isArray(o.knobs)) o.knobs = [0,0,0,0,0,0,0,0];
+  if (!Array.isArray(o.fx_params)) o.fx_params = [0,0,0,0,0,0,0,0];
+  if (!Array.isArray(o.lfo_params)) o.lfo_params = [0,0,0,0,0,0,0,0];
+  const isDbox = o.type === 'dbox' || 'drum_version' in o;
+  if (!isDbox && !Array.isArray(o.adsr)) o.adsr = [64,4000,32767,4000,2048,64,2048,16384];
+  if (!o.type) o.type = 'fm';
+  if (!o.fx_type) o.fx_type = 'mother';
+  if (!o.lfo_type) o.lfo_type = 'tremolo';
+  return o;
+}
+const isDbox = () => state.type === 'dbox' || 'drum_version' in state;
+
+/* ── Value formatting ────────────────────────────────────── */
+function nearestSample(samples, v) {
+  if (!samples || !samples.length) return null;
+  let best = samples[0];
+  for (const s of samples) if (Math.abs(s[0] - v) < Math.abs(best[0] - v)) best = s;
+  return best[1];
+}
+function fmtValue(eng, idx, raw) {
+  const e = LOOKUP[eng + '|' + idx];
+  const [min, max] = getRange(eng, idx);
+  if (eng === 'adsr' && idx === 7) return Math.floor(raw / 32767 * 100); // VOLUME 1–100
+  if (!e) { const p = Math.round((raw - min) / (max - min || 1) * 100); return p + '%'; }
+  if (e.scale === 'selector') return nearestSample(e.samples, raw);
+  if (e.scale === 'centered') { const p = Math.round(raw / 32767 * 100); return (p > 0 ? '+' : '') + p + '%'; }
+  if (e.scale === 'percent') { let p = Math.round((raw - min) / (max - min || 1) * 100); p = Math.max(0, Math.min(100, p)); return p + '%'; }
+  // discrete / decimal / hz / tempo / inverse → show known points exactly; else raw is the truth
+  const exact = e.samples.find(s => s[0] === raw);
+  return exact ? exact[1] : '';
+}
+function fillPct(eng, idx, raw) {
+  const [min, max] = getRange(eng, idx);
+  let p;
+  if (LOOKUP[eng + '|' + idx] && LOOKUP[eng + '|' + idx].scale === 'centered') p = raw / 32767 * 50 + 50;
+  else p = (raw - min) / (max - min || 1) * 100;
+  return Math.max(0, Math.min(100, p));
+}
+function scaleChip(eng, idx) {
+  const e = LOOKUP[eng + '|' + idx];
+  if (!e) return '';
+  const m = SCALE_META[e.scale] || { label: e.scale };
+  return `<span class="scale-chip chip-${e.scale}">${m.label}</span>`;
+}
+
+/* ── Engine illustrations (generated SVG) ────────────────── */
+function poly(fn, x0, x1, mid, amp, steps) {
+  const pts = [];
+  for (let i = 0; i <= steps; i++) { const t = i / steps; pts.push((x0 + (x1 - x0) * t).toFixed(1) + ',' + (mid - amp * fn(t)).toFixed(1)); }
+  return pts.join(' ');
+}
+const sine = c => t => Math.sin(t * Math.PI * 2 * c);
+function engineArt(type) {
+  const W = 120, H = 72;
+  let inner = '';
+  switch (type) {
+    case 'fm':
+      inner = `<circle cx="34" cy="36" r="13" fill="none"/><circle cx="86" cy="36" r="13" fill="none" class="ac"/>
+        <line x1="47" y1="36" x2="73" y2="36" class="ac"/><path d="M68 31 l6 5 -6 5" fill="none" class="ac"/>
+        <polyline points="${poly(sine(2),18,50,36,7,40)}" fill="none"/>
+        <polyline points="${poly(sine(5),72,104,36,7,40)}" fill="none" class="ac"/>`; break;
+    case 'string':
+      inner = `<line x1="16" y1="14" x2="16" y2="58"/><line x1="104" y1="14" x2="104" y2="58"/>
+        <path d="M16 36 Q60 12 104 36" fill="none" class="ac"/><path d="M16 36 Q60 60 104 36" fill="none" opacity=".5"/>`; break;
+    case 'pulse':
+      inner = `<polyline points="14,52 14,20 44,20 44,52 74,52 74,20 104,20 104,52" fill="none" class="ac"/>`; break;
+    case 'sampler':
+      inner = `<polyline points="${poly(t=>Math.sin(t*Math.PI*9)*(0.4+0.6*Math.sin(t*Math.PI)),16,104,36,22,90)}" fill="none"/>
+        <path d="M30 14 v44 M30 14 h6 M30 58 h6" class="ac" fill="none"/>
+        <path d="M90 14 v44 M90 14 h-6 M90 58 h-6" class="ac" fill="none"/>`; break;
+    case 'digital':
+      inner = `<polyline points="14,50 30,50 30,30 46,30 46,42 62,42 62,22 78,22 78,40 94,40 94,28 106,28" fill="none" class="ac"/>`; break;
+    case 'dimension':
+      inner = `<rect x="30" y="22" width="40" height="40" fill="none"/><rect x="50" y="12" width="40" height="40" fill="none" class="ac"/>
+        <line x1="30" y1="22" x2="50" y2="12"/><line x1="70" y1="22" x2="90" y2="12"/>
+        <line x1="30" y1="62" x2="50" y2="52"/><line x1="70" y1="62" x2="90" y2="52"/>`; break;
+    case 'dna':
+      inner = `<polyline points="${poly(sine(1.5),16,104,36,16,60)}" fill="none"/>
+        <polyline points="${poly(t=>-Math.sin(t*Math.PI*2*1.5),16,104,36,16,60)}" fill="none" class="ac"/>
+        <line x1="34" y1="26" x2="34" y2="46"/><line x1="60" y1="26" x2="60" y2="46"/><line x1="86" y1="26" x2="86" y2="46"/>`; break;
+    case 'drwave':
+      inner = `<polyline points="${poly(sine(1),14,104,28,9,40)}" fill="none" opacity=".4"/>
+        <polyline points="${poly(sine(2),14,104,40,9,40)}" fill="none" opacity=".7"/>
+        <polyline points="${poly(sine(3),14,104,52,9,40)}" fill="none" class="ac"/>`; break;
+    case 'dsynth': case 'dbox':
+      inner = `<polyline points="${poly(sine(2),14,104,36,16,60)}" fill="none"/>
+        <polyline points="${poly(t=>Math.sign(Math.sin(t*Math.PI*2*2)),14,104,36,14,120)}" fill="none" class="ac"/>`;
+      if (type === 'dbox') inner = `<g class="ac">${[0,1,2,3].map(r=>[0,1,2,3,4,5].map(c=>`<circle cx="${22+c*16}" cy="${18+r*14}" r="3" fill="none"/>`).join('')).join('')}</g>`;
+      break;
+    case 'phase':
+      inner = `<polyline points="${poly(sine(2),14,104,36,14,80)}" fill="none"/>
+        <polyline points="${poly(t=>Math.sin((t+0.18)*Math.PI*2*2),14,104,36,14,80)}" fill="none" class="ac"/>`; break;
+    case 'cluster':
+      inner = `<g class="ac">` + [0,1,2,3,4,5].map(i=>`<line x1="20" y1="${14+i*8}" x2="${30+i*13}" y2="${14+i*8}"/>`).join('') + `</g>
+        <line x1="20" y1="10" x2="20" y2="62"/>`; break;
+    case 'vocoder':
+      inner = `<g class="ac">` + [12,28,40,22,52,34,18,44,26].map((h,i)=>`<rect x="${16+i*11}" y="${56-h}" width="7" height="${h}" fill="none"/>`).join('') + `</g>`; break;
+    case 'voltage':
+      inner = `<polyline points="14,52 38,18 38,52 62,18 62,52 86,18 86,52 104,30" fill="none" class="ac"/>
+        <line x1="14" y1="58" x2="104" y2="58" opacity=".4"/>`; break;
+    case 'amp':
+      inner = `<polygon points="22,28 22,44 38,44 54,56 54,16 38,28" fill="none" class="ac"/>
+        <path d="M64 26 q8 10 0 20 M74 20 q14 16 0 32 M84 14 q20 22 0 44" fill="none"/>`; break;
+    default:
+      inner = `<polyline points="${poly(sine(2),14,104,36,16,80)}" fill="none" class="ac"/>`;
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" class="engine-svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none">${inner}</svg>`;
+}
+
+/* ── ADSR scope geometry ─────────────────────────────────── */
+const SC = { W: 560, H: 200, padL: 24, padR: 24, padT: 22, padB: 30, maxT: 16320 };
+SC.plotW = SC.W - SC.padL - SC.padR;
+SC.baseY = SC.H - SC.padB;
+SC.topY = SC.padT;
+SC.segMax = SC.plotW * 0.26;
+SC.holdW = SC.plotW * 0.16;
+function ease(t) { const k = 3.2; return (1 - Math.exp(-k * t)) / (1 - Math.exp(-k)); }
+function computeEnv() {
+  const a = state.adsr[0], d = state.adsr[1], s = state.adsr[2], r = state.adsr[3];
+  const aw = Math.max(6, a / SC.maxT * SC.segMax);
+  const dw = d / SC.maxT * SC.segMax;
+  const rw = r / SC.maxT * SC.segMax;
+  const x0 = SC.padL, x1 = x0 + aw, x2 = x1 + dw, x3 = x2 + SC.holdW, x4 = x3 + rw;
+  const susY = SC.baseY - (s / 32767) * (SC.baseY - SC.topY);
+  return { x0, x1, x2, x3, x4, susY, baseY: SC.baseY, topY: SC.topY };
+}
+function envPath(g) {
+  const N = 18, seg = (x0, y0, x1, y1) => {
+    let p = '';
+    for (let i = 1; i <= N; i++) { const t = i / N; p += ` L${(x0 + (x1 - x0) * t).toFixed(1)} ${(y0 + (y1 - y0) * ease(t)).toFixed(1)}`; }
+    return p;
+  };
+  let d = `M${g.x0} ${g.baseY}`;
+  d += seg(g.x0, g.baseY, g.x1, g.topY);
+  d += seg(g.x1, g.topY, g.x2, g.susY);
+  d += ` L${g.x3.toFixed(1)} ${g.susY.toFixed(1)}`;
+  d += seg(g.x3, g.susY, g.x4, g.baseY);
+  return d;
+}
+function scopeHtml() {
+  const gx = [];
+  for (let i = 1; i < 5; i++) gx.push(`<line class="env-grid" x1="${SC.padL + SC.plotW * i / 5}" y1="${SC.topY - 6}" x2="${SC.padL + SC.plotW * i / 5}" y2="${SC.baseY}"/>`);
+  return `<div class="scope-card">
+    <div class="scope-head"><span class="scope-title">ADSR Envelope</span><span class="scope-sub">drag the points · arrow keys to nudge</span></div>
+    <svg class="scope-svg" id="scopeSvg" viewBox="0 0 ${SC.W} ${SC.H}">
+      ${gx.join('')}
+      <line class="env-grid" x1="${SC.padL}" y1="${SC.baseY}" x2="${SC.W - SC.padR}" y2="${SC.baseY}"/>
+      <path class="env-fill" id="envFill"/>
+      <path class="env-line env-glow" id="envLine"/>
+      <circle class="handle" id="h-a" r="7" tabindex="0" role="slider" aria-label="Attack"></circle>
+      <circle class="handle" id="h-ds" r="7" tabindex="0" role="slider" aria-label="Decay and sustain"></circle>
+      <circle class="handle" id="h-r" r="7" tabindex="0" role="slider" aria-label="Release"></circle>
+    </svg>
+    <div class="scope-readout" id="scopeReadout"></div>
+  </div>`;
+}
+function drawScope() {
+  const g = computeEnv();
+  const line = document.getElementById('envLine');
+  if (!line) return;
+  const d = envPath(g);
+  line.setAttribute('d', d);
+  document.getElementById('envFill').setAttribute('d', d + ` L${g.x4} ${g.baseY} Z`);
+  const set = (id, x, y) => { const el = document.getElementById(id); el.setAttribute('cx', x); el.setAttribute('cy', y); };
+  set('h-a', g.x1, g.topY); set('h-ds', g.x2, g.susY); set('h-r', g.x4, g.baseY);
+  const ro = document.getElementById('scopeReadout');
+  const cell = (i) => `<div class="ro">${PARAM_NAMES.adsr[i]}<b>${state.adsr[i]} <span class="rd">${fmtValue('adsr', i, state.adsr[i])}</span></b></div>`;
+  ro.innerHTML = cell(0) + cell(1) + cell(2) + cell(3);
+}
+function svgCoords(svg, ev) {
+  const rect = svg.getBoundingClientRect();
+  return { x: (ev.clientX - rect.left) / rect.width * SC.W, y: (ev.clientY - rect.top) / rect.height * SC.H };
+}
+const clampI = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
+function applyHandle(h, x, y) {
+  if (h === 'a') {
+    state.adsr[0] = clampI((x - SC.padL) / SC.segMax * SC.maxT, 64, 16320);
+  } else if (h === 'ds') {
+    const g = computeEnv();
+    state.adsr[1] = clampI((x - g.x1) / SC.segMax * SC.maxT, 64, 16320);
+    state.adsr[2] = clampI((g.baseY - y) / (g.baseY - g.topY) * 32767, 0, 32767);
+  } else if (h === 'r') {
+    const g = computeEnv();
+    state.adsr[3] = clampI((x - g.x3) / SC.segMax * SC.maxT, 64, 16320);
+  }
+  drawScope();
+  syncEditor();
+}
+
+/* ── Parameter rows ──────────────────────────────────────── */
+function rowHtml(grp, eng, idx, raw) {
+  const name = PARAM_NAMES[eng][idx];
+  const [min, max] = getRange(eng, idx);
+  const e = LOOKUP[eng + '|' + idx];
+  const valLbl = fmtValue(eng, idx, raw);
+  // selector → dropdown of known options
+  let ctl;
+  if (e && e.scale === 'selector' && e.samples.length > 1) {
+    const opts = e.samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv} (${rv})</option>`).join('');
+    const exact = e.samples.some(s => s[0] === raw);
+    ctl = `<select class="pselect asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>${raw} (custom)</option>`}</select>`;
+  } else {
+    ctl = `<input type="range" class="ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">
+      <input type="number" class="rawin ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">`;
+  }
+  return `<div class="prow">
+    <div class="prow-top">
+      <span class="pname">${name}</span><span class="pidx">#${idx}</span>${scaleChip(eng, idx)}
+      <span class="pval" data-val="${grp}-${idx}">${valLbl == null ? '' : valLbl}</span>
+    </div>
+    <div class="prow-ctl">${ctl}</div>
+  </div>`;
+}
+function groupHtml(grp, label, arrKey, engPrefix, typeKey, typeList) {
+  const type = state[typeKey];
+  const eng = engPrefix + '.' + type;
+  const names = PARAM_NAMES[eng] || [];
+  const active = names.map((n, i) => n === null ? -1 : i).filter(i => i >= 0);
+  const arr = state[arrKey] || [];
+  const sel = `<select class="gsel" data-typekey="${typeKey}">${typeList.map(t => `<option value="${t}" ${t === type ? 'selected' : ''}>${t}</option>`).join('')}</select>`;
+  let toggle = '';
+  if (arrKey === 'fx_params') toggle = `<label class="toggle"><input type="checkbox" class="actv" data-key="fx_active" ${state.fx_active ? 'checked' : ''}>active</label>`;
+  if (arrKey === 'lfo_params') toggle = `<label class="toggle"><input type="checkbox" class="actv" data-key="lfo_active" ${state.lfo_active ? 'checked' : ''}>active</label>`;
+  const off = (arrKey === 'fx_params' && !state.fx_active) || (arrKey === 'lfo_params' && !state.lfo_active);
+  const rows = active.map(i => rowHtml(grp, eng, i, arr[i] != null ? arr[i] : 0)).join('');
+  return `<div class="pgroup ${off ? 'off' : ''}">
+    <div class="pgroup-head"><h2>${label}</h2>${sel}${toggle}</div>${rows}</div>`;
+}
+function adsrExtrasHtml() {
+  const rows = [4, 5, 6, 7].map(i => rowHtml('adsr', 'adsr', i, state.adsr[i] != null ? state.adsr[i] : 0)).join('');
+  return `<div class="pgroup"><div class="pgroup-head"><h2>Keyboard / ADSR</h2></div>${rows}</div>`;
+}
+function dboxHtml() {
+  const dyna = state.dyna_env || [0,0,0,0,0,0,0,0];
+  const cell = (i) => {
+    const e = LOOKUP['dbox.dyna_env|' + i];
+    const [min, max] = e.scale === 'centered' ? [-32768, 32767] : (i === 1 ? [0, 8192] : [0, 32767]);
+    return `<div class="dyna-cell"><div class="dn">${e.name}</div><div class="dv">${dyna[i]}</div><div class="dr">${min} … ${max}</div></div>`;
+  };
+  const pads = (state.dbox_data || []).length;
+  return `<div class="pgroup">
+    <div class="pgroup-head"><h2>Drum box</h2></div>
+    <div class="dbox-note"><b>Drum patch.</b> This engine stores ${pads} pads × 8 parameters in <b>dbox_data</b> and uses a dynamic envelope instead of ADSR. Per-pad editing is out of scope for now — edit the JSON directly to change pads. FX and LFO below remain fully editable.</div>
+    <div class="dyna-grid">${[0,1,2,3].map(cell).join('')}</div>
+  </div>`;
+}
+
+/* ── Render ──────────────────────────────────────────────── */
+function render() {
+  document.getElementById('idArt').innerHTML = engineArt(state.type);
+  document.getElementById('idEngine').textContent = state.type;
+  const nameInput = document.getElementById('nameInput');
+  if (document.activeElement !== nameInput) nameInput.value = state.name || '';
+  const octSel = document.getElementById('octSel');
+  octSel.value = String(state.octave != null ? state.octave : 0);
+
+  const viz = document.getElementById('viz');
+  // Column A: ADSR + synth · Column B: effect + LFO · Column C: keyboard/ADSR
+  let colA = '', colB = '', colC = '';
+  if (isDbox()) {
+    colA += dboxHtml();
+  } else {
+    colA += scopeHtml();
+    colA += groupHtml('knobs', 'Synth', 'knobs', 'synth', 'type', SYNTH_TYPES);
+  }
+  colB += groupHtml('fx', 'Effect', 'fx_params', 'fx', 'fx_type', FX_TYPES);
+  colB += groupHtml('lfo', 'LFO', 'lfo_params', 'lfo', 'lfo_type', LFO_TYPES);
+  if (!isDbox()) colC += adsrExtrasHtml();
+  viz.innerHTML = `<div class="viz-col viz-col-a">${colA}</div>` +
+    `<div class="viz-col viz-col-b">${colB}</div>` +
+    `<div class="viz-col viz-col-c">${colC}</div>`;
+  if (!isDbox()) drawScope();
+}
+function refreshRow(grp, idx) {
+  let eng;
+  if (grp === 'knobs') eng = 'synth.' + state.type;
+  else if (grp === 'fx') eng = 'fx.' + state.fx_type;
+  else if (grp === 'lfo') eng = 'lfo.' + state.lfo_type;
+  else eng = 'adsr';
+  const arr = grp === 'knobs' ? state.knobs : grp === 'fx' ? state.fx_params : grp === 'lfo' ? state.lfo_params : state.adsr;
+  const raw = arr[idx];
+  document.querySelectorAll(`.ctl[data-grp="${grp}"][data-idx="${idx}"]`).forEach(el => { if (document.activeElement !== el) el.value = raw; });
+  const lbl = document.querySelector(`[data-val="${grp}-${idx}"]`);
+  if (lbl) { const v = fmtValue(eng, idx, raw); lbl.textContent = v == null ? '' : v; }
+}
+
+/* ── JSON serialize / pretty-print (alphabetical keys) ───── */
+function fmtScalar(x) { return JSON.stringify(x); }
+function fmtVal(v, depth) {
+  if (Array.isArray(v)) {
+    if (v.length && Array.isArray(v[0])) {
+      const ind = '  '.repeat(depth + 1);
+      return '[\n' + v.map(row => ind + '[' + row.map(fmtScalar).join(', ') + ']').join(',\n') + '\n' + '  '.repeat(depth) + ']';
+    }
+    return '[' + v.map(fmtScalar).join(', ') + ']';
+  }
+  if (v && typeof v === 'object') {
+    const ks = Object.keys(v).sort();
+    const ind = '  '.repeat(depth + 1);
+    return '{\n' + ks.map(k => ind + JSON.stringify(k) + ': ' + fmtVal(v[k], depth + 1)).join(',\n') + '\n' + '  '.repeat(depth) + '}';
+  }
+  return fmtScalar(v);
+}
+function pretty(obj) {
+  const ks = Object.keys(obj).sort();
+  return '{\n' + ks.map(k => '  ' + JSON.stringify(k) + ': ' + fmtVal(obj[k], 1)).join(',\n') + '\n}';
+}
+
+/* ── Syntax highlighting ─────────────────────────────────── */
+const hlCode = document.querySelector('#jsonHighlight code');
+function highlight(text) {
+  let esc = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  esc = esc.replace(/("(?:\\.|[^"\\])*")(\s*:)?|\b(true|false|null)\b|(-?\d+\.?\d*(?:[eE][+-]?\d+)?)/g,
+    (m, str, colon, kw, num) => {
+      if (str != null) return colon != null
+        ? `<span class="tok-key">${str}</span><span class="tok-punct">${colon}</span>`
+        : `<span class="tok-str">${str}</span>`;
+      if (kw != null) return `<span class="tok-bool">${kw}</span>`;
+      if (num != null) return `<span class="tok-num">${num}</span>`;
+      return m;
+    });
+  hlCode.innerHTML = esc + '\n';
+}
+
+/* ── Editor sync ─────────────────────────────────────────── */
+const jsonInput = document.getElementById('jsonInput');
+const statusEl = document.getElementById('status');
+function setStatus(msg, ok) { statusEl.textContent = msg; statusEl.className = 'editor-status ' + (ok ? 'ok' : 'err'); }
+function syncEditor() {
+  const txt = pretty(state);
+  jsonInput.value = txt;
+  highlight(txt);
+  setStatus('In sync · ' + Object.keys(state).length + ' keys', true);
+}
+function liveParse() {
+  highlight(jsonInput.value);
+  let parsed;
+  try { parsed = JSON.parse(jsonInput.value); }
+  catch (err) { setStatus('Invalid JSON: ' + err.message, false); return; }
+  if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) { setStatus('Expected a JSON object', false); return; }
+  state = normalize(parsed);
+  setStatus('Parsed OK · ' + Object.keys(state).length + ' keys', true);
+  render();
+}
+function loadPreset(obj) {
+  state = normalize(clone(obj));
+  syncEditor();
+  render();
+}
+
+/* ── Editor scroll sync ──────────────────────────────────── */
+const hlPre = document.getElementById('jsonHighlight');
+jsonInput.addEventListener('scroll', () => { hlPre.scrollTop = jsonInput.scrollTop; hlPre.scrollLeft = jsonInput.scrollLeft; });
+jsonInput.addEventListener('input', liveParse);
+
+/* ── File loading ────────────────────────────────────────── */
+const fileInput = document.getElementById('fileInput');
+document.getElementById('openBtn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', () => {
+  const f = fileInput.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { jsonInput.value = reader.result; liveParse(); };
+  reader.readAsText(f);
+  fileInput.value = '';
+});
+const editorWrap = document.getElementById('editorWrap');
+['dragenter', 'dragover'].forEach(ev => editorWrap.addEventListener(ev, e => { e.preventDefault(); editorWrap.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => editorWrap.addEventListener(ev, e => { e.preventDefault(); editorWrap.classList.remove('drag'); }));
+editorWrap.addEventListener('drop', e => {
+  const f = e.dataTransfer.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { jsonInput.value = reader.result; liveParse(); };
+  reader.readAsText(f);
+});
+
+/* ── Sample picker ───────────────────────────────────────── */
+const sampleSel = document.getElementById('sampleSel');
+Object.keys(SAMPLES).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; sampleSel.appendChild(o); });
+sampleSel.addEventListener('change', () => loadPreset(SAMPLES[sampleSel.value]));
+
+/* ── Identity controls ───────────────────────────────────── */
+document.getElementById('nameInput').addEventListener('input', e => { state.name = e.target.value; syncEditor(); });
+document.getElementById('octSel').addEventListener('change', e => { state.octave = parseInt(e.target.value, 10); syncEditor(); });
+
+/* ── Delegated control handlers (viz panel) ──────────────── */
+const viz = document.getElementById('viz');
+function arrFor(grp) {
+  return grp === 'knobs' ? state.knobs : grp === 'fx' ? state.fx_params : grp === 'lfo' ? state.lfo_params : state.adsr;
+}
+viz.addEventListener('input', e => {
+  const t = e.target;
+  if (t.classList.contains('ctl')) {
+    const grp = t.dataset.grp, idx = +t.dataset.idx;
+    let v = parseInt(t.value, 10);
+    if (isNaN(v)) return;
+    arrFor(grp)[idx] = v;
+    refreshRow(grp, idx);
+    syncEditor();
+  }
+});
+viz.addEventListener('change', e => {
+  const t = e.target;
+  if (t.classList.contains('gsel')) {            // engine type switch
+    state[t.dataset.typekey] = t.value;
+    syncEditor(); render();
+  } else if (t.classList.contains('asel')) {     // selector dropdown
+    const grp = t.dataset.grp, idx = +t.dataset.idx;
+    arrFor(grp)[idx] = parseInt(t.value, 10);
+    refreshRow(grp, idx);
+    syncEditor();
+  } else if (t.classList.contains('actv')) {     // fx/lfo active toggle
+    state[t.dataset.key] = t.checked;
+    syncEditor(); render();
+  }
+});
+
+/* ── ADSR scope: pointer + keyboard (delegated, stable) ──── */
+viz.addEventListener('pointerdown', e => {
+  const h = e.target.closest('.handle');
+  if (!h) return;
+  const svg = document.getElementById('scopeSvg');
+  const hid = h.id.slice(2);
+  h.setPointerCapture(e.pointerId);
+  const move = ev => { const { x, y } = svgCoords(svg, ev); applyHandle(hid, x, y); };
+  const up = () => { try { h.releasePointerCapture(e.pointerId); } catch (_) {} window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+  window.addEventListener('pointermove', move);
+  window.addEventListener('pointerup', up);
+});
+viz.addEventListener('keydown', e => {
+  const h = e.target.closest && e.target.closest('.handle');
+  if (!h) return;
+  const hid = h.id.slice(2);
+  const stepT = 400, stepS = 1200;
+  let used = true;
+  const adj = (i, d, lo, hi) => { state.adsr[i] = clampI(state.adsr[i] + d, lo, hi); };
+  if (hid === 'a') { if (e.key === 'ArrowRight') adj(0, stepT, 64, 16320); else if (e.key === 'ArrowLeft') adj(0, -stepT, 64, 16320); else used = false; }
+  else if (hid === 'ds') {
+    if (e.key === 'ArrowRight') adj(1, stepT, 64, 16320); else if (e.key === 'ArrowLeft') adj(1, -stepT, 64, 16320);
+    else if (e.key === 'ArrowUp') adj(2, stepS, 0, 32767); else if (e.key === 'ArrowDown') adj(2, -stepS, 0, 32767); else used = false;
+  } else if (hid === 'r') { if (e.key === 'ArrowRight') adj(3, stepT, 64, 16320); else if (e.key === 'ArrowLeft') adj(3, -stepT, 64, 16320); else used = false; }
+  if (used) { e.preventDefault(); drawScope(); syncEditor(); }
+});
+
+/* ── Init ────────────────────────────────────────────────── */
+loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
+</script>
+</body>
+</html>
