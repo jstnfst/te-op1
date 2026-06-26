@@ -1,5 +1,6 @@
 @echo off
 setlocal
+cd /d "%~dp0"
 
 cl op1dump.c  /Fe:op1dump.exe  /W3 /D_CRT_SECURE_NO_WARNINGS
 if errorlevel 1 goto fail
@@ -26,6 +27,9 @@ cl sort-synths.c /Fe:sort-synths.exe /W3 /D_CRT_SECURE_NO_WARNINGS
 if errorlevel 1 goto fail
 
 cl tag-patch.c /Fe:tag-patch.exe /W3 /D_CRT_SECURE_NO_WARNINGS
+if errorlevel 1 goto fail
+
+cl wrap-sampler.c /Fe:wrap-sampler.exe /W3 /D_CRT_SECURE_NO_WARNINGS
 if errorlevel 1 goto fail
 
 del *.obj >nul 2>&1

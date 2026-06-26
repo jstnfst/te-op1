@@ -28,11 +28,19 @@
  * ========================================================================= */
 
 static const char *json_find_value(const char *json, const char *key) {
+    /* Match the quoted key, then tolerate whitespace around the colon so both
+       compact ("type":"x") and pretty-printed ("type" : "x") JSON work — the
+       latter is what hardware-exported patches use. */
     char search[128];
-    snprintf(search, sizeof(search), "\"%s\":", key);
+    snprintf(search, sizeof(search), "\"%s\"", key);
     const char *p = strstr(json, search);
     if (!p) return NULL;
-    return p + strlen(search);
+    p += strlen(search);
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+    if (*p != ':') return NULL;
+    p++;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+    return p;
 }
 
 static int json_get_string(const char *json, const char *key,

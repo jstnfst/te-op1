@@ -105,6 +105,23 @@ static char *make_wav_path(const char *json_path) {
     return out;
 }
 
+/* True if the JSON's "type" value equals `want`, tolerating whitespace around
+   the colon — compact ("type":"x") and pretty ("type" : "x") JSON both work.
+   The quoted "type" token can't match inside "fx_type"/"lfo_type". */
+static int json_type_is(const char *json, const char *want) {
+    const char *p = strstr(json, "\"type\"");
+    if (!p) return 0;
+    p += 6;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+    if (*p != ':') return 0;
+    p++;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+    if (*p != '"') return 0;
+    p++;
+    size_t n = strlen(want);
+    return strncmp(p, want, n) == 0 && p[n] == '"';
+}
+
 /* ---- JSON helpers -------------------------------------------------------- */
 
 static int json_replace_array(const char *src, size_t srclen,
@@ -820,7 +837,7 @@ static int process_json_file(const char *json_path, int mode,
     int16_t       *wav_buf      = NULL;
     const char    *audio_label  = "silence";
 
-    if (strstr(json_write_ptr, "\"type\":\"sampler\"")) {
+    if (json_type_is(json_write_ptr, "sampler")) {
         char *wav_path = make_wav_path(json_path);
         if (wav_path) {
             uint32_t wframes, wrate; uint16_t wchan;
@@ -846,7 +863,7 @@ static int process_json_file(const char *json_path, int mode,
         }
     }
 
-    uint32_t appl_sz = strstr(json_write_ptr, "\"type\":\"dbox\"")
+    uint32_t appl_sz = json_type_is(json_write_ptr, "dbox")
                        ? APPL_DATA_SIZE_DBOX : APPL_DATA_SIZE_SYNTH;
     int ret = write_aif(json_write_ptr, json_write_size, out_path, allow_overwrite,
                         aif_audio, aif_frames, aif_channels, aif_rate, appl_sz);

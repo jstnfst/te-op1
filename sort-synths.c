@@ -1,8 +1,8 @@
 /*
  * sort-synths.c — organize OP-1 patch files by synth engine type
  *
- * Reads each .json patch, extracts the "type" field, and moves both
- * the .json and its .aif sidecar into:
+ * Reads each .json patch, extracts the "type" field, and moves the .json
+ * together with any audio sidecar (.aif, .aiff, or .wav) into:
  *
  *   <parent-of-input>/synth/<type>/<filename>.{json,aif}
  *
@@ -75,12 +75,18 @@ static void make_dirs(const char *path) {
     CreateDirectoryA(tmp, NULL);
 }
 
-/* Extract the value of "type":"..." from a JSON string. */
+/* Extract the value of the "type" key from a JSON string.
+   Tolerates whitespace around the colon and after it, so both the compact
+   ("type":"x") and pretty-printed ("type" : "x") forms work. The "type"
+   token has quotes on both sides, so it won't match "fx_type"/"lfo_type". */
 static int get_synth_type(const char *json, char *out, size_t outsz) {
-    const char *p = strstr(json, "\"type\":");
+    const char *p = strstr(json, "\"type\"");
     if (!p) return 0;
-    p += 7;
-    while (*p == ' ') p++;
+    p += 6;                                                  /* past "type" */
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
+    if (*p != ':') return 0;
+    p++;
+    while (*p == ' ' || *p == '\t' || *p == '\n' || *p == '\r') p++;
     if (*p != '"') return 0;
     p++;
     size_t i = 0;
@@ -139,30 +145,39 @@ static void process_file(const char *json_path, const char *synth_base, Stats *s
     char base[256];
     basename_no_ext(json_path, base, sizeof(base));
 
-    /* build source paths for .json and .aif */
+    /* source stem = json path without its extension */
+    char stem[MAX_PATH];
     const char *dot = strrchr(json_path, '.');
     const char *sep = strrchr(json_path, '\\');
-    char aif_src[MAX_PATH];
     if (dot && (!sep || dot > sep)) {
         size_t prefix = (size_t)(dot - json_path);
-        memcpy(aif_src, json_path, prefix);
-        strcpy(aif_src + prefix, ".aif");
+        memcpy(stem, json_path, prefix);
+        stem[prefix] = '\0';
     } else {
-        snprintf(aif_src, sizeof(aif_src), "%s.aif", json_path);
+        strncpy(stem, json_path, sizeof(stem) - 1);
+        stem[sizeof(stem) - 1] = '\0';
     }
 
-    /* destination paths */
-    char json_dst[MAX_PATH], aif_dst[MAX_PATH];
+    /* move the .json */
+    char json_dst[MAX_PATH];
     snprintf(json_dst, sizeof(json_dst), "%s\\%s.json", dest_dir, base);
-    snprintf(aif_dst,  sizeof(aif_dst),  "%s\\%s.aif",  dest_dir, base);
-
     printf("%s  ->  %s\\\n", base, dest_dir);
-
     int r_json = move_one(json_path, json_dst);
-    int r_aif  = move_one(aif_src,   aif_dst);
 
-    if (r_json == 1 || r_aif == 1) st->failed++;
-    else if (r_json == 0 || r_aif == 0) st->moved++;
+    /* move any audio sidecar that exists (.aif / .aiff / .wav) */
+    static const char *AUDIO_EXTS[] = { ".aif", ".aiff", ".wav" };
+    int audio_failed = 0, audio_moved = 0;
+    for (int e = 0; e < (int)(sizeof(AUDIO_EXTS) / sizeof(AUDIO_EXTS[0])); e++) {
+        char a_src[MAX_PATH], a_dst[MAX_PATH];
+        snprintf(a_src, sizeof(a_src), "%s%s", stem, AUDIO_EXTS[e]);
+        snprintf(a_dst, sizeof(a_dst), "%s\\%s%s", dest_dir, base, AUDIO_EXTS[e]);
+        int r = move_one(a_src, a_dst);
+        if (r == 1) audio_failed = 1;
+        else if (r == 0) audio_moved = 1;
+    }
+
+    if (r_json == 1 || audio_failed) st->failed++;
+    else if (r_json == 0 || audio_moved) st->moved++;
     else st->skipped++;
 }
 
