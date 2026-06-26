@@ -32,6 +32,9 @@ if errorlevel 1 goto fail
 cl wrap-sampler.c /Fe:wrap-sampler.exe /W3 /D_CRT_SECURE_NO_WARNINGS
 if errorlevel 1 goto fail
 
+cl dump-samples.c /Fe:dump-samples.exe /W3 /D_CRT_SECURE_NO_WARNINGS
+if errorlevel 1 goto fail
+
 del *.obj >nul 2>&1
 echo.
 echo Build OK
