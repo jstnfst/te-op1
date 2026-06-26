@@ -438,6 +438,7 @@ function getRange(eng, idx) {
 /* ── Sample presets (baked in) ───────────────────────────── */
 const SAMPLES = {
   'cluster — cluster pad': {"adsr":[1600,10688,32767,14272,2048,4160,4000,4000],"fx_active":false,"fx_params":[4132,13409,2048,16392,8000,8000,8000,8000],"fx_type":"delay","knobs":[15616,30271,12288,309,0,0,0,0],"lfo_active":false,"lfo_params":[7168,32767,1024,11040,0,0,0,0],"lfo_type":"element","mtime":1782342081.0,"name":"cluster pad","octave":0,"synth_version":2,"type":"cluster"},
+  'dbox — drum kit': {"dbox_data":[[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[-24320,0,0,0,0,0,0,0],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607]],"drum_version":2,"dyna_env":[-32768,0,-32768,0,0,0,0,0],"fx_active":false,"fx_params":[0,0,0,0,0,0,0,0],"fx_type":"cwo","lfo_active":false,"lfo_params":[1024,-32767,1024,2464,0,0,0,0],"lfo_type":"element","mtime":1782233500,"name":"drum kit","octave":0,"type":"dbox"},
   'digital — digital': {"adsr":[2112,8128,0,7232,2048,6464,4000,4000],"fx_active":true,"fx_params":[8000,11447,10660,18368,0,0,0,0],"fx_type":"delay","knobs":[31743,7424,-25088,0,0,0,0,0],"lfo_active":true,"lfo_params":[5808,-21615,4480,15360,0,0,0,0],"lfo_type":"element","name":"digital","octave":0,"synth_version":2,"type":"digital"},
   'dimension — kaini': {"adsr":[64,5440,22016,4672,6144,5440,18432,21093],"fx_active":true,"fx_params":[17059,0,17704,15325,0,0,0,0],"fx_type":"mother","knobs":[9309,0,10560,26609,0,0,0,0],"lfo_active":true,"lfo_params":[7680,2617,2816,10560,0,0,0,0],"lfo_type":"value","mtime":1657634875.0,"name":"kaini","octave":0,"synth_version":3,"type":"dimension"},
   'dna — 20130528_1601': {"adsr":[64,64,21504,7616,2048,6432,4000,4000],"fx_active":true,"fx_params":[5184,17408,7095,9856,0,0,0,0],"fx_type":"nitro","knobs":[-14131,10608,0,30720,0,0,0,0],"lfo_active":true,"lfo_params":[1024,19744,4928,15360,0,0,0,0],"lfo_type":"element","name":"20130528_1601","octave":1,"synth_version":1,"type":"dna"},
@@ -697,7 +698,8 @@ function rowHtml(grp, eng, idx, raw) {
   if (isSel && samples.length > 1) {
     const opts = samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv} (${rv})</option>`).join('');
     const exact = samples.some(s => s[0] === raw);
-    ctl = `<select class="pselect asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>${raw} (custom)</option>`}</select>`;
+    const nearLbl = nearestSample(samples, raw);
+    ctl = `<select class="pselect asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>~${nearLbl} (${raw})</option>`}</select>`;
   } else {
     ctl = `<input type="range" class="ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">
       <input type="number" class="rawin ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">`;
