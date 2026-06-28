@@ -7,9 +7,10 @@ compatibility_date = "2026-06-27"
 [[d1_databases]]
 binding = "DB"
 database_name = "te-op1-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "1958b1c5-ce17-4191-8ba9-4553a57f2cbd"
 
 # Non-secret vars. Secrets (OAuth client IDs/secrets, JWT_SECRET) are set with
 # `wrangler pages secret put <NAME>` and mirrored in .dev.vars for local dev.
+# SITE_URL is the production origin; local dev overrides it via .dev.vars.
 [vars]
-SITE_URL = "http://localhost:8788"
+SITE_URL = "https://te-op1.pages.dev"
