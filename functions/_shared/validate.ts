@@ -11,6 +11,13 @@ export const LFO_TYPES = ["element", "midi", "random", "tremolo", "value", "velo
 const APPL_JSON_MAX_SYNTH = 1023 // 1028 - 4 - 1
 const APPL_JSON_MAX_DBOX = 4095 // 4100 - 4 - 1
 
+// Coarse upper bound on an accepted upload *before* parsing, to refuse abusive
+// payloads cheaply. The authoritative storage limits are the per-type caps above
+// (checked against the minified/canonical JSON). This is ~4x the largest storable
+// preset to leave room for pretty-printed whitespace; real presets are <2 KB.
+// Largest measured across oracle/ + collection/: 1480 B canonical, 1915 B raw.
+export const MAX_UPLOAD_BYTES = APPL_JSON_MAX_DBOX * 4 // ~16 KB
+
 export interface PatchMeta {
   name: string
   type: string
@@ -43,7 +50,7 @@ function canonicalize(obj: Record<string, unknown>): string {
 export function validatePreset(raw: unknown): ValidateResult {
   let obj: Record<string, unknown>
   if (typeof raw === "string") {
-    if (raw.length > APPL_JSON_MAX_DBOX * 2) return { ok: false, error: "Preset is too large." }
+    if (raw.length > MAX_UPLOAD_BYTES) return { ok: false, error: "Preset is too large." }
     try { obj = JSON.parse(raw) } catch { return { ok: false, error: "Not valid JSON." } }
   } else if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     obj = raw as Record<string, unknown>

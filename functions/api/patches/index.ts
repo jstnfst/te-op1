@@ -1,6 +1,6 @@
 import type { Env } from "../../_shared/env"
 import { getSessionUser, json } from "../../_shared/session"
-import { validatePreset } from "../../_shared/validate"
+import { validatePreset, MAX_UPLOAD_BYTES } from "../../_shared/validate"
 import { deriveTags } from "../../_shared/tags"
 
 const PER_PAGE = 24
@@ -37,8 +37,17 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in to upload." }, { status: 401 })
 
+  // Reject oversized uploads before parsing, so a huge body can't be read into
+  // memory and canonicalized just to be rejected by the storage cap later.
+  const declaredLen = Number(request.headers.get("content-length") || 0)
+  if (declaredLen > MAX_UPLOAD_BYTES) return json({ error: "Preset is too large." }, { status: 413 })
+
+  let rawBody: string
+  try { rawBody = await request.text() } catch { return json({ error: "Could not read request body." }, { status: 400 }) }
+  if (rawBody.length > MAX_UPLOAD_BYTES) return json({ error: "Preset is too large." }, { status: 413 })
+
   let body: unknown
-  try { body = await request.json() } catch { return json({ error: "Expected a JSON body." }, { status: 400 }) }
+  try { body = JSON.parse(rawBody) } catch { return json({ error: "Expected a JSON body." }, { status: 400 }) }
   const presetInput =
     body && typeof body === "object" && "json" in (body as Record<string, unknown>)
       ? (body as Record<string, unknown>).json
