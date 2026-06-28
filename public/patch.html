@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/site.css">
   <script src="/site-header.js" defer></script>
+  <script src="/aif.js" defer></script>
   <style>
     /* Theme tokens + header/nav/footer chrome + scale chips live in /site.css */
     :root {
@@ -25,6 +26,17 @@
       color: #E3A87E; background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
     .patch-notice a { color: var(--orange); font-weight: 700; text-decoration: none; }
     .patch-notice a:hover { text-decoration: underline; }
+    .file-msg { font-size: 11px; font-weight: 300; line-height: 1.5; }
+    .file-msg.note { margin: 4px 0 2px; padding: 10px 12px; color: #E3A87E; background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
+    .file-msg.err { margin: 4px 0 2px; color: var(--orange); }
+    .panel.drag { outline: 2px dashed var(--orange); outline-offset: 4px; }
+    details.raw-json { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
+    details.raw-json > summary { cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+    details.raw-json > summary:hover { color: var(--text); }
+    details.raw-json[open] > summary { margin-bottom: 10px; }
+    .raw-hint { font-size: 11px; font-weight: 300; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
+    .raw-hint code { background: var(--border); padding: 1px 4px; border-radius: 2px; }
+    .raw-hint a { color: var(--orange); text-decoration: none; font-weight: 700; }
 
     /* ── IDENTITY (inside the editor panel) ── */
     .identity { display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
@@ -164,7 +176,7 @@
 <main>
   <div class="workspace">
     <!-- LEFT: JSON EDITOR -->
-    <section class="panel" aria-label="Preset JSON editor">
+    <section class="panel" id="editorPanel" aria-label="Preset editor">
       <!-- patch identity -->
       <div class="identity">
         <div class="id-art" id="idArt" aria-hidden="true"></div>
@@ -184,16 +196,24 @@
       </div>
       <div class="editor-toolbar">
         <select id="sampleSel" aria-label="Load a sample preset"></select>
-        <button class="btn" id="openBtn" type="button">Open .json</button>
-        <input type="file" id="fileInput" accept=".json,application/json" hidden>
+        <button class="btn" id="openBtn" type="button">Open .aif</button>
+        <button class="btn" id="dlAif" type="button">Download .aif</button>
+        <input type="file" id="fileInput" accept=".aif,.json,application/json" hidden>
       </div>
+      <div class="file-msg" id="fileMsg"></div>
+      <details class="raw-json" id="rawJson">
+        <summary>Advanced · raw JSON</summary>
+        <p class="raw-hint">Patches are stored as a small JSON blob to keep them tiny &mdash; that's why the
+          library stays fast. Curious how the <code>.aif</code> format was reverse-engineered? See the
+          project on <a href="https://github.com/jstnfst/te-op1">GitHub &rarr;</a></p>
       <div class="editor-wrap" id="editorWrap">
         <pre class="code-layer" id="jsonHighlight" aria-hidden="true"><code></code></pre>
         <textarea class="code-layer" id="jsonInput" spellcheck="false" autocomplete="off"
           autocorrect="off" autocapitalize="off" wrap="off" aria-label="Preset JSON"></textarea>
       </div>
       <div class="editor-status" id="status"></div>
-      <div class="editor-hint">Edit the JSON directly, drop a <b>.json</b> file here, or pick a sample. Changes sync live with the controls. Keys are re-sorted alphabetically as the OP-1 firmware requires.</div>
+      <div class="editor-hint">Edit the JSON directly and the controls update live. Keys are re-sorted alphabetically as the OP-1 firmware requires.</div>
+      </details>
     </section>
 
     <!-- RIGHT: VISUALIZATION -->
@@ -958,6 +978,7 @@ function syncEditor() {
   jsonInput.value = txt;
   highlight(txt);
   setStatus('In sync · ' + Object.keys(state).length + ' keys', true);
+  updateFileMsg();
 }
 function liveParse() {
   highlight(jsonInput.value);
@@ -968,6 +989,7 @@ function liveParse() {
   state = normalize(parsed);
   setStatus('Parsed OK · ' + Object.keys(state).length + ' keys', true);
   render();
+  updateFileMsg();
 }
 function loadPreset(obj) {
   state = normalize(clone(obj));
@@ -980,25 +1002,48 @@ const hlPre = document.getElementById('jsonHighlight');
 jsonInput.addEventListener('scroll', () => { hlPre.scrollTop = jsonInput.scrollTop; hlPre.scrollLeft = jsonInput.scrollLeft; });
 jsonInput.addEventListener('input', liveParse);
 
-/* ── File loading ────────────────────────────────────────── */
+/* ── File loading (.aif primary; .json still accepted) ────── */
 const fileInput = document.getElementById('fileInput');
+const fileMsg = document.getElementById('fileMsg');
+function setFileMsg(msg, kind) { fileMsg.textContent = msg || ''; fileMsg.className = 'file-msg' + (msg ? ' ' + kind : ''); }
+function updateFileMsg() {
+  if (state && state.type === 'sampler')
+    setFileMsg('Sampler audio isn’t stored — only the patch settings. A downloaded .aif contains a placeholder tone.', 'note');
+  else setFileMsg('', 'note');
+}
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const buf = new Uint8Array(reader.result);
+    const isAif = buf.length >= 4 && buf[0] === 0x46 && buf[1] === 0x4F && buf[2] === 0x52 && buf[3] === 0x4D; // "FORM"
+    try {
+      jsonInput.value = isAif ? window.OP1Aif.aifToJson(buf) : new TextDecoder().decode(buf);
+    } catch (err) { setFileMsg(err.message, 'err'); return; }
+    liveParse();
+  };
+  reader.readAsArrayBuffer(file);
+}
 document.getElementById('openBtn').addEventListener('click', () => fileInput.click());
-fileInput.addEventListener('change', () => {
-  const f = fileInput.files[0]; if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => { jsonInput.value = reader.result; liveParse(); };
-  reader.readAsText(f);
-  fileInput.value = '';
+fileInput.addEventListener('change', () => { const f = fileInput.files[0]; if (f) handleFile(f); fileInput.value = ''; });
+
+document.getElementById('dlAif').addEventListener('click', () => {
+  const json = jsonInput.value;
+  let bytes;
+  try { JSON.parse(json); bytes = window.OP1Aif.jsonToAif(json); }
+  catch (err) { setFileMsg('Can’t export .aif: ' + err.message, 'err'); return; }
+  const slug = (document.getElementById('nameInput').value || 'patch').trim().toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'patch';
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([bytes], { type: 'audio/x-aiff' }));
+  a.download = slug + '.aif';
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(a.href);
 });
-const editorWrap = document.getElementById('editorWrap');
-['dragenter', 'dragover'].forEach(ev => editorWrap.addEventListener(ev, e => { e.preventDefault(); editorWrap.classList.add('drag'); }));
-['dragleave', 'drop'].forEach(ev => editorWrap.addEventListener(ev, e => { e.preventDefault(); editorWrap.classList.remove('drag'); }));
-editorWrap.addEventListener('drop', e => {
-  const f = e.dataTransfer.files[0]; if (!f) return;
-  const reader = new FileReader();
-  reader.onload = () => { jsonInput.value = reader.result; liveParse(); };
-  reader.readAsText(f);
-});
+
+const editorPanel = document.getElementById('editorPanel');
+['dragenter', 'dragover'].forEach(ev => editorPanel.addEventListener(ev, e => { e.preventDefault(); editorPanel.classList.add('drag'); }));
+['dragleave', 'drop'].forEach(ev => editorPanel.addEventListener(ev, e => { e.preventDefault(); editorPanel.classList.remove('drag'); }));
+editorPanel.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) handleFile(f); });
 
 /* ── Sample picker ───────────────────────────────────────── */
 const sampleSel = document.getElementById('sampleSel');

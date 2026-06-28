@@ -34,3 +34,13 @@ textarea { width: 100%; min-height: 220px; white-space: pre; }
 /* login */
 .provider-list { display: flex; flex-direction: column; gap: 10px; max-width: 320px; margin-top: 18px; }
 .provider-list a { justify-content: center; padding: 12px; }
+
+/* upload */
+.dropzone { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 28px 22px;
+  border: 1px dashed var(--border); border-radius: 8px; background: var(--surface); }
+details.adv { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
+details.adv > summary { cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--muted); }
+details.adv > summary:hover { color: var(--text); }
+details.adv code { background: var(--border); padding: 1px 4px; border-radius: 2px; }
+details.adv a { color: var(--orange); text-decoration: none; font-weight: 700; }
