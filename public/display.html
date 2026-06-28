@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Raw-to-display value mappings for OP-1 Field parameters. Scale types, sample points, and behavioral notes per engine.">
+  <title>OP-1 Field — Value Mappings</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #15161A; --surface: #1F2127; --border: #31343C;
+      --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
+      --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
+
+      /* Scale type colors */
+      --c-percent:   #5B8DEF;
+      --c-centered:  #A78BFA;
+      --c-discrete:  #34D399;
+      --c-selector:  #F59E0B;
+      --c-hz:        #F97316;
+      --c-tempo:     #EC4899;
+      --c-inverse:   #14B8A6;
+      --c-decimal:   #06B6D4;
+    }
+    body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* ── HEADER ── */
+    header { background: var(--header-bg); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
+    .header-row { display: flex; align-items: center; gap: 10px; padding: 16px 32px 10px; }
+    .site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
+    .site-title:hover { color: rgba(255,255,255,.8); }
+    .site-sep { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.2); }
+    .site-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.42); letter-spacing: .03em; }
+    .fw-tag { margin-left: auto; font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; }
+    .page-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.06); gap: 2px; }
+    .nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px; text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
+    .nav-btn:hover { color: rgba(255,255,255,.72); }
+    .nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
+
+    /* ── MAIN ── */
+    main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 80px; }
+
+    h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+
+    /* ── SCALE LEGEND ── */
+    .legend-section { margin-bottom: 36px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .legend-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 400; color: var(--text); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+    /* ── DISTRIBUTION BAR ── */
+    .dist-section { margin-bottom: 36px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+    .dist-bar { display: flex; height: 20px; border-radius: 3px; overflow: hidden; gap: 2px; margin-bottom: 10px; }
+    .dist-seg { height: 100%; min-width: 2px; border-radius: 2px; transition: opacity .15s; cursor: default; }
+    .dist-seg:hover { opacity: .8; }
+    .dist-labels { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+    .dist-label { font-size: 10px; font-weight: 300; color: var(--muted); display: flex; align-items: center; gap: 5px; }
+    .dist-label-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .dist-label strong { font-weight: 700; color: var(--text); }
+
+    /* ── PARAM TABLE ── */
+    .table-section {}
+    .table-controls { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+    .t-btn { font-family: inherit; font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 2px; cursor: pointer; padding: 4px 10px 3px; transition: all .12s; }
+    .t-btn:hover { border-color: var(--text); color: var(--text); }
+    .t-btn.active { background: var(--text); color: var(--surface); border-color: var(--text); }
+    .param-table { width: 100%; border-collapse: collapse; }
+    .param-table th { font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--muted); text-align: left; padding: 6px 10px 5px; border-bottom: 2px solid var(--border); }
+    .param-table td { font-size: 11px; font-weight: 400; padding: 6px 10px; border-bottom: 1px solid #24262C; vertical-align: top; }
+    .param-table tr:last-child td { border-bottom: none; }
+    .param-table tr:hover td { background: #24262C; }
+    .engine-cell { font-weight: 700; white-space: nowrap; }
+    .idx-cell { color: var(--muted); font-size: 10px; text-align: right; width: 28px; }
+    .scale-chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; white-space: nowrap; }
+    .samples-cell { font-size: 10px; font-weight: 300; color: var(--muted); }
+    .sample-pair { display: inline-block; margin-right: 8px; white-space: nowrap; }
+    .sample-pair .raw { color: var(--muted); }
+    .sample-pair .arrow { margin: 0 2px; }
+    .sample-pair .disp { color: var(--text); font-weight: 700; }
+    .info-cell { font-size: 10px; font-weight: 300; color: var(--muted); max-width: 240px; }
+
+    /* ── ENGINE GROUP HEADER ROWS ── */
+    .engine-group-row td {
+      background: #24262C;
+      padding: 5px 10px 4px;
+      border-bottom: 1px solid var(--border);
+      border-top: 2px solid var(--border);
+    }
+    .engine-group-row:first-child td { border-top: none; }
+    .engine-group-header {
+      font-size: 9px; font-weight: 700; letter-spacing: .2em;
+      color: var(--muted); text-transform: uppercase;
+    }
+
+    /* ── SCALE TYPE CHIP COLORS ── */
+    .chip-percent   { background: rgba(91,141,239,.18);  color: var(--c-percent); }
+    .chip-centered  { background: rgba(167,139,250,.18); color: var(--c-centered); }
+    .chip-discrete  { background: rgba(52,211,153,.18);  color: var(--c-discrete); }
+    .chip-selector  { background: rgba(245,158,11,.18);  color: var(--c-selector); }
+    .chip-hz        { background: rgba(249,115,22,.18);  color: var(--c-hz); }
+    .chip-tempo     { background: rgba(236,72,153,.18);  color: var(--c-tempo); }
+    .chip-inverse   { background: rgba(20,184,166,.18);  color: var(--c-inverse); }
+    .chip-decimal   { background: rgba(6,182,212,.18);   color: var(--c-decimal); }
+
+    /* ── MINI BAR (inline % visualization for percent/centered) ── */
+    .mini-bar-wrap { display: flex; align-items: center; gap: 6px; }
+    .mini-bar { flex: 1; max-width: 80px; height: 3px; background: var(--border); border-radius: 2px; position: relative; }
+    .mini-bar-fill { height: 100%; border-radius: 2px; }
+
+    /* ── FOOTER ── */
+    footer { text-align: center; padding: 32px; font-size: 11px; font-weight: 300; color: var(--muted); letter-spacing: .04em; }
+    footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
+    footer a:hover { color: var(--text); }
+
+    @media (max-width: 640px) {
+      .header-row { padding: 12px 16px 8px; }
+      .site-sub { display: none; }
+      main { padding: 20px 16px 60px; }
+      .param-table .info-cell { display: none; }
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div class="header-row">
+    <a href="index.html" class="site-title">OP-1 FIELD</a>
+    <span class="site-sep">//</span>
+    <span class="site-sub">value mappings</span>
+    <span class="fw-tag" id="fw-tag"></span>
+  </div>
+  <nav class="page-nav" aria-label="Site navigation">
+    <a href="index.html" class="nav-btn">HOME</a>
+    <a href="params.html" class="nav-btn">LAYOUT</a>
+    <a href="display.html" class="nav-btn active">MAPPINGS</a>
+    <a href="patch.html" class="nav-btn">PATCH</a>
+  </nav>
+</header>
+
+<main>
+
+  <!-- SECTION 1: SCALE TYPE LEGEND -->
+  <section class="legend-section">
+    <h2>Scale types</h2>
+    <div class="legend-grid" id="legend"></div>
+  </section>
+
+  <!-- SECTION 2: DISTRIBUTION -->
+  <section class="dist-section">
+    <h2>Parameter distribution by scale type</h2>
+    <div class="dist-bar" id="dist-bar"></div>
+    <div class="dist-labels" id="dist-labels"></div>
+  </section>
+
+  <!-- SECTION 3: FULL PARAMETER TABLE -->
+  <section class="table-section">
+    <h2>All parameters</h2>
+    <div class="table-controls" id="table-controls"></div>
+    <table class="param-table" id="param-table">
+      <thead>
+        <tr>
+          <th>ENGINE</th>
+          <th style="width:28px">#</th>
+          <th>NAME</th>
+          <th>SCALE</th>
+          <th>RAW &rarr; DISPLAY</th>
+          <th class="info-cell">INFO</th>
+        </tr>
+      </thead>
+      <tbody id="table-body"></tbody>
+    </table>
+  </section>
+
+</main>
+
+<footer id="footer"></footer>
+
+<script>
+  const FW = '1.7.3';
+  document.getElementById('fw-tag').textContent = 'fw ' + FW;
+  document.getElementById('footer').innerHTML =
+    'OP-1 Field firmware&nbsp;' + FW +
+    ' &middot; <a href="https://github.com/jstnfst/te-op1">github.com/jstnfst/te-op1</a>';
+
+  // ── SCALE TYPE DEFINITIONS ──────────────────────────────
+  const SCALE_META = {
+    percent:   { label: '%',             desc: 'Unipolar 0–100%; raw 0=0, raw 32767=100',        color: '#5B8DEF' },
+    centered:  { label: 'centered %',    desc: 'Bipolar, centered at 0; can be negative raw',    color: '#A78BFA' },
+    discrete:  { label: 'discrete',      desc: 'Stepped integer display (0–N or 1–N)',            color: '#34D399' },
+    selector:  { label: 'selector',      desc: 'Named discrete options (context-dependent)',      color: '#F59E0B' },
+    hz:        { label: 'hz (log)',       desc: 'Logarithmic Hz scale; not linear percentage',    color: '#F97316' },
+    tempo:     { label: 'tempo dial',    desc: 'Non-linear BPM/tempo dial; no simple formula',   color: '#EC4899' },
+    inverse:   { label: 'ms inverse',    desc: 'Lower raw = more time; delay range in ms',       color: '#14B8A6' },
+    decimal:   { label: 'decimal',       desc: 'Continuous decimal scale between two bounds',    color: '#06B6D4' },
+  };
+
+  // ── PARAMETER DATA ──────────────────────────────────────
+  // Each entry: [engine, idx, name, scaleType, samples[], info]
+  // samples: [[raw, display], ...]  — display can be number or string
+  const DATA = [
+    ['synth.amp', 0, 'VOLUME',     'percent', [[16415, 50]], ''],
+    ['synth.amp', 1, 'COMPRESSOR', 'percent', [[16416, 50]], ''],
+    ['synth.amp', 2, 'TONE',       'percent', [[16704, 51]], ''],
+    ['synth.amp', 3, 'DRIVE',      'percent', [[16384, 50]], ''],
+
+    ['synth.cluster', 0, 'WAVE NUMBER', 'percent', [[3072,'min'],[17408,'max']], 'range 3072–17408'],
+    ['synth.cluster', 1, 'WAVE ENV',    'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.cluster', 2, 'SPREAD',      'percent', [[512,'min'],[24064,'max']], 'range 512–24064'],
+    ['synth.cluster', 3, 'UNITOR',      'percent', [[3,0],[1638,100]], 'range 3–1638'],
+
+    ['synth.dbox', 0, 'ENVELOPE CROSSFADER', 'percent', [[0,'min'],[24832,'max']], 'same params as dsynth; different lfo PARAMETER encoding'],
+    ['synth.dbox', 1, 'WAVEFORM 1',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dbox', 2, 'ENVELOPE 1',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dbox', 3, 'CROSS MODULATION',    'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dbox', 4, 'FREQUENCY',           'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dbox', 5, 'WAVEFORM 2',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dbox', 6, 'ENVELOPE 2',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dbox', 7, 'CUTOFF',              'percent', [[0,'min'],[32767,'max']], ''],
+
+    ['dbox.dyna_env', 0, 'ATTACK',  'centered', [[-32768,'min'],[32767,'max']], 'bipolar'],
+    ['dbox.dyna_env', 1, 'GAIN',    'percent',  [[0,'min'],[8192,'max']], 'max 8192'],
+    ['dbox.dyna_env', 2, 'RELEASE', 'centered', [[-32768,'min'],[32767,'max']], 'bipolar'],
+    ['dbox.dyna_env', 3, 'SMOOTH',  'percent',  [[0,'min'],[32767,'max']], ''],
+
+    ['synth.digital', 0, 'WAVE SHAPER',    'percent',  [[0,'min'],[32767,'max']], ''],
+    ['synth.digital', 1, 'OCTAVE',         'discrete', [[2048, 0],[19712, 4],[26624, 6]], '0–6'],
+    ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-32768,'min'],[-10369, 33]], 'bipolar'],
+    ['synth.digital', 3, 'DIGITALNESS',    'percent',  [[0,'min'],[32767,'max']], ''],
+
+    ['synth.dimension', 0, 'WAVEFORM',           'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dimension', 1, 'STEREO',             'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dimension', 2, 'FILTER CUTOFF FREQ', 'hz',     [[13742, '1320 Hz']], ''],
+    ['synth.dimension', 3, 'RESONANCE',          'percent', [[0,'min'],[32767,'max']], ''],
+
+    ['synth.dna', 0, 'FILTER',        'centered', [[-29491,-90],[32767,100]], 'range −29491 to +32767'],
+    ['synth.dna', 1, 'WAVE NUMBER',   'percent',  [[4608,'min'],[12800,'max']], 'range 4608–12800'],
+    ['synth.dna', 2, 'WAVE MODIFIER', 'percent',  [[32767,'max']], ''],
+    ['synth.dna', 3, 'NOISE',         'percent',  [[0,'min'],[32767,'max']], ''],
+
+    ['synth.drwave', 0, 'WAVE TYPE AND LENGTH', 'discrete', [[14209, 57],[24568, 98]], '0–98; encodes wave type and length'],
+    ['synth.drwave', 1, 'FILTER',               'discrete', [[11735, 70],[16379, 98]], '0–98'],
+    ['synth.drwave', 2, 'PHASE',                'discrete', [[8199, 49],[16377, 98]],  '0–98'],
+    ['synth.drwave', 3, 'CHORUS',               'discrete', [[0, 0],[32767, 99]],      '0–99'],
+
+    ['synth.dsynth', 0, 'ENVELOPE CROSSFADER', 'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 1, 'WAVEFORM 1',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 2, 'ENVELOPE 1',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 3, 'CROSS MODULATION',    'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 4, 'FREQUENCY',           'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 5, 'WAVEFORM 2',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 6, 'ENVELOPE 2',          'percent', [[0,'min'],[32767,'max']], ''],
+    ['synth.dsynth', 7, 'CUTOFF',              'percent', [[0,'min'],[32767,'max']], ''],
+
+    ['synth.fm', 0, 'FM AMOUNT', 'discrete', [[31743, 95]],           '0–99'],
+    ['synth.fm', 1, 'FREQUENCY', 'discrete', [[17352, 52]],           '0–99'],
+    ['synth.fm', 2, 'TOPOLOGY',  'selector', [[1024,'min'],[13312, 6],[17408,'max']], '9 options'],
+    ['synth.fm', 3, 'DETUNE',    'discrete', [[0, 0]],                '0–99'],
+
+    ['synth.phase', 0, 'PHASE SHIFT',       'percent', [[0, 0],[32767,'max']], ''],
+    ['synth.phase', 1, 'DISTORTION AMOUNT', 'percent', [[14310, 44],[29491, 90]], 'max 29491'],
+    ['synth.phase', 2, 'PHASE FILTER',      'percent', [[0, 0],[32767,'max']], ''],
+    ['synth.phase', 3, 'PHASE TILT',        'percent', [[0, 0],[32767,'max']], ''],
+
+    ['synth.pulse', 0, 'FILTER',     'percent',  [[18848, 57]],  'max 23168'],
+    ['synth.pulse', 1, 'AMPLITUDE',  'percent',  [[3984, 12]],   'max 16384'],
+    ['synth.pulse', 2, 'PULSE TWO',  'percent',  [[10752, 33]],  'max 16384'],
+    ['synth.pulse', 3, 'MODULATION', 'centered', [[-16384,-100],[-6144,-38],[16384,100]], 'symmetric ±16384'],
+
+    ['synth.sampler', 0, 'START',     'percent',  [[0,'min'],[32766,'max']], ''],
+    ['synth.sampler', 1, 'LOOP IN',   'percent',  [[0,'min'],[9821,30],[32767,'max']], ''],
+    ['synth.sampler', 2, 'LOOP OUT',  'percent',  [[0,'min'],[18033,55],[32767,'max']], ''],
+    ['synth.sampler', 3, 'END',       'percent',  [[0,'min'],[31301,96],[32767,'max']], ''],
+    ['synth.sampler', 4, 'DIRECTION', 'selector', [[8192, 'min'],[12000, 'forward']], 'forward/reverse; min 8192'],
+    ['synth.sampler', 5, 'FINE TUNE', 'percent',  [[0,'min'],[30195,92],[32767,'max']], ''],
+    ['synth.sampler', 6, 'LOOP FADE', 'percent',  [[0,'min'],[9103,28],[32767,'max']], ''],
+    ['synth.sampler', 7, 'GAIN',      'percent',  [[0,'min'],[8192,25],[32767,'max']], ''],
+
+    ['synth.string', 0, 'TENSION',      'percent', [[64,'min'],[3392, 10],[8256,'max']], 'range 64–8256'],
+    ['synth.string', 1, 'DECAY',        'percent', [[24064, 'max']], 'silence below 512'],
+    ['synth.string', 2, 'DETUNE',       'percent', [[16384, 50]], ''],
+    ['synth.string', 3, 'IMPULSE TYPE', 'percent', [[8256,0],[16448,100]], 'range 8256–16448'],
+
+    ['synth.vocoder', 0, 'WAVEFORM', 'selector', [[0, 'S']], 'S/1/2/3/4/5/6/N'],
+    ['synth.vocoder', 1, 'FORMANT',  'discrete', [[0, -4]], 'range −4 to +4; raw 0 = −4'],
+    ['synth.vocoder', 2, 'BANDS',    'discrete', [[0, 0]], '0–7'],
+    ['synth.vocoder', 3, 'MIX',      'percent',  [[0, 0],[32767,'max']], ''],
+
+    ['synth.voltage', 0, 'AMPERE MODULATION', 'percent', [[16383, 50],[26623, 81]], ''],
+    ['synth.voltage', 1, 'GROUND NOISE',      'percent', [[14336, 44],[26623, 81]], ''],
+    ['synth.voltage', 2, 'PHASE FILTER',      'percent', [[20992, 64],[29183, 89]], ''],
+    ['synth.voltage', 3, 'VOLTAGE DETUNE',    'percent', [[16384, 50],[26112, 80]], ''],
+
+    ['fx.cwo', 0, 'FREQUENCY', 'percent', [[16366, 50]], ''],
+    ['fx.cwo', 1, 'DELAY',     'percent', [[16677, 50]], ''],
+    ['fx.cwo', 2, 'FEEDBACK',  'percent', [[16610, 50]], ''],
+    ['fx.cwo', 3, 'SIDEBAND',  'percent', [[15345, 50]], ''],
+
+    ['fx.delay', 0, 'RANGE',    'inverse',  [[8000, '125 ms']], '31.25–1000 ms; lower raw = more delay'],
+    ['fx.delay', 1, 'SPEED',    'discrete', [[10624, 25]], '0–99'],
+    ['fx.delay', 2, 'FEEDBACK', 'discrete', [[8328, 50]], '0–99; max raw ~16383'],
+    ['fx.delay', 3, 'LEVEL',    'percent',  [[0,'min'],[32767,'max']], ''],
+
+    ['fx.grid', 0, 'X SIZE',     'discrete', [[9064, 50]], '0–99'],
+    ['fx.grid', 1, 'Y SIZE',     'discrete', [[6032, 30]], '0–99'],
+    ['fx.grid', 2, 'Z FEEDBACK', 'discrete', [[23248, 72]], '0–99'],
+    ['fx.grid', 3, 'MIX',        'percent',  [[0,'min'],[32767,'max']], ''],
+
+    ['fx.mother', 0, 'DISTANCE', 'percent', [[19041, 58]], ''],
+    ['fx.mother', 1, 'GATE',     'percent', [[0, 0]], ''],
+    ['fx.mother', 2, 'COLOR',    'percent', [[9832, 30]], ''],
+    ['fx.mother', 3, 'MIX',      'percent', [[10826, 33]], ''],
+
+    ['fx.nitro', 0, 'FREQUENCY LOWS',  'percent',  [[64,'min'],[16448,'max']], 'range 64–16448'],
+    ['fx.nitro', 1, 'FILTER FOLLOW',   'centered', [[-32768,'min'],[0, 0],[32767,'max']], '0 = center; bipolar'],
+    ['fx.nitro', 2, 'FEEDBACK',        'percent',  [[0,'min'],[20643,'max']], 'max 20643'],
+    ['fx.nitro', 3, 'FREQUENCY HIGHS', 'percent',  [[64,'min'],[16448,'max']], 'range 64–16448'],
+
+    ['fx.phone', 0, 'TONE',     'percent', [[204,'min'],[5458,26],[10522,51],[20480,'max']], 'range 204–20480'],
+    ['fx.phone', 1, 'GSM',      'percent', [[3072,'min'],[6712,26],[10352,51],[17408,'max']], 'range 3072–17408'],
+    ['fx.phone', 2, 'BAUD',     'percent', [[1536,'min'],[5466,26],[9426,52],[16896,'max']], 'range 1536–16896'],
+    ['fx.phone', 3, 'TELEMATIC','percent', [[0,0],[8441,26],[16876,52],[32767,'max']], ''],
+
+    ['fx.punch', 0, 'FREQUENCY', 'percent',  [[1344,'min'],[12480,'max']], 'range 1344–12480'],
+    ['fx.punch', 1, 'PUNCH',     'percent',  [[24512, 74]], ''],
+    ['fx.punch', 2, 'ROUNDS',    'discrete', [[3744, 3],[11904,11]], '1–24'],
+    ['fx.punch', 3, 'POWER',     'percent',  [[29159,88],[31783,96]], ''],
+
+    ['fx.spring', 0, 'TONE',    'percent', [[16448, 50]], ''],
+    ['fx.spring', 1, 'TURNS',   'percent', [[14544, 44]], ''],
+    ['fx.spring', 2, 'DAMPING', 'percent', [[4096, 12]], ''],
+    ['fx.spring', 3, 'MIX',     'percent', [[32767, 100]], ''],
+
+    ['fx.terminal', 0, 'FREQUENCY', 'hz',      [[0,'100 Hz'],[32767,'20000 Hz']], '100 Hz–20 kHz'],
+    ['fx.terminal', 1, 'BITS',      'decimal', [[0, 2],[32767, 16]], '2.0–16.0 bits'],
+    ['fx.terminal', 2, 'MODEL',     'decimal', [[0, 1],[32767, 6]], '1.0–6.0'],
+    ['fx.terminal', 3, 'MIX',       'percent', [[14322, 50],[32767, 100]], ''],
+
+    ['lfo.element', 0, 'SOURCE',      'selector', [[2000,'gravity sensor']], 'envelope/gravity sensor'],
+    ['lfo.element', 1, 'AMOUNT',      'centered', [[-13743,-41],[6245,19],[8265,25],[32767,100]], '−100 to +100'],
+    ['lfo.element', 2, 'DESTINATION', 'selector', [[1024,'synth'],[7168,'mix']], 'synth/envelope/fx/mix'],
+    ['lfo.element', 3, 'PARAMETER',   'selector', [[1024,'min'],[15360,'max']], '4-param: 1024/4864/8704/15360; 8-param: 1024/2944/…/15360; dbox: 1024/2464/4384/6304/8224/10624/12544/14464'],
+
+    ['lfo.midi', 0, 'PARAMETER 1',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], '1–4 target knob'],
+    ['lfo.midi', 1, 'PARAMETER 2',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], ''],
+    ['lfo.midi', 2, 'PARAMETER 3',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], ''],
+    ['lfo.midi', 3, 'PARAMETER 4',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], ''],
+    ['lfo.midi', 4, 'DESTINATION 1', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], 'synth/envelope/fx/sound output'],
+    ['lfo.midi', 5, 'DESTINATION 2', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], ''],
+    ['lfo.midi', 6, 'DESTINATION 3', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], ''],
+    ['lfo.midi', 7, 'DESTINATION 4', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], ''],
+
+    ['lfo.random', 0, 'SPEED',       'tempo',    [[4952, 6]], ''],
+    ['lfo.random', 1, 'AMOUNT',      'discrete', [[7167, 21]], '0–99'],
+    ['lfo.random', 2, 'DESTINATION', 'selector', [[4952,'fx']], ''],
+    ['lfo.random', 3, 'ENVELOPE',    'percent',  [[28925, 88]], ''],
+    ['lfo.random', 4, 'PARAMETER',   'selector', [[0,'freq']], 'context-dep on DESTINATION'],
+
+    ['lfo.tremolo', 0, 'SPEED',          'tempo',    [[0,'min'],[32440,'max']], 'sweep: 0/2943/4576/12751/16348/22228/29422/32440'],
+    ['lfo.tremolo', 1, 'PITCH AMOUNT',   'centered', [[985,'~3%'],[2264,'~7%']], '−100 to +100'],
+    ['lfo.tremolo', 2, 'VOLUME LEVEL',   'centered', [[-12759,-38]], '−100 to +100'],
+    ['lfo.tremolo', 3, 'PITCH ENVELOPE', 'percent',  [[4592,14],[12136,37]], ''],
+    ['lfo.tremolo', 7, 'LFO SHAPE',      'selector', [[0,'default'],[19456,'exponential'],[32767,'max']], 'default/exponential; indices 4–6 unused'],
+
+    ['lfo.value', 0, 'SPEED',       'tempo',    [[0,'min'],[16384,'max']], ''],
+    ['lfo.value', 1, 'AMOUNT',      'centered', [[23255,'~71%']], '−100 to +100'],
+    ['lfo.value', 2, 'DESTINATION', 'selector', [[1024,'synth'],[2080,'synth free'],[4192,'envelope'],[6304,'envelope free'],[8416,'fx'],[10528,'fx free']], 'synth/synth free/envelope/envelope free/fx/fx free'],
+    ['lfo.value', 3, 'PARAMETER',   'selector', [[1024,'min'],[15360,'max']], '4-param: 1024/4864/8704/15360; 8-param: 1024/2944/…/15360; dbox: 1024/2464/…/14464'],
+    ['lfo.value', 4, 'LFO SHAPE',   'selector', [[0,'sine'],[9362,'square'],[18724,'sawtooth'],[28086,'reverse sawtooth']], 'sine/square/sawtooth/reverse sawtooth'],
+
+    ['lfo.velocity', 0, 'AMP',           'percent',  [[16381, 50]], ''],
+    ['lfo.velocity', 1, 'VOLUME AMOUNT', 'centered', [[16694,'~51%']], '−100 to +100'],
+    ['lfo.velocity', 2, 'DESTINATION',   'selector', [[1024,'synth'],[7168,'mix']], 'synth/envelope/fx/mix'],
+    ['lfo.velocity', 3, 'PARAMETER',     'selector', [[15360,'telematic']], 'context-dep; "telematic" when dest=fx/phone'],
+
+    ['adsr', 0, 'ATTACK',     'percent',  [[64,'min'],[16320,'max']], 'range 64–16320'],
+    ['adsr', 1, 'DECAY',      'percent',  [[64,'min'],[16320,'max']], 'range 64–16320'],
+    ['adsr', 2, 'SUSTAIN',    'percent',  [[0,'min'],[32767,'max']], ''],
+    ['adsr', 3, 'RELEASE',    'percent',  [[64,'min'],[16320,'max']], 'range 64–16320'],
+    ['adsr', 4, 'PLAY MODE',  'selector', [[2048,'poly'],[6140,'mono'],[9209,'legato'],[14336,'unison']], 'poly/mono/legato/unison'],
+    ['adsr', 5, 'PORTAMENTO', 'percent',  [[64,'min'],[16448,'max']], 'range 64–16448'],
+    ['adsr', 6, 'BEND RANGE', 'selector', [[2048,'1 st'],[5117,'2 st'],[9209,'4 st'],[13301,'7 st'],[18432,'oct']], '1/2/4/7 st, octave'],
+    ['adsr', 7, 'VOLUME',     'discrete', [[3276,10],[32767,100]], '1–100; raw = floor(N × 32767/100)'],
+  ];
+
+  // ── RENDER: LEGEND ──────────────────────────────────────
+  const legendEl = document.getElementById('legend');
+  Object.entries(SCALE_META).forEach(([type, meta]) => {
+    legendEl.innerHTML += `<div class="legend-item">
+      <div class="legend-dot" style="background:${meta.color}"></div>
+      <span><strong>${meta.label}</strong> — ${meta.desc}</span>
+    </div>`;
+  });
+
+  // ── RENDER: DISTRIBUTION ────────────────────────────────
+  const counts = {};
+  DATA.forEach(([,,, type]) => { counts[type] = (counts[type] || 0) + 1; });
+  const total = DATA.length;
+  const barEl = document.getElementById('dist-bar');
+  const labelsEl = document.getElementById('dist-labels');
+  Object.entries(SCALE_META).forEach(([type, meta]) => {
+    const n = counts[type] || 0;
+    if (!n) return;
+    const pct = (n / total * 100).toFixed(1);
+    barEl.innerHTML += `<div class="dist-seg" style="background:${meta.color};flex:${n}" title="${meta.label}: ${n} params (${pct}%)"></div>`;
+    labelsEl.innerHTML += `<div class="dist-label">
+      <div class="dist-label-dot" style="background:${meta.color}"></div>
+      <strong>${n}</strong>&nbsp;${meta.label}
+    </div>`;
+  });
+
+  // ── RENDER: TABLE ───────────────────────────────────────
+  let activeFilter = 'all';
+
+  function chipFor(type) {
+    const c = SCALE_META[type] || { label: type, color: '#6B7280' };
+    return `<span class="scale-chip chip-${type}">${c.label}</span>`;
+  }
+
+  function samplesHtml(samples) {
+    if (!samples.length) return '<span style="color:#5A5E66">—</span>';
+    return samples.map(([raw, disp]) =>
+      `<span class="sample-pair"><span class="raw">${raw}</span><span class="arrow">→</span><span class="disp">${disp}</span></span>`
+    ).join('');
+  }
+
+  function renderTable(filter) {
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
+    let lastEngine = null;
+    DATA.forEach(([engine, idx, name, type, samples, info]) => {
+      const [group] = engine.split('.');
+      if (filter !== 'all' && filter !== type && filter !== group) return;
+      if (engine !== lastEngine) {
+        const hrow = document.createElement('tr');
+        hrow.className = 'engine-group-row';
+        hrow.innerHTML = `<td colspan="6" class="engine-group-header">${engine}</td>`;
+        tbody.appendChild(hrow);
+        lastEngine = engine;
+      }
+      const row = document.createElement('tr');
+      row.innerHTML = `
+        <td class="engine-cell">${engine}</td>
+        <td class="idx-cell">${idx}</td>
+        <td>${name}</td>
+        <td>${chipFor(type)}</td>
+        <td class="samples-cell">${samplesHtml(samples)}</td>
+        <td class="info-cell">${info || '—'}</td>`;
+      tbody.appendChild(row);
+    });
+  }
+
+  // Table filter buttons
+  const controlsEl = document.getElementById('table-controls');
+  const filterOptions = [
+    { key: 'all', label: 'ALL' },
+    { key: 'synth', label: 'SYNTH' },
+    { key: 'fx', label: 'FX' },
+    { key: 'lfo', label: 'LFO' },
+    { key: 'adsr', label: 'ADSR' },
+    ...Object.entries(SCALE_META).map(([k, m]) => ({ key: k, label: m.label.toUpperCase() }))
+  ];
+  filterOptions.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 't-btn' + (opt.key === 'all' ? ' active' : '');
+    btn.textContent = opt.label;
+    btn.dataset.f = opt.key;
+    btn.addEventListener('click', () => {
+      activeFilter = opt.key;
+      document.querySelectorAll('.t-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderTable(activeFilter);
+    });
+    controlsEl.appendChild(btn);
+  });
+
+  renderTable('all');
+</script>
+</body>
+</html>

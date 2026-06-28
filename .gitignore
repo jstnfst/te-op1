@@ -18,3 +18,13 @@
 *.wav
 sampler*.aif
 /collection/
+
+# web app (Vite + Cloudflare Pages)
+node_modules/
+dist/
+.wrangler/
+.dev.vars
+.vite/
+*.local
+seed.generated.sql
+tsconfig.tsbuildinfo

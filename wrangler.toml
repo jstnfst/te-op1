@@ -1,0 +1,15 @@
+name = "te-op1"
+pages_build_output_dir = "./dist"
+compatibility_date = "2026-06-27"
+
+# D1 database binding. After `wrangler d1 create te-op1-db`, paste the printed
+# database_id below (and into the Pages project's production/preview bindings).
+[[d1_databases]]
+binding = "DB"
+database_name = "te-op1-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+# Non-secret vars. Secrets (OAuth client IDs/secrets, JWT_SECRET) are set with
+# `wrangler pages secret put <NAME>` and mirrored in .dev.vars for local dev.
+[vars]
+SITE_URL = "http://localhost:8788"
