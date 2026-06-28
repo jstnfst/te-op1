@@ -7,8 +7,8 @@ export default function Home() {
       <h1 className="hero-title">A reference and community library for OP-1 Field presets.</h1>
       <p className="lead">
         Explore how the preset format works, browse patches uploaded by the community, and
-        publish your own. Sign in with Google, Microsoft, or Yahoo to upload &mdash; everything
-        else stays open.
+        publish your own. Sign in with Google, Microsoft, Yahoo, or GitHub to upload &mdash;
+        everything else stays open.
       </p>
 
       <h2>Explore</h2>

@@ -8,42 +8,11 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/site.css">
+  <script src="/site-header.js" defer></script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root {
-      --bg: #15161A; --surface: #1F2127; --border: #31343C;
-      --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
-      --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
-
-      /* Scale type colors */
-      --c-percent:   #5B8DEF;
-      --c-centered:  #A78BFA;
-      --c-discrete:  #34D399;
-      --c-selector:  #F59E0B;
-      --c-hz:        #F97316;
-      --c-tempo:     #EC4899;
-      --c-inverse:   #14B8A6;
-      --c-decimal:   #06B6D4;
-    }
-    body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
-
-    /* ── HEADER ── */
-    header { background: var(--header-bg); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
-    .header-row { display: flex; align-items: center; gap: 10px; padding: 16px 32px 10px; }
-    .site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
-    .site-title:hover { color: rgba(255,255,255,.8); }
-    .site-sep { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.2); }
-    .site-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.42); letter-spacing: .03em; }
-    .fw-tag { margin-left: auto; font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28); border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; }
-    .page-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.06); gap: 2px; }
-    .nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px; text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
-    .nav-btn:hover { color: rgba(255,255,255,.72); }
-    .nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
-
-    /* ── MAIN ── */
-    main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 80px; }
-
-    h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin-bottom: 14px; }
+    /* Theme tokens + header/nav/footer chrome + scale chips live in /site.css */
+    h2 { margin: 0 0 14px; }
 
     /* ── SCALE LEGEND ── */
     .legend-section { margin-bottom: 36px; padding-bottom: 28px; border-bottom: 1px solid var(--border); }
@@ -74,7 +43,6 @@
     .param-table tr:hover td { background: #24262C; }
     .engine-cell { font-weight: 700; white-space: nowrap; }
     .idx-cell { color: var(--muted); font-size: 10px; text-align: right; width: 28px; }
-    .scale-chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; white-space: nowrap; }
     .samples-cell { font-size: 10px; font-weight: 300; color: var(--muted); }
     .sample-pair { display: inline-block; margin-right: 8px; white-space: nowrap; }
     .sample-pair .raw { color: var(--muted); }
@@ -95,49 +63,18 @@
       color: var(--muted); text-transform: uppercase;
     }
 
-    /* ── SCALE TYPE CHIP COLORS ── */
-    .chip-percent   { background: rgba(91,141,239,.18);  color: var(--c-percent); }
-    .chip-centered  { background: rgba(167,139,250,.18); color: var(--c-centered); }
-    .chip-discrete  { background: rgba(52,211,153,.18);  color: var(--c-discrete); }
-    .chip-selector  { background: rgba(245,158,11,.18);  color: var(--c-selector); }
-    .chip-hz        { background: rgba(249,115,22,.18);  color: var(--c-hz); }
-    .chip-tempo     { background: rgba(236,72,153,.18);  color: var(--c-tempo); }
-    .chip-inverse   { background: rgba(20,184,166,.18);  color: var(--c-inverse); }
-    .chip-decimal   { background: rgba(6,182,212,.18);   color: var(--c-decimal); }
-
     /* ── MINI BAR (inline % visualization for percent/centered) ── */
     .mini-bar-wrap { display: flex; align-items: center; gap: 6px; }
     .mini-bar { flex: 1; max-width: 80px; height: 3px; background: var(--border); border-radius: 2px; position: relative; }
     .mini-bar-fill { height: 100%; border-radius: 2px; }
 
-    /* ── FOOTER ── */
-    footer { text-align: center; padding: 32px; font-size: 11px; font-weight: 300; color: var(--muted); letter-spacing: .04em; }
-    footer a { color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
-    footer a:hover { color: var(--text); }
-
     @media (max-width: 640px) {
-      .header-row { padding: 12px 16px 8px; }
-      .site-sub { display: none; }
-      main { padding: 20px 16px 60px; }
       .param-table .info-cell { display: none; }
     }
   </style>
 </head>
-<body>
-<header>
-  <div class="header-row">
-    <a href="index.html" class="site-title">OP-1 FIELD</a>
-    <span class="site-sep">//</span>
-    <span class="site-sub">value mappings</span>
-    <span class="fw-tag" id="fw-tag"></span>
-  </div>
-  <nav class="page-nav" aria-label="Site navigation">
-    <a href="index.html" class="nav-btn">HOME</a>
-    <a href="params.html" class="nav-btn">LAYOUT</a>
-    <a href="display.html" class="nav-btn active">MAPPINGS</a>
-    <a href="patch.html" class="nav-btn">PATCH</a>
-  </nav>
-</header>
+<body data-section="mappings">
+<div data-site-header></div>
 
 <main>
 
@@ -175,15 +112,9 @@
 
 </main>
 
-<footer id="footer"></footer>
+<div data-site-footer></div>
 
 <script>
-  const FW = '1.7.3';
-  document.getElementById('fw-tag').textContent = 'fw ' + FW;
-  document.getElementById('footer').innerHTML =
-    'OP-1 Field firmware&nbsp;' + FW +
-    ' &middot; <a href="https://github.com/jstnfst/te-op1">github.com/jstnfst/te-op1</a>';
-
   // ── SCALE TYPE DEFINITIONS ──────────────────────────────
   const SCALE_META = {
     percent:   { label: '%',             desc: 'Unipolar 0–100%; raw 0=0, raw 32767=100',        color: '#5B8DEF' },
