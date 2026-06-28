@@ -8,7 +8,8 @@
       "Bash(git push *)",
       "PowerShell(cmd.exe /c \"C:\\\\Users\\\\jstnf\\\\hack\\\\te-op1\\\\build.bat\")",
       "PowerShell(cmd.exe /c \"C:\\\\Users\\\\jstnf\\\\hack\\\\te-op1\\\\build.bat\" 2>&1)",
-      "Bash(C:/Users/jstnf/hack/te-op1/op1dump.exe *)"
+      "Bash(C:/Users/jstnf/hack/te-op1/op1dump.exe *)",
+      "Bash(git commit -q -m ' *)"
     ]
   }
 }

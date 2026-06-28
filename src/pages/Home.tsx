@@ -6,9 +6,9 @@ export default function Home() {
       <p className="eyebrow">OP-1 Field</p>
       <h1 className="hero-title">A reference and community library for OP-1 Field presets.</h1>
       <p className="lead">
-        Explore how the preset format works, browse patches uploaded by the community, and
-        publish your own. Sign in with Google, Microsoft, Yahoo, or GitHub to upload &mdash;
-        everything else stays open.
+        Explore how the OP-1 Field preset format works &mdash; the knob layout, value mappings,
+        and live patch viewer stay open to everyone. Sign in with Google, Microsoft, Yahoo, or
+        GitHub to browse the community library and publish your own.
       </p>
 
       <h2>Explore</h2>

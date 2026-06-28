@@ -5,6 +5,11 @@
    here, so changing a destination, the firmware tag, or the footer is
    a one-file edit.
 
+   The nav has two groups: REFERENCE (the public format docs) and
+   LIBRARY (the community patches, which require sign-in). The Library
+   group is injected only when a session exists; logged-out visitors see
+   a single "Log in to browse" call-to-action in its place.
+
    A page opts in with two placeholders and this script:
      <div data-site-header></div>   ... <div data-site-footer></div>
      <script src="/site-header.js" defer></script>
@@ -17,15 +22,17 @@
   var FW = "1.7.3";
   var REPO = "https://github.com/jstnfst/te-op1";
 
-  // The whole site map, in nav order. Edit here to change every page.
-  var NAV = [
-    { label: "HOME",       href: "/",             section: "home" },
-    { label: "LAYOUT",     href: "/params.html",  section: "layout" },
-    { label: "MAPPINGS",   href: "/display.html", section: "mappings" },
-    { label: "PATCH",      href: "/patch.html",   section: "patch" },
-    { label: "BROWSE",     href: "/browse",       section: "browse" },
-    { label: "UPLOAD",     href: "/upload",       section: "upload" },
-    { label: "MY PATCHES", href: "/me",           section: "mypatches" }
+  // Public format reference. Edit here to change every page.
+  var REFERENCE = [
+    { label: "LAYOUT",   href: "/params.html",  section: "layout" },
+    { label: "MAPPINGS", href: "/display.html", section: "mappings" },
+    { label: "PATCH",    href: "/patch.html",   section: "patch" }
+  ];
+  // Community library — shown only when signed in.
+  var LIBRARY = [
+    { label: "BROWSE",     href: "/browse", section: "browse" },
+    { label: "UPLOAD",     href: "/upload", section: "upload" },
+    { label: "MY PATCHES", href: "/me",     section: "mypatches" }
   ];
 
   var SUBTITLE = {
@@ -58,11 +65,10 @@
     });
   }
 
-  function navHTML(section) {
-    return NAV.map(function (i) {
-      return '<a href="' + i.href + '" class="nav-btn' +
-        (i.section === section ? " active" : "") + '">' + i.label + "</a>";
-    }).join("");
+  function navBtn(item, section) {
+    return '<a href="' + item.href + '" class="nav-btn' +
+      (item.section === section ? " active" : "") +
+      '" data-section="' + item.section + '">' + item.label + "</a>";
   }
 
   function headerHTML(section) {
@@ -76,7 +82,10 @@
           '<span class="fw-tag">fw ' + esc(FW) + "</span>" +
           '<span class="auth-mini" data-auth></span>' +
         "</div>" +
-        '<nav class="page-nav" aria-label="Site navigation">' + navHTML(section) + "</nav>" +
+        '<nav class="page-nav" aria-label="Site navigation">' +
+          REFERENCE.map(function (i) { return navBtn(i, section); }).join("") +
+          '<span data-nav-library></span>' +
+        "</nav>" +
       "</header>"
     );
   }
@@ -86,19 +95,36 @@
       ' &middot; <a href="' + REPO + '">github.com/jstnfst/te-op1</a></footer>';
   }
 
-  function renderAuth(el) {
-    if (!el) return;
+  // Fill the Library slot based on auth: the group when signed in, otherwise a
+  // single call-to-action. Rendered after /api/auth/me so logged-out visitors
+  // never see (or flash) gated links.
+  function fillLibrary(user, section) {
+    var slot = document.querySelector("[data-nav-library]");
+    if (!slot) return;
+    var sep = '<span class="nav-sep" aria-hidden="true">&middot;</span>';
+    slot.innerHTML = user
+      ? sep + LIBRARY.map(function (i) { return navBtn(i, section); }).join("")
+      : sep + '<a href="/login" class="nav-btn cta" data-section="">Log in to browse &rarr;</a>';
+  }
+
+  function applyAuth(user) {
+    var section = currentSection();
+    var el = document.querySelector("[data-auth]");
+    if (el) {
+      el.innerHTML = user
+        ? (user.avatar ? '<img src="' + esc(user.avatar) + '" alt="">' : "") +
+          "<span>" + esc(user.name || user.email || "account") + "</span>" +
+          '<a href="/api/auth/logout">log out</a>'
+        : '<a href="/login">log in</a>';
+    }
+    fillLibrary(user, section);
+  }
+
+  function loadAuth() {
     fetch("/api/auth/me", { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : { user: null }; })
-      .then(function (d) {
-        var u = d && d.user;
-        el.innerHTML = u
-          ? (u.avatar ? '<img src="' + esc(u.avatar) + '" alt="">' : "") +
-            "<span>" + esc(u.name || u.email || "account") + "</span>" +
-            '<a href="/api/auth/logout">log out</a>'
-          : '<a href="/login">log in</a>';
-      })
-      .catch(function () { el.innerHTML = '<a href="/login">log in</a>'; });
+      .then(function (d) { applyAuth(d && d.user); })
+      .catch(function () { applyAuth(null); });
   }
 
   function mount() {
@@ -107,7 +133,7 @@
     if (head) head.innerHTML = headerHTML(section);
     var foot = document.querySelector("[data-site-footer]");
     if (foot) foot.innerHTML = footerHTML();
-    renderAuth(document.querySelector("[data-auth]"));
+    loadAuth();
   }
 
   // Keep the active tab + subtitle correct when the SPA navigates client-side.
@@ -117,7 +143,7 @@
     if (subEl) subEl.textContent = SUBTITLE[section] || SUBTITLE.home;
     var btns = document.querySelectorAll(".page-nav .nav-btn");
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle("active", NAV[i] && NAV[i].section === section);
+      btns[i].classList.toggle("active", btns[i].dataset.section === section);
     }
   }
 

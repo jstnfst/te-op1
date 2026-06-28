@@ -45,6 +45,11 @@ header.site { background: var(--header-bg); position: sticky; top: 0; z-index: 1
   text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
 .nav-btn:hover { color: rgba(255,255,255,.72); }
 .nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
+/* divider between the Reference group and the Library group */
+.nav-sep { align-self: center; color: rgba(255,255,255,.16); font-size: 12px; padding: 0 8px 2px; user-select: none; }
+/* logged-out call-to-action that takes the place of the Library group */
+.nav-btn.cta { color: var(--orange); }
+.nav-btn.cta:hover { color: #ff6a33; }
 
 /* ── MAIN (default centered column; patch/layout override locally) ── */
 main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 80px; }

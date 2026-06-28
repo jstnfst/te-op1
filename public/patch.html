@@ -21,6 +21,10 @@
     /* ── MAIN ── (full-width workspace, unlike the centered reference pages) */
     main { max-width: none; margin: 0; padding: 24px 32px 80px; }
     h2 { margin: 0 0 14px; }
+    .patch-notice { margin-bottom: 18px; padding: 12px 16px; font-size: 12px; font-weight: 300; line-height: 1.6;
+      color: #E3A87E; background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
+    .patch-notice a { color: var(--orange); font-weight: 700; text-decoration: none; }
+    .patch-notice a:hover { text-decoration: underline; }
 
     /* ── IDENTITY (inside the editor panel) ── */
     .identity { display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
@@ -1074,10 +1078,26 @@ loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
 (function () {
   var id = new URLSearchParams(location.search).get('id');
   if (!id) return;
+  function notice(html) {
+    var n = document.createElement('div');
+    n.className = 'patch-notice';
+    n.innerHTML = html;
+    var m = document.querySelector('main');
+    if (m) m.insertBefore(n, m.firstChild);
+  }
   fetch('/api/patches/' + encodeURIComponent(id), { credentials: 'same-origin' })
-    .then(function (r) { if (!r.ok) throw new Error('not found'); return r.json(); })
+    .then(function (r) {
+      if (r.status === 401) { var e = new Error('auth'); e.auth = true; throw e; }
+      if (!r.ok) throw new Error('not found');
+      return r.json();
+    })
     .then(function (d) { if (d && d.preset && typeof loadPreset === 'function') loadPreset(d.preset); })
-    .catch(function () { /* leave the default sample loaded */ });
+    .catch(function (err) {
+      if (err && err.auth) {
+        notice('Sign in to open community patches. <a href="/login">Log in &rarr;</a> The viewer below still works with your own JSON.');
+      }
+      /* otherwise leave the default sample loaded */
+    });
 })();
 </script>
 </body>

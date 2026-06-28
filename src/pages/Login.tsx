@@ -23,7 +23,8 @@ export default function Login() {
       <p className="eyebrow">Account</p>
       <h1 className="hero-title">Log in</h1>
       <p className="lead">
-        Sign in to upload and manage your patches. Browsing the library stays open to everyone.
+        Sign in to browse the community library, upload presets, and manage your own. The format
+        reference &mdash; knob layout, value mappings, and the patch viewer &mdash; stays open to everyone.
       </p>
       {params.get("error") && <p className="error">Login failed. Please try again.</p>}
       <div className="provider-list">
