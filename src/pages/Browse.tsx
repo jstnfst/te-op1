@@ -7,7 +7,7 @@ const TYPES = [
   "dsynth", "fm", "phase", "pulse", "sampler", "string", "vocoder", "voltage",
 ]
 
-function Card({ p, selected, onToggle }: { p: PatchSummary; selected: boolean; onToggle: () => void }) {
+function Card({ p, selected, onToggle, onTagClick }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void }) {
   const tags = p.tags.split(",").filter(Boolean).slice(0, 6)
   return (
     <div className={"card" + (selected ? " selected" : "")}>
@@ -22,7 +22,9 @@ function Card({ p, selected, onToggle }: { p: PatchSummary; selected: boolean; o
       </div>
       <div className="card-title">{p.name}</div>
       <div className="card-desc">
-        {tags.map((t) => <span key={t} className="chip tag">{t}</span>)}
+        {tags.map((t) => (
+          <span key={t} className="chip tag" style={{ cursor: "pointer" }} onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
+        ))}
       </div>
       <div className="row" style={{ marginTop: 12 }}>
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
@@ -36,17 +38,20 @@ export default function Browse() {
   const [items, setItems] = useState<PatchSummary[]>([])
   const [type, setType] = useState("")
   const [q, setQ] = useState("")
+  const [tag, setTag] = useState("")
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const selection = useSelection()
 
-  async function load() {
+  async function load(overrides?: { tag?: string }) {
     setLoading(true)
     setErr("")
     try {
+      const effectiveTag = overrides?.tag ?? tag
       const params = new URLSearchParams()
       if (type) params.set("type", type)
       if (q.trim()) params.set("q", q.trim())
+      if (effectiveTag.trim()) params.set("tag", effectiveTag.trim())
       const data = await apiGet<{ items: PatchSummary[] }>(`/api/patches?${params.toString()}`)
       setItems(data.items)
     } catch (e) {
@@ -54,6 +59,11 @@ export default function Browse() {
     } finally {
       setLoading(false)
     }
+  }
+
+  function handleTagClick(t: string) {
+    setTag(t)
+    load({ tag: t })
   }
 
   useEffect(() => { load() }, [type])
@@ -74,7 +84,15 @@ export default function Browse() {
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") load() }}
         />
-        <button className="btn" onClick={load}>Search</button>
+        <input
+          type="search"
+          placeholder="Filter by tag…"
+          value={tag}
+          onChange={(e) => setTag(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") load() }}
+          style={{ width: 140 }}
+        />
+        <button className="btn" onClick={() => load()}>Search</button>
       </div>
       {err && <p className="error">{err}</p>}
       {loading ? (
@@ -84,7 +102,7 @@ export default function Browse() {
       ) : (
         <div className="grid">
           {items.map((p) => (
-            <Card key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} />
+            <Card key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} />
           ))}
         </div>
       )}

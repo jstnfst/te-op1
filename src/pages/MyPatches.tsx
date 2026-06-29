@@ -67,6 +67,13 @@ export default function MyPatches() {
                 <span className="chip">{p.type}</span> {p.is_public ? "public" : "private"}
               </div>
               <div className="card-title">{p.name}</div>
+              {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
+                <div className="card-desc" style={{ marginTop: 6 }}>
+                  {p.tags.split(",").filter(Boolean).slice(0, 6).map((t) => (
+                    <span key={t} className="chip tag">{t}</span>
+                  ))}
+                </div>
+              )}
               <div className="row" style={{ marginTop: 12 }}>
                 <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
                 <a className="btn" href={`/api/patches/${p.id}/download`}>.aif</a>

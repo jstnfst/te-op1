@@ -61,6 +61,10 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request 
   const binds: unknown[] = []
   if (typeof body.name === "string" && body.name.trim()) { binds.push(body.name.trim()); sets.push(`name = ?${binds.length}`) }
   if (typeof body.is_public === "boolean") { binds.push(body.is_public ? 1 : 0); sets.push(`is_public = ?${binds.length}`) }
+  if (typeof body.tags === "string") {
+    const normalized = [...new Set(body.tags.split(",").map((t: string) => t.trim().toLowerCase().replace(/[^a-z0-9-]/g, "")).filter(Boolean))].join(",")
+    binds.push(normalized); sets.push(`tags = ?${binds.length}`)
+  }
   if (body.json !== undefined) {
     const v = validatePreset(body.json)
     if (!v.ok || !v.json || !v.meta) return json({ error: v.error || "Invalid preset." }, { status: 400 })
