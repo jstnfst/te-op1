@@ -210,13 +210,20 @@
     .clip-panel[open] .clip-caret { transform: rotate(90deg); }
     .clip-count { color: var(--muted); }
     .clip-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+    /* Single-row card: name (flexes + ellipsizes) · synth/fx/lfo chips · time · delete. */
     .clip-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: var(--surface); }
     .clip-item:hover { border-color: #474b54; }
     .clip-item.active { border-color: var(--blue); background: rgba(59,158,234,.07); }
-    .clip-item-name { font-size: 11px; font-weight: 700; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .clip-item-meta { font-size: 9px; color: var(--muted); white-space: nowrap; }
+    .clip-item-name { font-size: 11px; font-weight: 700; color: var(--text); flex: 0 0 120px; width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .clip-item-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; line-height: 1; padding: 0; flex-shrink: 0; }
     .clip-item-del:hover { color: var(--text); }
+    .clip-eng { display: inline-flex; align-items: baseline; gap: 4px; flex-shrink: 1; min-width: 0; font-size: 9px;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 6px; }
+    .clip-eng-k { flex-shrink: 0; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+    .clip-eng-v { min-width: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .clip-item-time { margin-left: auto; flex-shrink: 0; font-size: 9px; color: var(--muted); white-space: nowrap; }
+    /* On mobile, drop the SYNTH/FX/LFO labels — the engine names alone fit the tight row. */
+    @media (max-width: 640px) { .clip-eng-k { display: none; } }
 
     /* ── COMMUNITY PATCH TAGS ── */
     .patch-tags { padding: 20px 0 6px; border-top: 1px solid var(--border); margin-top: 8px; }
@@ -996,12 +1003,12 @@ function render() {
   const lfoG = groupHtml('lfo', 'LFO', 'lfo_params', 'lfo', 'lfo_type', LFO_TYPES);
   let html = '';
   const tbHtml = `<div class="patch-toolbar">
+    <button type="button" class="btn tb-open">Open .aif</button>
     <button type="button" class="btn tb-copy">Copy</button>
     <button type="button" class="btn tb-undo" id="undoBtn" disabled>Undo</button>
-    <button type="button" class="btn tb-open">Open .aif</button>
-    <button type="button" class="btn tb-download">Download .aif</button>
     <button type="button" class="btn tb-update owner-only">Update</button>
     <button type="button" class="btn tb-save">Save new</button>
+    <button type="button" class="btn tb-download">Download .aif</button>
     <span class="toolbar-status" id="toolbarStatus"></span>
   </div>`;
   if (isDbox()) {
@@ -1243,6 +1250,11 @@ var clips = [];
 try { clips = JSON.parse(localStorage.getItem(CLIP_KEY) || '[]'); } catch (_) {}
 var activeClipIdx = 0;
 function activeClip() { return clips[activeClipIdx] || null; }
+function clipEsc(s) {
+  return String(s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+  });
+}
 function timeAgo(ts) {
   const s = Math.floor((Date.now() - ts) / 1000);
   if (s < 60) return 'just now';
@@ -1259,11 +1271,17 @@ function renderClipboard() {
   if (countEl) countEl.textContent = clips.length ? '(' + clips.length + ')' : '';
   updateActiveClipChips();
   list.innerHTML = clips.map(function (c, i) {
+    var p = c.preset || {};
+    function eng(k, v) {
+      return '<span class="clip-eng"><span class="clip-eng-k">' + k + '</span>' +
+        '<span class="clip-eng-v">' + clipEsc(v || '—') + '</span></span>';
+    }
     return '<div class="clip-item' + (i === activeClipIdx ? ' active' : '') + '" data-clip-idx="' + i + '">' +
-      '<span class="clip-item-name">' + (c.name || 'untitled') + '</span>' +
-      '<span class="clip-item-meta">' + (c.preset && c.preset.type ? c.preset.type : '') + ' · ' + timeAgo(c.ts) + '</span>' +
+      '<span class="clip-item-name">' + clipEsc(c.name || 'untitled') + '</span>' +
+      eng('synth', p.type) + eng('fx', p.fx_type) + eng('lfo', p.lfo_type) +
+      '<span class="clip-item-time">' + timeAgo(c.ts) + '</span>' +
       '<button type="button" class="clip-item-del" data-del-idx="' + i + '" title="Remove">×</button>' +
-      '</div>';
+    '</div>';
   }).join('');
   updatePasteVisibility();
 }
