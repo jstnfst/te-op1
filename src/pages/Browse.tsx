@@ -1,15 +1,21 @@
 import { useEffect, useState } from "react"
 import { apiGet, type PatchSummary } from "../api"
+import { useSelection, SelectionBar } from "../packs"
 
 const TYPES = [
   "amp", "cluster", "dbox", "digital", "dimension", "dna", "drwave",
   "dsynth", "fm", "phase", "pulse", "sampler", "string", "vocoder", "voltage",
 ]
 
-function Card({ p }: { p: PatchSummary }) {
+function Card({ p, selected, onToggle }: { p: PatchSummary; selected: boolean; onToggle: () => void }) {
   const tags = p.tags.split(",").filter(Boolean).slice(0, 6)
   return (
-    <div className="card">
+    <div className={"card" + (selected ? " selected" : "")}>
+      <div className="card-eyebrow">
+        <label className="card-check">
+          <input type="checkbox" checked={selected} onChange={onToggle} /> select
+        </label>
+      </div>
       <div className="card-eyebrow">
         <span className="chip">{p.type}</span>
         {p.author ? ` by ${p.author}` : ""}
@@ -32,6 +38,7 @@ export default function Browse() {
   const [q, setQ] = useState("")
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
+  const selection = useSelection()
 
   async function load() {
     setLoading(true)
@@ -75,8 +82,13 @@ export default function Browse() {
       ) : items.length === 0 ? (
         <p className="muted">No patches found.</p>
       ) : (
-        <div className="grid">{items.map((p) => <Card key={p.id} p={p} />)}</div>
+        <div className="grid">
+          {items.map((p) => (
+            <Card key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} />
+          ))}
+        </div>
       )}
+      <SelectionBar ids={selection.ids} onClear={selection.clear} />
     </>
   )
 }

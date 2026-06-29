@@ -1,11 +1,7 @@
 import type { Env } from "../../../_shared/env"
 import { buildAif } from "../../../_shared/aif"
 import { getSessionUser } from "../../../_shared/session"
-
-function slug(name: string): string {
-  const s = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")
-  return s || "patch"
-}
+import { slug } from "../../../_shared/util"
 
 // GET /api/patches/:id/download — reconstruct and return the .aif.
 export const onRequestGet: PagesFunction<Env> = async ({ params, env, request }) => {

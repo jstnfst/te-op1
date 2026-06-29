@@ -2,12 +2,14 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
+import { useSelection, SelectionBar } from "../packs"
 
 export default function MyPatches() {
   const { user, loading } = useAuth()
   const [items, setItems] = useState<PatchSummary[]>([])
   const [err, setErr] = useState("")
   const [busy, setBusy] = useState(true)
+  const selection = useSelection()
 
   async function load() {
     try {
@@ -55,7 +57,12 @@ export default function MyPatches() {
       ) : (
         <div className="grid">
           {items.map((p) => (
-            <div className="card" key={p.id}>
+            <div className={"card" + (selection.has(p.id) ? " selected" : "")} key={p.id}>
+              <div className="card-eyebrow">
+                <label className="card-check">
+                  <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} /> select
+                </label>
+              </div>
               <div className="card-eyebrow">
                 <span className="chip">{p.type}</span> {p.is_public ? "public" : "private"}
               </div>
@@ -70,6 +77,7 @@ export default function MyPatches() {
           ))}
         </div>
       )}
+      <SelectionBar ids={selection.ids} onClear={selection.clear} />
     </>
   )
 }

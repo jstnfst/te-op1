@@ -32,13 +32,14 @@
   var LIBRARY = [
     { label: "BROWSE",     href: "/browse", section: "browse" },
     { label: "UPLOAD",     href: "/upload", section: "upload" },
-    { label: "MY PATCHES", href: "/me",     section: "mypatches" }
+    { label: "MY PATCHES", href: "/me",     section: "mypatches" },
+    { label: "PACKS",      href: "/packs",  section: "packs" }
   ];
 
   var SUBTITLE = {
     home: "preset library", layout: "knob layout", mappings: "value mappings",
     patch: "patch", browse: "library", upload: "upload", mypatches: "my patches",
-    login: "account"
+    packs: "packs", login: "account"
   };
 
   function sectionFromPath(path) {
@@ -48,6 +49,7 @@
     if (path.indexOf("/browse") === 0) return "browse";
     if (path.indexOf("/upload") === 0) return "upload";
     if (path.indexOf("/me") === 0) return "mypatches";
+    if (path.indexOf("/packs") === 0) return "packs";
     if (path.indexOf("/login") === 0) return "login";
     return "home";
   }

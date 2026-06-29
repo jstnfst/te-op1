@@ -107,6 +107,11 @@ Register each app and add the redirect URI `https://<name>.pages.dev/api/auth/<p
 - **Download:** `GET /api/patches/:id/download` rebuilds the AIFF-C `.aif` from
   the stored JSON (`functions/_shared/aif.ts`). Note: JSON-only means **sampler
   audio is not preserved** — sampler downloads contain a 440 Hz sine.
+- **Packs:** users curate patches into packs (`functions/api/packs/*`, tables in
+  `migrations/0002_packs.sql`). `GET /api/packs/:id/download` streams a `.zip` of
+  the pack's `.aif` files (public packs are downloadable by anyone; private by the
+  owner). Ad-hoc multi-select bundles via `POST /api/patches/zip`. The ZIP is built
+  in-worker by `functions/_shared/zip.ts` (DEFLATE via `CompressionStream`).
 
 ## Notes / follow-ups
 

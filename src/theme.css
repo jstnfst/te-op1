@@ -44,3 +44,18 @@ details.adv > summary { cursor: pointer; font-size: 10px; font-weight: 700; lett
 details.adv > summary:hover { color: var(--text); }
 details.adv code { background: var(--border); padding: 1px 4px; border-radius: 2px; }
 details.adv a { color: var(--orange); text-decoration: none; font-weight: 700; }
+
+/* selection + packs */
+.card.selected { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange) inset; }
+.card-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.card input[type=checkbox] { accent-color: var(--orange); cursor: pointer; }
+.selbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 50;
+  display: flex; align-items: center; gap: 12px; padding: 10px 16px; font-size: 12px; color: var(--text);
+  background: var(--header-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.55); }
+.selbar-pack { position: relative; }
+.selbar-menu { position: absolute; bottom: calc(100% + 8px); left: 0; min-width: 190px; max-height: 280px; overflow: auto;
+  display: flex; flex-direction: column; gap: 2px; padding: 4px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,.55); }
+.menu-item { text-align: left; background: none; border: none; color: var(--text); font-size: 12px;
+  padding: 8px 10px; border-radius: 4px; cursor: pointer; }
+.menu-item:hover { background: var(--bg); }
