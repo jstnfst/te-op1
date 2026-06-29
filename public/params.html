@@ -11,8 +11,7 @@
   <link rel="stylesheet" href="/site.css">
   <script src="/site-header.js" defer></script>
   <style>
-    /* Theme tokens + header/nav/footer chrome live in /site.css */
-    :root { --knob-null: #4A4E57; }
+    /* Theme tokens (incl. --knob-null) + header/nav/footer chrome live in /site.css */
 
     /* ── FILTER ROW (page-specific, sits under the shared nav) ── */
     .filter-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.04); background: var(--header-bg); }
@@ -31,7 +30,7 @@
 
     /* ── GRID + CARD ── */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 10px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 16px 18px 14px; transition: box-shadow .18s, transform .18s; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px 14px; transition: box-shadow .18s, transform .18s; }
     .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.5); transform: translateY(-2px); }
     .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
     .g-badge { font-size: 8px; font-weight: 700; letter-spacing: .18em; padding: 2px 6px 1px; border-radius: 2px; }

@@ -17,18 +17,29 @@
       /* JSON token colors (tuned for the dark editor) */
       --tok-key: #E0973D; --tok-str: #6FCB7F; --tok-num: #6AA8FF;
       --tok-bool: #C58BF5; --tok-punct: #6B6E74;
+      /* Oscilloscope scope card — a white-on-near-black instrument screen.
+         Its ink is white at graded opacity; full-strength ink = readout values. */
+      --scope-edge: #000;                       /* 1px black rim */
+      --scope-ink: #fff;                         /* readout values (AA: 19:1) */
+      --scope-label: rgba(255,255,255,.58);      /* section title (AA: 6.85:1) */
+      --scope-sub: rgba(255,255,255,.5);         /* subtitle + readout captions (AA: 5.36:1) */
+      --scope-grid: rgba(255,255,255,.07);       /* envelope grid lines (decorative) */
     }
 
     /* ── MAIN ── (full-width workspace, unlike the centered reference pages) */
     main { max-width: none; margin: 0; padding: 24px 32px 80px; }
     h2 { margin: 0 0 14px; }
+    .intro { margin-bottom: 20px; }
+    .intro h1 { font-size: 18px; font-weight: 800; letter-spacing: .04em; color: var(--text); margin-bottom: 6px; }
+    .intro p { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.7; max-width: 680px; }
+    .intro code { font-family: inherit; background: var(--border); padding: 1px 5px; border-radius: 2px; font-size: 11px; color: var(--text); }
     .patch-notice { margin-bottom: 18px; padding: 12px 16px; font-size: 12px; font-weight: 300; line-height: 1.6;
-      color: #E3A87E; background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
+      color: var(--orange-ink); background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
     .patch-notice a { color: var(--orange); font-weight: 700; text-decoration: none; }
     .patch-notice a:hover { text-decoration: underline; }
     .file-msg { font-size: 11px; font-weight: 300; line-height: 1.5; }
-    .file-msg.note { margin: 4px 0 2px; padding: 10px 12px; color: #E3A87E; background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
-    .file-msg.err { margin: 4px 0 2px; color: var(--orange); }
+    .file-msg.note { margin: 4px 0 2px; padding: 10px 12px; color: var(--orange-ink); background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
+    .file-msg.err { margin: 4px 0 2px; color: var(--danger); }
     .panel.drag { outline: 2px dashed var(--orange); outline-offset: 4px; }
     details.raw-json { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
     details.raw-json > summary { cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
@@ -50,7 +61,7 @@
     .id-engine { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); font-size: 13px; }
     .ph-engine-row .lbl { letter-spacing: .12em; text-transform: uppercase; font-weight: 700; font-size: 9px; color: var(--muted); }
     .ph-engine-row select { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
     .id-name { font-size: 18px; font-weight: 800; letter-spacing: .01em; color: var(--text); background: transparent;
       border: none; border-bottom: 2px dashed transparent; font-family: inherit; padding: 2px 0; min-width: 160px; }
     .id-name:hover { border-bottom-color: var(--border); }
@@ -76,7 +87,7 @@
 
     .ph-actions select, .btn {
       font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 10px; cursor: pointer;
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; cursor: pointer;
     }
     .btn:hover, .ph-actions select:hover { border-color: var(--text); }
     .btn { text-transform: uppercase; }
@@ -103,19 +114,19 @@
     .tok-num { color: var(--tok-num); } .tok-bool { color: var(--tok-bool); }
     .tok-punct { color: var(--tok-punct); }
     .editor-status { margin-top: 10px; font-size: 11px; font-weight: 400; min-height: 16px; }
-    .editor-status.ok { color: var(--green); } .editor-status.err { color: var(--orange); }
+    .editor-status.ok { color: var(--green); } .editor-status.err { color: var(--danger); }
     .editor-hint { margin-top: 6px; font-size: 10px; font-weight: 300; color: var(--muted); }
 
     /* ── VIZ PANEL ── (3 inner columns → 4 total with the editor) */
     .viz { display: flex; flex-direction: column; gap: 22px; }
 
     /* ── ADSR SCOPE (signature) ── */
-    .scope-card { background: var(--header-bg); border-radius: 6px; padding: 16px 16px 12px; border: 1px solid #000; max-width: 620px; }
+    .scope-card { background: var(--header-bg); border-radius: 6px; padding: 16px 16px 12px; border: 1px solid var(--scope-edge); max-width: 620px; }
     .scope-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
-    .scope-title { font-size: 10px; font-weight: 700; letter-spacing: .2em; color: rgba(255,255,255,.5); text-transform: uppercase; }
-    .scope-sub { font-size: 9px; font-weight: 300; color: rgba(255,255,255,.32); letter-spacing: .05em; }
+    .scope-title { font-size: 10px; font-weight: 700; letter-spacing: .2em; color: var(--scope-label); text-transform: uppercase; }
+    .scope-sub { font-size: 9px; font-weight: 300; color: var(--scope-sub); letter-spacing: .05em; }
     .scope-svg { width: 100%; aspect-ratio: 560 / 200; display: block; touch-action: none; }
-    .env-grid { stroke: rgba(255,255,255,.07); stroke-width: 1; }
+    .env-grid { stroke: var(--scope-grid); stroke-width: 1; }
     .env-fill { fill: rgba(255,72,0,.12); stroke: none; }
     .env-line { fill: none; stroke: var(--orange); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
       filter: drop-shadow(0 0 5px rgba(255,72,0,.6)); }
@@ -125,8 +136,8 @@
     .handle:hover, .handle:focus-visible { r: 9; fill: var(--orange); outline: none; }
     .handle:active { cursor: grabbing; }
     .scope-readout { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 10px; }
-    .ro { font-size: 9px; letter-spacing: .04em; color: rgba(255,255,255,.4); }
-    .ro b { display: block; font-size: 11px; color: #fff; font-weight: 700; letter-spacing: 0; margin-top: 1px; }
+    .ro { font-size: 9px; letter-spacing: .04em; color: var(--scope-sub); }
+    .ro b { display: block; font-size: 11px; color: var(--scope-ink); font-weight: 700; letter-spacing: 0; margin-top: 1px; }
     .ro .rd { color: var(--orange); }
 
     /* ── PARAM GROUPS ── */
@@ -136,7 +147,7 @@
     .pgroup-head h2 { margin: 0; }
     .pgroup-engine { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--text); }
     .pgroup-head select { font-family: inherit; font-size: 10px; font-weight: 700; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
     .toggle { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
       display: inline-flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; user-select: none; }
     .toggle input { accent-color: var(--orange); cursor: pointer; }
@@ -153,7 +164,7 @@
     .knob-val { font-size: 11px; font-weight: 700; color: var(--text); min-height: 13px; line-height: 1;
       max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .knob-num { width: 100%; font-family: inherit; font-size: 10px; font-weight: 700; text-align: center; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 2px; }
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 2px; }
     .knob-num:focus { outline: none; border-color: var(--orange); }
     select.knob-num { cursor: pointer; }
 
@@ -161,7 +172,7 @@
 
     /* ── DBOX SUMMARY ── */
     .dbox-note { background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; padding: 14px 16px;
-      font-size: 11px; font-weight: 300; color: #E3A87E; line-height: 1.6; }
+      font-size: 11px; font-weight: 300; color: var(--orange-ink); line-height: 1.6; }
     .dbox-note b { font-weight: 700; }
     .dyna-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
     .dyna-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
@@ -178,6 +189,18 @@
       .env-glow { animation: none; }
       * { transition: none !important; }
     }
+    /* Touch / coarse pointer: enlarge hit areas without bloating the dense mouse layout.
+       Keyed on the input device, not screen width, so a touchscreen laptop benefits too. */
+    @media (pointer: coarse) {
+      .btn, .ph-actions select { padding: 11px 14px; }
+      .ph-engine-row select, .pgroup-head select, .knob-num { padding: 7px 8px; }
+      .handle { r: 11; }
+      .handle:hover, .handle:focus-visible { r: 13; }
+      .clip-item { padding: 11px 12px; }
+      .clip-item-del { font-size: 20px; padding: 0 4px; }
+      .tag-chip button { font-size: 15px; }
+      .toggle input, .clip-item input[type=checkbox] { width: 18px; height: 18px; }
+    }
 
     /* ── PATCH TOOLBAR (copy always; update/save-new only for community patches) ── */
     .patch-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-bottom: 14px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
@@ -187,18 +210,19 @@
     .is-owner .owner-only { display: inline-flex; }
     /* Floating status toast: absolutely positioned so it never reflows the toolbar or pushes the page. */
     .toolbar-status { position: absolute; top: 100%; left: 0; margin-top: 3px; font-size: 10px; color: var(--muted);
-      transition: color .2s; white-space: nowrap; pointer-events: none; z-index: 2; }
+      transition: color .2s; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
+      pointer-events: none; z-index: 2; }
     .toolbar-status:empty { display: none; }
     .toolbar-status.ok { color: var(--green); }
-    .toolbar-status.err { color: #F87171; }
-    #undoBtn:disabled { opacity: .38; }
+    .toolbar-status.err { color: var(--danger); }
+    #undoBtn:disabled, #redoBtn:disabled { opacity: .38; }
 
     /* ── PASTE BUTTONS ── */
-    .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 3px; padding: 2px 7px; cursor: pointer; white-space: nowrap; line-height: 1.5; }
+    .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; line-height: 1.5; }
     .paste-btn:hover { background: rgba(59,158,234,.24); }
     .has-clipboard .paste-btn { display: inline-flex; align-items: center; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
-    .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 3px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+    .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     .clip-active-chip:empty { display: none; }
 
     /* ── CLIPBOARD PANEL ── */
@@ -218,7 +242,7 @@
     .clip-item-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; line-height: 1; padding: 0; flex-shrink: 0; }
     .clip-item-del:hover { color: var(--text); }
     .clip-eng { display: inline-flex; align-items: baseline; gap: 4px; flex-shrink: 1; min-width: 0; font-size: 9px;
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 2px 6px; }
+      background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
     .clip-eng-k { flex-shrink: 0; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
     .clip-eng-v { min-width: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .clip-item-time { margin-left: auto; flex-shrink: 0; font-size: 9px; color: var(--muted); white-space: nowrap; }
@@ -233,7 +257,7 @@
     .tag-chip button { background: none; border: none; cursor: pointer; color: inherit; font-size: 12px; line-height: 1; padding: 0; opacity: .6; font-family: inherit; }
     .tag-chip button:hover { opacity: 1; }
     .tag-add-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-    .tag-add-row input[type=text] { font: inherit; font-size: 11px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 4px 8px; width: 130px; }
+    .tag-add-row input[type=text] { font: inherit; font-size: 11px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; width: 130px; }
     .tag-add-row input[type=text]:focus { outline: 1px solid var(--blue); border-color: var(--blue); }
     .tag-save-status { font-size: 10px; color: var(--muted); margin-left: 2px; }
   </style>
@@ -242,6 +266,11 @@
 <div data-site-header></div>
 
 <main>
+  <section class="intro">
+    <h1>Patch viewer</h1>
+    <p>Load a preset and explore it live. Pick a <b>sample</b>, drag in an <code>.aif</code> or
+      <code>.json</code>, or edit the raw JSON &mdash; the controls and the data stay in sync, both ways.</p>
+  </section>
   <div class="workspace">
     <!-- LEFT: JSON EDITOR -->
     <section class="panel" id="editorPanel" aria-label="Preset editor">
@@ -361,18 +390,6 @@ const PARAM_NAMES = {
   'lfo.tremolo':     ['SPEED','PITCH AMOUNT','VOLUME LEVEL','PITCH ENVELOPE',null,null,null,'LFO SHAPE'],
   'lfo.value':       ['SPEED','AMOUNT','DESTINATION','PARAMETER','LFO SHAPE'],
   'lfo.velocity':    ['AMP','VOLUME AMOUNT','DESTINATION','PARAMETER'],
-};
-
-/* ── Scale-type metadata (from display.html) ─────────────── */
-const SCALE_META = {
-  percent:  { label: '%',          color: '#5B8DEF' },
-  centered: { label: 'centered %', color: '#A78BFA' },
-  discrete: { label: 'discrete',   color: '#34D399' },
-  selector: { label: 'selector',   color: '#F59E0B' },
-  hz:       { label: 'hz (log)',   color: '#F97316' },
-  tempo:    { label: 'tempo dial', color: '#EC4899' },
-  inverse:  { label: 'ms inverse', color: '#14B8A6' },
-  decimal:  { label: 'decimal',    color: '#06B6D4' },
 };
 
 /* ── Raw→display sample table (from display.html) ────────── */
@@ -734,13 +751,6 @@ function fillPct(eng, idx, raw) {
   else p = (raw - min) / (max - min || 1) * 100;
   return Math.max(0, Math.min(100, p));
 }
-function scaleChip(eng, idx) {
-  const e = LOOKUP[eng + '|' + idx];
-  if (!e) return '';
-  const m = SCALE_META[e.scale] || { label: e.scale };
-  return `<span class="scale-chip chip-${e.scale}">${m.label}</span>`;
-}
-
 /* ── Engine illustrations (generated SVG) ────────────────── */
 function poly(fn, x0, x1, mid, amp, steps) {
   const pts = [];
@@ -1006,6 +1016,7 @@ function render() {
     <button type="button" class="btn tb-open">Open .aif</button>
     <button type="button" class="btn tb-copy">Copy</button>
     <button type="button" class="btn tb-undo" id="undoBtn" disabled>Undo</button>
+    <button type="button" class="btn tb-redo" id="redoBtn" disabled>Redo</button>
     <button type="button" class="btn tb-update owner-only">Update</button>
     <button type="button" class="btn tb-save">Save new</button>
     <button type="button" class="btn tb-download">Download .aif</button>
@@ -1027,7 +1038,7 @@ function render() {
   }
   viz.innerHTML = html;
   renderAllDials();
-  updateUndoBtn();
+  updateHistoryBtns();
   if (!isDbox()) drawScope();
 }
 
@@ -1152,42 +1163,66 @@ function syncEditor() {
   setStatus('In sync · ' + Object.keys(state).length + ' keys', true);
   updateFileMsg();
 }
+/* Turn a parser "position N" into a line/column the editor can point at.
+   Skipped when the browser's own message already names the line (Firefox does). */
+function jsonErrorHint(err, text) {
+  if (/line \d+/i.test(err.message)) return '';
+  const m = /position (\d+)/i.exec(err.message);
+  if (!m) return '';
+  const pos = Math.min(+m[1], text.length);
+  const upto = text.slice(0, pos);
+  const line = (upto.match(/\n/g) || []).length + 1;
+  const col = pos - upto.lastIndexOf('\n');
+  return ' (line ' + line + ', column ' + col + ')';
+}
 function liveParse() {
   highlight(jsonInput.value);
   resizeEditor();
   let parsed;
   try { parsed = JSON.parse(jsonInput.value); }
-  catch (err) { setStatus('Invalid JSON: ' + err.message, false); return; }
+  catch (err) { setStatus('Invalid JSON: ' + err.message + jsonErrorHint(err, jsonInput.value), false); return; }
   if (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null) { setStatus('Expected a JSON object', false); return; }
   state = normalize(parsed);
   setStatus('Parsed OK · ' + Object.keys(state).length + ' keys', true);
   render();
   updateFileMsg();
 }
-/* ── Undo stack ── */
+/* ── Undo / redo stacks ── */
 const undoStack = [];
+const redoStack = [];
 function pushUndo() {
   undoStack.push(JSON.stringify(state));
   if (undoStack.length > 10) undoStack.shift();
-  updateUndoBtn();
+  redoStack.length = 0;            // a fresh edit invalidates the redo future
+  updateHistoryBtns();
 }
 function undo() {
   if (!undoStack.length) return;
+  redoStack.push(JSON.stringify(state));
   state = normalize(JSON.parse(undoStack.pop()));
   syncEditor(); render();
-  updateUndoBtn();
+  updateHistoryBtns();
 }
-function clearUndo() { undoStack.length = 0; updateUndoBtn(); }
-function updateUndoBtn() {
-  const btn = document.getElementById('undoBtn');
-  if (!btn) return;
-  btn.disabled = undoStack.length === 0;
-  btn.textContent = undoStack.length ? 'Undo (' + undoStack.length + ')' : 'Undo';
+function redo() {
+  if (!redoStack.length) return;
+  undoStack.push(JSON.stringify(state));
+  state = normalize(JSON.parse(redoStack.pop()));
+  syncEditor(); render();
+  updateHistoryBtns();
+}
+function clearUndo() { undoStack.length = 0; redoStack.length = 0; updateHistoryBtns(); }
+function updateHistoryBtns() {
+  const u = document.getElementById('undoBtn');
+  if (u) { u.disabled = undoStack.length === 0; u.textContent = undoStack.length ? 'Undo (' + undoStack.length + ')' : 'Undo'; }
+  const r = document.getElementById('redoBtn');
+  if (r) { r.disabled = redoStack.length === 0; r.textContent = redoStack.length ? 'Redo (' + redoStack.length + ')' : 'Redo'; }
 }
 document.addEventListener('keydown', function (e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-    if (document.activeElement !== document.getElementById('jsonInput')) { e.preventDefault(); undo(); }
-  }
+  if (document.activeElement === document.getElementById('jsonInput')) return;  // let the textarea own its native history
+  if (!(e.ctrlKey || e.metaKey)) return;
+  const k = e.key.toLowerCase();
+  if (k === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+  else if ((k === 'z' && e.shiftKey) || k === 'y') { e.preventDefault(); redo(); }
 });
 
 function loadPreset(obj) {
@@ -1567,6 +1602,7 @@ viz.addEventListener('click', e => {
   if (e.target.closest('.paste-btn')) { pasteSection(e.target.closest('.paste-btn').dataset.paste); return; }
   if (e.target.closest('.tb-copy')) { clipPush(state.name || 'untitled', state); setToolbarStatus('Copied to clipboard.', true); return; }
   if (e.target.closest('.tb-undo')) { undo(); return; }
+  if (e.target.closest('.tb-redo')) { redo(); return; }
   if (e.target.closest('.tb-open')) { fileInput.click(); return; }
   if (e.target.closest('.tb-download')) { downloadAif(); return; }
   if (e.target.closest('.tb-update')) { doUpdate(); return; }

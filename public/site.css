@@ -12,6 +12,10 @@
   --bg: #15161A; --surface: #1F2127; --border: #31343C;
   --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
   --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
+  /* --orange is the brand color, never an error color. --danger (red) is the one
+     error/failure color; --orange-ink is readable amber text on orange-tinted info notices. */
+  --danger: #F87171; --orange-ink: #E3A87E;
+  --knob-null: #4A4E57;   /* dim mark for inactive knob-dial ticks / param indices */
 
   /* scale-type palette (mappings + patch) */
   --c-percent: #5B8DEF; --c-centered: #A78BFA; --c-discrete: #34D399;
@@ -55,7 +59,7 @@ header.site { background: var(--header-bg); position: sticky; top: 0; z-index: 1
 main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 80px; }
 h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; margin: 36px 0 14px; }
 .muted { color: var(--muted); font-size: 12px; }
-.error { color: var(--orange); font-size: 12px; }
+.error { color: var(--danger); font-size: 12px; }
 .ok { color: var(--green); font-size: 12px; }
 
 /* ── SCALE-TYPE CHIPS (mappings + patch) ── */
@@ -78,4 +82,10 @@ footer.site a:hover { color: var(--text); border-bottom-color: var(--text); }
   .header-row { padding: 12px 16px 8px; }
   .site-sub { display: none; }
   main { padding: 20px 16px 60px; }
+}
+
+/* Touch / coarse pointer: roomier nav + auth tap targets (keyed on input device, not width). */
+@media (pointer: coarse) {
+  .nav-btn { padding: 12px 14px; }
+  .auth-mini a, .auth-mini button { padding: 6px 4px; }
 }
