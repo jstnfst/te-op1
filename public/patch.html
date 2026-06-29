@@ -179,13 +179,7 @@
     .patch-tags { padding: 20px 0 6px; border-top: 1px solid var(--border); margin-top: 8px; }
     .patch-tags-head { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
     .tag-chips { display: flex; flex-wrap: wrap; gap: 4px; }
-    .tag-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px 2px 7px; border-radius: 2px; background: rgba(59,158,234,.18); color: var(--blue); }
-    .tag-chip button { background: none; border: none; cursor: pointer; color: inherit; font-size: 12px; line-height: 1; padding: 0; opacity: .6; font-family: inherit; }
-    .tag-chip button:hover { opacity: 1; }
-    .tag-add-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
-    .tag-add-row input[type=text] { font: inherit; font-size: 11px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 3px; padding: 4px 8px; width: 130px; }
-    .tag-add-row input[type=text]:focus { outline: 1px solid var(--blue); border-color: var(--blue); }
-    .tag-save-status { font-size: 10px; color: var(--muted); margin-left: 2px; }
+    .tag-chip { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 7px; border-radius: 2px; background: rgba(59,158,234,.18); color: var(--blue); }
   </style>
 </head>
 <body data-section="patch">
@@ -230,12 +224,6 @@
       <div class="patch-tags">
         <div class="patch-tags-head">Tags</div>
         <div class="tag-chips" id="tagChips"></div>
-        <div class="tag-add-row">
-          <input type="text" id="tagInput" placeholder="Add tag…" maxlength="32" autocomplete="off">
-          <button type="button" class="btn" id="tagAddBtn">Add</button>
-          <button type="button" class="btn" id="tagSaveBtn">Save tags</button>
-          <span class="tag-save-status" id="tagStatus"></span>
-        </div>
       </div>
     </div>
 
@@ -1151,7 +1139,11 @@ editorPanel.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; i
 /* ── Sample picker ───────────────────────────────────────── */
 const sampleSel = document.getElementById('sampleSel');
 Object.keys(SAMPLES).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; sampleSel.appendChild(o); });
-sampleSel.addEventListener('change', () => loadPreset(SAMPLES[sampleSel.value]));
+sampleSel.addEventListener('change', () => {
+  if (!sampleSel.value) return;
+  loadPreset(SAMPLES[sampleSel.value]);
+  document.getElementById('patchTagsSection').hidden = true;
+});
 
 /* ── Identity controls ───────────────────────────────────── */
 document.getElementById('nameInput').addEventListener('input', e => { state.name = e.target.value; syncEditor(); });
@@ -1297,51 +1289,12 @@ rawJson.addEventListener('toggle', () => { if (rawJson.open) resizeEditor(); });
 /* ── Init ────────────────────────────────────────────────── */
 loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
 
-/* ── Community patch tag editor ── */
-var _patchId = null, _patchTags = [];
-
-function renderTagChips() {
-  document.getElementById('tagChips').innerHTML = _patchTags.map(function (t, i) {
-    return '<span class="tag-chip">' + t +
-      '<button type="button" onclick="removeTag(' + i + ')" aria-label="Remove ' + t + '">×</button>' +
-      '</span>';
+/* ── Community patch tags ── */
+function showPatchTags(tagsStr) {
+  var tags = tagsStr.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+  document.getElementById('tagChips').innerHTML = tags.map(function (t) {
+    return '<span class="tag-chip">' + t + '</span>';
   }).join('');
-}
-
-function removeTag(i) { _patchTags.splice(i, 1); renderTagChips(); }
-
-document.getElementById('tagAddBtn').addEventListener('click', function () {
-  var inp = document.getElementById('tagInput');
-  var val = inp.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-  if (val && !_patchTags.includes(val)) { _patchTags.push(val); renderTagChips(); }
-  inp.value = '';
-  inp.focus();
-});
-
-document.getElementById('tagInput').addEventListener('keydown', function (e) {
-  if (e.key === 'Enter') { e.preventDefault(); document.getElementById('tagAddBtn').click(); }
-});
-
-document.getElementById('tagSaveBtn').addEventListener('click', function () {
-  if (!_patchId) return;
-  var st = document.getElementById('tagStatus');
-  st.textContent = 'Saving…';
-  fetch('/api/patches/' + _patchId, {
-    method: 'PATCH', credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ tags: _patchTags.join(',') })
-  }).then(function (r) {
-    return r.json().then(function (d) { return { ok: r.ok, d: d }; });
-  }).then(function (res) {
-    if (res.ok) { st.textContent = 'Saved.'; setTimeout(function () { st.textContent = ''; }, 2000); }
-    else { st.textContent = res.d.error || 'Error saving.'; }
-  }).catch(function () { st.textContent = 'Network error.'; });
-});
-
-function showPatchTags(id, tagsStr) {
-  _patchId = id;
-  _patchTags = tagsStr.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
-  renderTagChips();
   document.getElementById('patchTagsSection').hidden = false;
 }
 
@@ -1364,7 +1317,13 @@ function showPatchTags(id, tagsStr) {
     })
     .then(function (d) {
       if (d && d.preset && typeof loadPreset === 'function') loadPreset(d.preset);
-      if (d) showPatchTags(id, d.tags || '');
+      if (d) {
+        var opt = document.createElement('option');
+        opt.value = ''; opt.textContent = 'Editing user preset'; opt.disabled = false;
+        sampleSel.insertBefore(opt, sampleSel.firstChild);
+        sampleSel.value = '';
+        showPatchTags(d.tags || '');
+      }
     })
     .catch(function (err) {
       if (err && err.auth) {
