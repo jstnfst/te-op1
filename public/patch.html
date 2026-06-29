@@ -130,7 +130,18 @@
     .pidx { font-size: 9px; color: var(--muted); }
     .pval { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--text); }
     .prow-ctl { display: flex; align-items: center; gap: 12px; }
-    .prow-ctl input[type=range] { flex: 1; accent-color: var(--orange); height: 4px; cursor: pointer; min-width: 0; }
+    /* Custom range: orange fill + thumb on a dark, recessive track (no grey native track/border).
+       --fill (set in JS) drives the Chromium fill; Firefox uses ::-moz-range-progress. */
+    .prow-ctl input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0;
+      height: 4px; cursor: pointer; border: none; padding: 0; margin: 0; border-radius: 3px; outline: none;
+      background: linear-gradient(var(--orange), var(--orange)) 0 / var(--fill, 0%) 100% no-repeat, #24262C; }
+    .prow-ctl input[type=range]::-webkit-slider-runnable-track { -webkit-appearance: none; height: 4px; background: transparent; border: none; }
+    .prow-ctl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px;
+      border-radius: 50%; background: var(--orange); border: none; box-shadow: none; }
+    .prow-ctl input[type=range]::-moz-range-track { height: 4px; background: #24262C; border: none; border-radius: 3px; }
+    .prow-ctl input[type=range]::-moz-range-progress { height: 4px; background: var(--orange); border: none; border-radius: 3px; }
+    .prow-ctl input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--orange); border: none; }
+    .prow-ctl input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--orange); outline-offset: 2px; }
     .rawin { width: 78px; font-family: inherit; font-size: 11px; font-weight: 700; text-align: right; color: var(--text);
       background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; }
     .rawin:focus { outline: none; border-color: var(--orange); }
@@ -916,7 +927,17 @@ function render() {
   viz.innerHTML = `<div class="viz-col viz-col-a">${colA}</div>` +
     `<div class="viz-col viz-col-b">${colB}</div>` +
     `<div class="viz-col viz-col-c">${colC}</div>`;
+  paintAllRanges();
   if (!isDbox()) drawScope();
+}
+/* Paint the orange fill up to a range's value (Chromium has no native progress). */
+function paintRange(el) {
+  const min = +el.min, max = +el.max, v = +el.value;
+  const p = max > min ? ((v - min) / (max - min)) * 100 : 0;
+  el.style.setProperty('--fill', Math.max(0, Math.min(100, p)).toFixed(2) + '%');
+}
+function paintAllRanges() {
+  document.querySelectorAll('#viz input[type=range].ctl').forEach(paintRange);
 }
 function refreshRow(grp, idx) {
   let eng;
@@ -926,7 +947,10 @@ function refreshRow(grp, idx) {
   else eng = 'adsr';
   const arr = grp === 'knobs' ? state.knobs : grp === 'fx' ? state.fx_params : grp === 'lfo' ? state.lfo_params : state.adsr;
   const raw = arr[idx];
-  document.querySelectorAll(`.ctl[data-grp="${grp}"][data-idx="${idx}"]`).forEach(el => { if (document.activeElement !== el) el.value = raw; });
+  document.querySelectorAll(`.ctl[data-grp="${grp}"][data-idx="${idx}"]`).forEach(el => {
+    if (document.activeElement !== el) el.value = raw;
+    if (el.type === 'range') paintRange(el);
+  });
   const lbl = document.querySelector(`[data-val="${grp}-${idx}"]`);
   if (lbl) { const v = fmtValue(eng, idx, raw); lbl.textContent = v == null ? '' : v; }
 }
@@ -1067,6 +1091,7 @@ viz.addEventListener('input', e => {
     if (isNaN(v)) return;
     arrFor(grp)[idx] = v;
     refreshRow(grp, idx);
+    if (t.type === 'range') paintRange(t);
     syncEditor();
   }
 });
