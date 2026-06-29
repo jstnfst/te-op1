@@ -38,43 +38,53 @@
     .raw-hint code { background: var(--border); padding: 1px 4px; border-radius: 2px; }
     .raw-hint a { color: var(--orange); text-decoration: none; font-weight: 700; }
 
-    /* ── IDENTITY (inside the editor panel) ── */
-    .identity { display: flex; align-items: center; gap: 14px; margin-bottom: 14px;
-      padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-    .id-art { width: 84px; height: 50px; flex-shrink: 0; color: var(--text); }
+    /* ── PATCH HEADER: identity (icon + engine + octave + name) left, actions right ── */
+    .patch-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+    .ph-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
+    .id-art { width: 72px; height: 44px; flex-shrink: 0; color: var(--text); }
     .engine-svg { width: 100%; height: 100%; }
     .engine-svg .ac { stroke: var(--orange); }
     .engine-svg .acf { fill: var(--orange); }
-    .id-fields { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 0; }
-    .id-name { font-size: 16px; font-weight: 800; letter-spacing: .01em; color: var(--text); background: transparent;
-      border: none; border-bottom: 2px dashed transparent; font-family: inherit; width: 100%; padding: 2px 0; }
+    .ph-id-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+    .ph-engine-row { display: flex; align-items: center; gap: 8px; }
+    .id-engine { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); font-size: 13px; }
+    .ph-engine-row .lbl { letter-spacing: .12em; text-transform: uppercase; font-weight: 700; font-size: 9px; color: var(--muted); }
+    .ph-engine-row select { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
+    .id-name { font-size: 18px; font-weight: 800; letter-spacing: .01em; color: var(--text); background: transparent;
+      border: none; border-bottom: 2px dashed transparent; font-family: inherit; padding: 2px 0; min-width: 160px; }
     .id-name:hover { border-bottom-color: var(--border); }
     .id-name:focus { outline: none; border-bottom-color: var(--orange); }
-    .id-meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font-size: 11px; color: var(--muted); }
-    .id-engine { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); font-size: 12px; }
-    .id-meta select { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .06em; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
-    .id-meta .lbl { letter-spacing: .12em; text-transform: uppercase; font-weight: 700; font-size: 9px; }
+    .ph-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
 
     /* ── WORKSPACE ── */
-    /* Widest: 4 columns — editor | (ADSR + synth) | (effect + LFO) | keyboard */
-    .workspace { display: grid; grid-template-columns: minmax(340px, 0.85fr) minmax(0, 2.6fr); gap: 22px; align-items: start; }
-
+    .workspace { display: flex; flex-direction: column; gap: 22px; }
     .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 18px; }
 
-    /* ── EDITOR ── */
-    .editor-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-    .editor-toolbar select, .btn {
+    /* Three columns: ADSR | Effect+Keyboard (always 4) | Synth+LFO (can exceed 4). */
+    .param-cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 320px) minmax(0, 1.3fr); gap: 24px 26px; align-items: start; }
+    .param-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+    /* Medium: two columns — col 1 = ADSR + Effect + Keyboard, col 2 = Synth + LFO. */
+    @media (min-width: 721px) and (max-width: 1024px) {
+      .param-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .param-col:nth-child(1) { grid-column: 1; grid-row: 1; }
+      .param-col:nth-child(2) { grid-column: 1; grid-row: 2; }
+      .param-col:nth-child(3) { grid-column: 2; grid-row: 1 / span 2; }
+    }
+    /* Narrow: single column. */
+    @media (max-width: 720px) { .param-cols { grid-template-columns: 1fr; } }
+
+    .ph-actions select, .btn {
       font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--text);
       background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 6px 10px; cursor: pointer;
     }
-    .btn:hover, .editor-toolbar select:hover { border-color: var(--text); }
+    .btn:hover, .ph-actions select:hover { border-color: var(--text); }
     .btn { text-transform: uppercase; }
     .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #131418; }
     .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px rgba(255,72,0,.25); }
     .code-layer {
       position: absolute; inset: 0; margin: 0; border: 0;
-      font-family: 'JetBrains Mono','Courier New',monospace; font-size: 12.5px; line-height: normal;
+      font-family: 'JetBrains Mono','Courier New',monospace; font-size: 12.5px; line-height: 19px;
       letter-spacing: 0; tab-size: 2; padding: 14px 16px;
       white-space: pre; overflow: auto; word-wrap: normal;
     }
@@ -93,11 +103,10 @@
     .editor-hint { margin-top: 6px; font-size: 10px; font-weight: 300; color: var(--muted); }
 
     /* ── VIZ PANEL ── (3 inner columns → 4 total with the editor) */
-    .viz { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: start; }
-    .viz-col { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+    .viz { display: flex; flex-direction: column; gap: 22px; }
 
     /* ── ADSR SCOPE (signature) ── */
-    .scope-card { background: var(--header-bg); border-radius: 6px; padding: 16px 16px 12px; border: 1px solid #000; }
+    .scope-card { background: var(--header-bg); border-radius: 6px; padding: 16px 16px 12px; border: 1px solid #000; max-width: 620px; }
     .scope-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
     .scope-title { font-size: 10px; font-weight: 700; letter-spacing: .2em; color: rgba(255,255,255,.5); text-transform: uppercase; }
     .scope-sub { font-size: 9px; font-weight: 300; color: rgba(255,255,255,.32); letter-spacing: .05em; }
@@ -118,39 +127,33 @@
 
     /* ── PARAM GROUPS ── */
     .pgroup { } /* spacing handled by the .viz-col flex gap */
-    .pgroup-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    /* Fixed height so heads with an engine <select> and bare-label heads (Keyboard) line up. */
+    .pgroup-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; min-height: 26px; }
     .pgroup-head h2 { margin: 0; }
     .pgroup-engine { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--text); }
     .pgroup-head select { font-family: inherit; font-size: 10px; font-weight: 700; color: var(--text);
       background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 6px; cursor: pointer; }
-    .toggle { margin-left: auto; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+    .toggle { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
       display: inline-flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; user-select: none; }
     .toggle input { accent-color: var(--orange); cursor: pointer; }
     .pgroup.off { opacity: .45; }
 
-    .prow { padding: 9px 0; }
-    .prow-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
-    .pname { font-size: 11px; font-weight: 700; letter-spacing: .02em; }
-    .pidx { font-size: 9px; color: var(--muted); }
-    .pval { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--text); }
-    .prow-ctl { display: flex; align-items: center; gap: 12px; }
-    /* Custom range: orange fill + thumb on a dark, recessive track (no grey native track/border).
-       --fill (set in JS) drives the Chromium fill; Firefox uses ::-moz-range-progress. */
-    .prow-ctl input[type=range] { -webkit-appearance: none; appearance: none; flex: 1; min-width: 0;
-      height: 4px; cursor: pointer; border: none; padding: 0; margin: 0; border-radius: 3px; outline: none;
-      background: linear-gradient(var(--orange), var(--orange)) 0 / var(--fill, 0%) 100% no-repeat, #24262C; }
-    .prow-ctl input[type=range]::-webkit-slider-runnable-track { -webkit-appearance: none; height: 4px; background: transparent; border: none; }
-    .prow-ctl input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5px;
-      border-radius: 50%; background: var(--orange); border: none; box-shadow: none; }
-    .prow-ctl input[type=range]::-moz-range-track { height: 4px; background: #24262C; border: none; border-radius: 3px; }
-    .prow-ctl input[type=range]::-moz-range-progress { height: 4px; background: var(--orange); border: none; border-radius: 3px; }
-    .prow-ctl input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--orange); border: none; }
-    .prow-ctl input[type=range]:focus-visible::-webkit-slider-thumb { outline: 2px solid var(--orange); outline-offset: 2px; }
-    .rawin { width: 78px; font-family: inherit; font-size: 11px; font-weight: 700; text-align: right; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 4px 6px; }
-    .rawin:focus { outline: none; border-color: var(--orange); }
-    .pselect { width: 100%; font-family: inherit; font-size: 11px; font-weight: 700; color: var(--text);
-      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 5px 8px; cursor: pointer; }
+    /* ── KNOBS (tight grid, packed from the left; reflows fluidly by width) ── */
+    .knob-grid { display: grid; grid-template-columns: repeat(auto-fill, 72px); justify-content: start; gap: 16px 10px; margin-top: 8px; }
+    .knob { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; min-width: 0; }
+    .knob-name { font-size: 9px; font-weight: 700; letter-spacing: .04em; color: var(--muted); text-transform: uppercase;
+      line-height: 1.25; min-height: 23px; display: flex; align-items: flex-end; justify-content: center; max-width: 100%; }
+    .knob-dial { width: 50px; height: 50px; touch-action: none; cursor: ns-resize; border-radius: 50%; outline: none; }
+    .knob-dial svg { width: 100%; height: 100%; display: block; pointer-events: none; }
+    .knob-dial:focus-visible { box-shadow: 0 0 0 2px var(--orange); }
+    .knob-val { font-size: 11px; font-weight: 700; color: var(--text); min-height: 13px; line-height: 1;
+      max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .knob-num { width: 100%; font-family: inherit; font-size: 10px; font-weight: 700; text-align: center; color: var(--text);
+      background: var(--bg); border: 1px solid var(--border); border-radius: 3px; padding: 3px 2px; }
+    .knob-num:focus { outline: none; border-color: var(--orange); }
+    select.knob-num { cursor: pointer; }
+
+    /* Raw JSON shows in a full-width advanced panel at the bottom (see details.raw-json above). */
 
     /* ── DBOX SUMMARY ── */
     .dbox-note { background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; padding: 14px 16px;
@@ -163,21 +166,9 @@
     .dyna-cell .dr { font-size: 9px; color: var(--muted); margin-top: 2px; }
 
     /* Large: 3 columns — editor | viz(2 cols, groups wrap) */
-    @media (max-width: 1500px) {
-      .viz { grid-template-columns: 1fr 1fr; }
-    }
-    /* Medium: 2 columns — editor | stacked viz */
-    @media (max-width: 1180px) {
-      .workspace { grid-template-columns: minmax(340px, 0.9fr) minmax(0, 1.7fr); }
-      .viz { grid-template-columns: 1fr; }
-    }
-    /* Narrow: single column, editor on top */
-    @media (max-width: 920px) {
-      .workspace { grid-template-columns: 1fr; }
-    }
     @media (max-width: 640px) {
       main { padding: 18px 16px 60px; }
-      .identity { flex-direction: column; align-items: flex-start; gap: 14px; }
+      .ph-actions { margin-left: 0; }
     }
     @media (prefers-reduced-motion: reduce) {
       .env-glow { animation: none; }
@@ -192,35 +183,42 @@
   <div class="workspace">
     <!-- LEFT: JSON EDITOR -->
     <section class="panel" id="editorPanel" aria-label="Preset editor">
-      <!-- patch identity -->
-      <div class="identity">
-        <div class="id-art" id="idArt" aria-hidden="true"></div>
-        <div class="id-fields">
-          <div class="id-meta">
-            <span class="id-engine" id="idEngine">—</span>
-            <span class="lbl">octave</span>
-            <select id="octSel" aria-label="Octave">
-              <option value="-4">-4</option><option value="-3">-3</option>
-              <option value="-2">-2</option><option value="-1">-1</option>
-              <option value="0">0</option><option value="1">+1</option>
-              <option value="2">+2</option><option value="3">+3</option><option value="4">+4</option>
-            </select>
+      <header class="patch-head">
+        <div class="ph-id">
+          <div class="id-art" id="idArt" aria-hidden="true"></div>
+          <div class="ph-id-text">
+            <div class="ph-engine-row">
+              <span class="id-engine" id="idEngine">—</span>
+              <span class="lbl">oct</span>
+              <select id="octSel" aria-label="Octave">
+                <option value="-4">-4</option><option value="-3">-3</option>
+                <option value="-2">-2</option><option value="-1">-1</option>
+                <option value="0">0</option><option value="1">+1</option>
+                <option value="2">+2</option><option value="3">+3</option><option value="4">+4</option>
+              </select>
+            </div>
+            <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
           </div>
-          <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
         </div>
-      </div>
-      <div class="editor-toolbar">
-        <select id="sampleSel" aria-label="Load a sample preset"></select>
-        <button class="btn" id="openBtn" type="button">Open .aif</button>
-        <button class="btn" id="dlAif" type="button">Download .aif</button>
-        <input type="file" id="fileInput" accept=".aif,.json,application/json" hidden>
-      </div>
+        <div class="ph-actions">
+          <select id="sampleSel" aria-label="Load a sample preset"></select>
+          <button class="btn" id="openBtn" type="button">Open .aif</button>
+          <button class="btn" id="dlAif" type="button">Download .aif</button>
+          <input type="file" id="fileInput" accept=".aif,.json,application/json" hidden>
+        </div>
+      </header>
       <div class="file-msg" id="fileMsg"></div>
-      <details class="raw-json" id="rawJson">
-        <summary>Advanced · raw JSON</summary>
-        <p class="raw-hint">Patches are stored as a small JSON blob to keep them tiny &mdash; that's why the
-          library stays fast. Curious how the <code>.aif</code> format was reverse-engineered? See the
-          project on <a href="https://github.com/jstnfst/te-op1">GitHub &rarr;</a></p>
+    </section>
+
+    <!-- MIDDLE: 3-column controls -->
+    <section class="viz" id="viz" aria-label="Patch visualization"></section>
+
+    <!-- BOTTOM: raw JSON in a full-width advanced panel above the footer -->
+    <details class="raw-json" id="rawJson">
+      <summary>Advanced &middot; Raw JSON</summary>
+      <p class="raw-hint">Patches are stored as a small JSON blob to keep them tiny. Curious how the
+        <code>.aif</code> format was reverse-engineered? See the project on
+        <a href="https://github.com/jstnfst/te-op1">GitHub &rarr;</a></p>
       <div class="editor-wrap" id="editorWrap">
         <pre class="code-layer" id="jsonHighlight" aria-hidden="true"><code></code></pre>
         <textarea class="code-layer" id="jsonInput" spellcheck="false" autocomplete="off"
@@ -228,11 +226,7 @@
       </div>
       <div class="editor-status" id="status"></div>
       <div class="editor-hint">Edit the JSON directly and the controls update live. Keys are re-sorted alphabetically as the OP-1 firmware requires.</div>
-      </details>
-    </section>
-
-    <!-- RIGHT: VISUALIZATION -->
-    <section class="viz" id="viz" aria-label="Patch visualization"></section>
+    </details>
   </div>
 </main>
 
@@ -732,14 +726,15 @@ SC.plotW = SC.W - SC.padL - SC.padR;
 SC.baseY = SC.H - SC.padB;
 SC.topY = SC.padT;
 SC.segMax = SC.plotW * 0.26;
-SC.holdW = SC.plotW * 0.16;
 function ease(t) { const k = 3.2; return (1 - Math.exp(-k * t)) / (1 - Math.exp(-k)); }
 function computeEnv() {
   const a = state.adsr[0], d = state.adsr[1], s = state.adsr[2], r = state.adsr[3];
   const aw = Math.max(6, a / SC.maxT * SC.segMax);
   const dw = d / SC.maxT * SC.segMax;
   const rw = r / SC.maxT * SC.segMax;
-  const x0 = SC.padL, x1 = x0 + aw, x2 = x1 + dw, x3 = x2 + SC.holdW, x4 = x3 + rw;
+  const x0 = SC.padL, x1 = x0 + aw, x2 = x1 + dw;
+  const x4 = SC.W - SC.padR;          // release END is always pinned to the far right
+  const x3 = Math.max(x2, x4 - rw);   // sustain end / release start — sustain stretches to fill the gap
   const susY = SC.baseY - (s / 32767) * (SC.baseY - SC.topY);
   return { x0, x1, x2, x3, x4, susY, baseY: SC.baseY, topY: SC.topY };
 }
@@ -768,7 +763,7 @@ function scopeHtml() {
       <path class="env-line env-glow" id="envLine"/>
       <circle class="handle" id="h-a" r="7" tabindex="0" role="slider" aria-label="Attack"></circle>
       <circle class="handle" id="h-ds" r="7" tabindex="0" role="slider" aria-label="Decay and sustain"></circle>
-      <circle class="handle" id="h-r" r="7" tabindex="0" role="slider" aria-label="Release"></circle>
+      <circle class="handle" id="h-r" r="7" tabindex="0" role="slider" aria-label="Release and sustain"></circle>
     </svg>
     <div class="scope-readout" id="scopeReadout"></div>
   </div>`;
@@ -781,7 +776,7 @@ function drawScope() {
   line.setAttribute('d', d);
   document.getElementById('envFill').setAttribute('d', d + ` L${g.x4} ${g.baseY} Z`);
   const set = (id, x, y) => { const el = document.getElementById(id); el.setAttribute('cx', x); el.setAttribute('cy', y); };
-  set('h-a', g.x1, g.topY); set('h-ds', g.x2, g.susY); set('h-r', g.x4, g.baseY);
+  set('h-a', g.x1, g.topY); set('h-ds', g.x2, g.susY); set('h-r', g.x3, g.susY);
   const ro = document.getElementById('scopeReadout');
   const cell = (i) => `<div class="ro">${PARAM_NAMES.adsr[i]}<b>${state.adsr[i]} <span class="rd">${fmtValue('adsr', i, state.adsr[i])}</span></b></div>`;
   ro.innerHTML = cell(0) + cell(1) + cell(2) + cell(3);
@@ -799,8 +794,9 @@ function applyHandle(h, x, y) {
     state.adsr[1] = clampI((x - g.x1) / SC.segMax * SC.maxT, 64, 16320);
     state.adsr[2] = clampI((g.baseY - y) / (g.baseY - g.topY) * 32767, 0, 32767);
   } else if (h === 'r') {
-    const g = computeEnv();
-    state.adsr[3] = clampI((x - g.x3) / SC.segMax * SC.maxT, 64, 16320);
+    // handle sits at the sustain end; drag left/right = release, up/down = sustain
+    state.adsr[3] = clampI((SC.W - SC.padR - x) / SC.segMax * SC.maxT, 64, 16320);
+    state.adsr[2] = clampI((SC.baseY - y) / (SC.baseY - SC.topY) * 32767, 0, 32767);
   }
   drawScope();
   syncEditor();
@@ -852,25 +848,22 @@ function rowHtml(grp, eng, idx, raw) {
   const e = LOOKUP[eng + '|' + idx];
   let samples = e ? e.samples : null;
   if (grp === 'lfo') { const dyn = lfoParamSamples(state.lfo_type, idx); if (dyn) samples = dyn; }
-  const isSel = !!(e && e.scale === 'selector' && samples);
-  const valLbl = isSel ? nearestSample(samples, raw) : fmtValue(eng, idx, raw);
-  // selector → dropdown of known options
-  let ctl;
-  if (isSel && samples.length > 1) {
+  const isSel = !!(e && e.scale === 'selector' && samples && samples.length > 1);
+  const valLbl = fmtValue(eng, idx, raw);
+  let field;
+  if (isSel) {
     const opts = samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv} (${rv})</option>`).join('');
     const exact = samples.some(s => s[0] === raw);
     const nearLbl = nearestSample(samples, raw);
-    ctl = `<select class="pselect asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>~${nearLbl} (${raw})</option>`}</select>`;
+    field = `<select class="knob-num asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>~${nearLbl} (${raw})</option>`}</select>`;
   } else {
-    ctl = `<input type="range" class="ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">
-      <input type="number" class="rawin ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">`;
+    field = `<input type="number" class="knob-num ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">`;
   }
-  return `<div class="prow">
-    <div class="prow-top">
-      <span class="pname">${name}</span><span class="pidx">#${idx}</span>${scaleChip(eng, idx)}
-      <span class="pval" data-val="${grp}-${idx}">${valLbl == null ? '' : valLbl}</span>
-    </div>
-    <div class="prow-ctl">${ctl}</div>
+  return `<div class="knob">
+    <div class="knob-name">${name}</div>
+    <div class="knob-dial" data-grp="${grp}" data-idx="${idx}" data-min="${min}" data-max="${max}"${isSel ? ' data-sel="1"' : ''} tabindex="0" role="slider" aria-label="${name}" aria-valuemin="${min}" aria-valuemax="${max}" aria-valuenow="${raw}"></div>
+    <div class="knob-val" data-val="${grp}-${idx}">${valLbl == null ? '' : valLbl}</div>
+    ${field}
   </div>`;
 }
 function groupHtml(grp, label, arrKey, engPrefix, typeKey, typeList) {
@@ -886,11 +879,13 @@ function groupHtml(grp, label, arrKey, engPrefix, typeKey, typeList) {
   const off = (arrKey === 'fx_params' && !state.fx_active) || (arrKey === 'lfo_params' && !state.lfo_active);
   const rows = active.map(i => rowHtml(grp, eng, i, arr[i] != null ? arr[i] : 0)).join('');
   return `<div class="pgroup ${off ? 'off' : ''}">
-    <div class="pgroup-head"><h2>${label}</h2>${sel}${toggle}</div>${rows}</div>`;
+    <div class="pgroup-head"><h2>${label}</h2>${sel}${toggle}</div>
+    <div class="knob-grid">${rows}</div></div>`;
 }
 function adsrExtrasHtml() {
   const rows = [4, 5, 6, 7].map(i => rowHtml('adsr', 'adsr', i, state.adsr[i] != null ? state.adsr[i] : 0)).join('');
-  return `<div class="pgroup"><div class="pgroup-head"><h2>Keyboard</h2></div>${rows}</div>`;
+  return `<div class="pgroup"><div class="pgroup-head"><h2>Keyboard</h2></div>
+    <div class="knob-grid">${rows}</div></div>`;
 }
 function dboxHtml() {
   const dyna = state.dyna_env || [0,0,0,0,0,0,0,0];
@@ -917,46 +912,91 @@ function render() {
   octSel.value = String(state.octave != null ? state.octave : 0);
 
   const viz = document.getElementById('viz');
-  // Column A: ADSR + synth · Column B: effect + LFO · Column C: keyboard/ADSR
-  let colA = '', colB = '', colC = '';
+  // Col 1: ADSR · Col 2: Effect + Keyboard (always 4 knobs) · Col 3: Synth + LFO (can exceed 4).
+  const fxG = groupHtml('fx', 'Effect', 'fx_params', 'fx', 'fx_type', FX_TYPES);
+  const lfoG = groupHtml('lfo', 'LFO', 'lfo_params', 'lfo', 'lfo_type', LFO_TYPES);
+  let html = '';
   if (isDbox()) {
-    colA += dboxHtml();
+    html += `<div class="param-cols">
+      <div class="param-col">${dboxHtml()}</div>
+      <div class="param-col">${fxG}</div>
+      <div class="param-col">${lfoG}</div>
+    </div>`;
   } else {
-    colA += scopeHtml();
-    colA += groupHtml('knobs', 'Synth', 'knobs', 'synth', 'type', SYNTH_TYPES);
+    const synthG = groupHtml('knobs', 'Synth', 'knobs', 'synth', 'type', SYNTH_TYPES);
+    html += `<div class="param-cols">
+      <div class="param-col">${scopeHtml()}</div>
+      <div class="param-col">${fxG + adsrExtrasHtml()}</div>
+      <div class="param-col">${synthG + lfoG}</div>
+    </div>`;
   }
-  colB += groupHtml('fx', 'Effect', 'fx_params', 'fx', 'fx_type', FX_TYPES);
-  colB += groupHtml('lfo', 'LFO', 'lfo_params', 'lfo', 'lfo_type', LFO_TYPES);
-  if (!isDbox()) colC += adsrExtrasHtml();
-  viz.innerHTML = `<div class="viz-col viz-col-a">${colA}</div>` +
-    `<div class="viz-col viz-col-b">${colB}</div>` +
-    `<div class="viz-col viz-col-c">${colC}</div>`;
-  paintAllRanges();
+  viz.innerHTML = html;
+  renderAllDials();
   if (!isDbox()) drawScope();
 }
-/* Paint the orange fill up to a range's value (Chromium has no native progress). */
-function paintRange(el) {
-  const min = +el.min, max = +el.max, v = +el.value;
-  const p = max > min ? ((v - min) / (max - min)) * 100 : 0;
-  el.style.setProperty('--fill', Math.max(0, Math.min(100, p)).toFixed(2) + '%');
+
+/* ── Knob rendering (270° arc, gap at the bottom; selectors get N ticks) ── */
+const K_START = 135, K_SWEEP = 270;
+function kpol(cx, cy, r, deg) { const a = deg * Math.PI / 180; return [cx + r * Math.cos(a), cy + r * Math.sin(a)]; }
+function karc(cx, cy, r, d0, d1) {
+  const [x0, y0] = kpol(cx, cy, r, d0), [x1, y1] = kpol(cx, cy, r, d1);
+  const lg = (d1 - d0) > 180 ? 1 : 0;
+  return `M${x0.toFixed(2)} ${y0.toFixed(2)} A${r} ${r} 0 ${lg} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
 }
-function paintAllRanges() {
-  document.querySelectorAll('#viz input[type=range].ctl').forEach(paintRange);
+function knobSVG(frac, detents, active) {
+  frac = Math.max(0, Math.min(1, frac));
+  const cx = 50, cy = 50, r = 34, ang = K_START + frac * K_SWEEP;
+  let ticks = '';
+  if (detents) {
+    for (let i = 0; i < detents; i++) {
+      const a = K_START + (detents > 1 ? i / (detents - 1) : 0) * K_SWEEP;
+      const [x0, y0] = kpol(cx, cy, r + 4, a), [x1, y1] = kpol(cx, cy, r + 9, a);
+      const on = i === active;
+      ticks += `<line x1="${x0.toFixed(1)}" y1="${y0.toFixed(1)}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${on ? 'var(--orange)' : 'var(--knob-null)'}" stroke-width="${on ? 2.5 : 1.5}" stroke-linecap="round"/>`;
+    }
+  }
+  const [ix, iy] = kpol(cx, cy, 8, ang), [px, py] = kpol(cx, cy, 24, ang);
+  return `<svg viewBox="0 0 100 100" aria-hidden="true">
+    <circle cx="50" cy="50" r="27" fill="var(--bg)" stroke="#000" stroke-width="1"/>
+    <path d="${karc(cx, cy, r, K_START, K_START + K_SWEEP)}" fill="none" stroke="#2A2D34" stroke-width="6" stroke-linecap="round"/>
+    <path d="${karc(cx, cy, r, K_START, ang)}" fill="none" stroke="var(--orange)" stroke-width="6" stroke-linecap="round"/>
+    ${ticks}
+    <line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+  </svg>`;
 }
+function engFor(grp) {
+  return grp === 'knobs' ? 'synth.' + state.type : grp === 'fx' ? 'fx.' + state.fx_type : grp === 'lfo' ? 'lfo.' + state.lfo_type : 'adsr';
+}
+/* Selector option list for a control (handles the dynamic LFO PARAMETER case), or null. */
+function samplesFor(grp, idx) {
+  const eng = engFor(grp), e = LOOKUP[eng + '|' + idx];
+  let s = e ? e.samples : null;
+  if (grp === 'lfo') { const dyn = lfoParamSamples(state.lfo_type, idx); if (dyn) s = dyn; }
+  return (e && e.scale === 'selector' && s && s.length > 1) ? s : null;
+}
+function nearestIndex(samples, v) {
+  let bi = 0;
+  for (let i = 1; i < samples.length; i++) if (Math.abs(samples[i][0] - v) < Math.abs(samples[bi][0] - v)) bi = i;
+  return bi;
+}
+function renderDial(dial) {
+  const grp = dial.dataset.grp, idx = +dial.dataset.idx, eng = engFor(grp);
+  const raw = arrFor(grp)[idx] != null ? arrFor(grp)[idx] : 0;
+  const sel = dial.dataset.sel ? samplesFor(grp, idx) : null;
+  if (sel) { const n = sel.length, ai = nearestIndex(sel, raw); dial.innerHTML = knobSVG(n > 1 ? ai / (n - 1) : 0, n, ai); }
+  else dial.innerHTML = knobSVG(fillPct(eng, idx, raw) / 100, null, null);
+}
+function renderAllDials() { document.querySelectorAll('#viz .knob-dial').forEach(renderDial); }
+
 function refreshRow(grp, idx) {
-  let eng;
-  if (grp === 'knobs') eng = 'synth.' + state.type;
-  else if (grp === 'fx') eng = 'fx.' + state.fx_type;
-  else if (grp === 'lfo') eng = 'lfo.' + state.lfo_type;
-  else eng = 'adsr';
-  const arr = grp === 'knobs' ? state.knobs : grp === 'fx' ? state.fx_params : grp === 'lfo' ? state.lfo_params : state.adsr;
-  const raw = arr[idx];
-  document.querySelectorAll(`.ctl[data-grp="${grp}"][data-idx="${idx}"]`).forEach(el => {
+  const eng = engFor(grp), raw = arrFor(grp)[idx];
+  document.querySelectorAll(`.knob-num[data-grp="${grp}"][data-idx="${idx}"]`).forEach(el => {
     if (document.activeElement !== el) el.value = raw;
-    if (el.type === 'range') paintRange(el);
   });
-  const lbl = document.querySelector(`[data-val="${grp}-${idx}"]`);
+  const lbl = document.querySelector(`.knob-val[data-val="${grp}-${idx}"]`);
   if (lbl) { const v = fmtValue(eng, idx, raw); lbl.textContent = v == null ? '' : v; }
+  const dial = document.querySelector(`.knob-dial[data-grp="${grp}"][data-idx="${idx}"]`);
+  if (dial) { renderDial(dial); dial.setAttribute('aria-valuenow', raw); }
 }
 
 /* ── JSON serialize / pretty-print (alphabetical keys) ───── */
@@ -1001,15 +1041,24 @@ function highlight(text) {
 const jsonInput = document.getElementById('jsonInput');
 const statusEl = document.getElementById('status');
 function setStatus(msg, ok) { statusEl.textContent = msg; statusEl.className = 'editor-status ' + (ok ? 'ok' : 'err'); }
+// Fit the editor height to the JSON's line count (line-height 19px + 28px padding).
+function resizeEditor() {
+  const ew = document.getElementById('editorWrap');
+  if (!ew) return;
+  const lines = (jsonInput.value.match(/\n/g) || []).length + 1;
+  ew.style.height = Math.min(560, Math.max(64, (lines + 1) * 19 + 28)) + 'px';
+}
 function syncEditor() {
   const txt = pretty(state);
   jsonInput.value = txt;
   highlight(txt);
+  resizeEditor();
   setStatus('In sync · ' + Object.keys(state).length + ' keys', true);
   updateFileMsg();
 }
 function liveParse() {
   highlight(jsonInput.value);
+  resizeEditor();
   let parsed;
   try { parsed = JSON.parse(jsonInput.value); }
   catch (err) { setStatus('Invalid JSON: ' + err.message, false); return; }
@@ -1095,7 +1144,6 @@ viz.addEventListener('input', e => {
     if (isNaN(v)) return;
     arrFor(grp)[idx] = v;
     refreshRow(grp, idx);
-    if (t.type === 'range') paintRange(t);
     syncEditor();
   }
 });
@@ -1116,6 +1164,75 @@ viz.addEventListener('change', e => {
     syncEditor(); render();
   }
 });
+
+/* ── Knob interaction: vertical OR horizontal drag, arrow keys, wheel ── */
+let kdrag = null;
+function refocusDial(grp, idx) {
+  const d = document.querySelector(`.knob-dial[data-grp="${grp}"][data-idx="${idx}"]`);
+  if (d) d.focus();
+}
+function commitDial(dial, raw) {
+  const grp = dial.dataset.grp, idx = +dial.dataset.idx;
+  if (arrFor(grp)[idx] === raw) return;
+  arrFor(grp)[idx] = raw;
+  refreshRow(grp, idx);
+  syncEditor();
+}
+function nudgeDial(dial, dir, fine) {
+  const grp = dial.dataset.grp, idx = +dial.dataset.idx;
+  const sel = dial.dataset.sel ? samplesFor(grp, idx) : null;
+  const cur = arrFor(grp)[idx] != null ? arrFor(grp)[idx] : 0;
+  if (sel) {
+    const n = sel.length, ai = Math.max(0, Math.min(n - 1, nearestIndex(sel, cur) + dir));
+    arrFor(grp)[idx] = sel[ai][0]; syncEditor(); render(); refocusDial(grp, idx);
+  } else {
+    const mn = +dial.dataset.min, mx = +dial.dataset.max, step = fine ? 1 : Math.max(1, Math.round((mx - mn) / 100));
+    commitDial(dial, Math.max(mn, Math.min(mx, cur + dir * step)));
+  }
+}
+viz.addEventListener('pointerdown', e => {
+  const dial = e.target.closest('.knob-dial');
+  if (!dial) return;
+  e.preventDefault();
+  dial.focus();
+  const grp = dial.dataset.grp, idx = +dial.dataset.idx;
+  const sel = dial.dataset.sel ? samplesFor(grp, idx) : null;
+  const cur = arrFor(grp)[idx] != null ? arrFor(grp)[idx] : 0;
+  kdrag = { dial, grp, idx, sel, mn: +dial.dataset.min, mx: +dial.dataset.max,
+            x: e.clientX, y: e.clientY, startRaw: cur, startIdx: sel ? nearestIndex(sel, cur) : 0 };
+  window.addEventListener('pointermove', kmove);
+  window.addEventListener('pointerup', kup, { once: true });
+});
+function kmove(e) {
+  if (!kdrag) return;
+  const d = (e.clientX - kdrag.x) - (e.clientY - kdrag.y);  // drag right OR up = increase
+  if (kdrag.sel) {
+    const n = kdrag.sel.length, ni = Math.max(0, Math.min(n - 1, kdrag.startIdx + Math.round(d / 26)));
+    commitDial(kdrag.dial, kdrag.sel[ni][0]);
+  } else {
+    const sens = (e.shiftKey ? 0.25 : 1) / 220;   // full range over ~220px; Shift = fine
+    const raw = Math.max(kdrag.mn, Math.min(kdrag.mx, Math.round(kdrag.startRaw + d * sens * (kdrag.mx - kdrag.mn))));
+    commitDial(kdrag.dial, raw);
+  }
+}
+function kup() {
+  window.removeEventListener('pointermove', kmove);
+  const wasSel = kdrag && kdrag.sel, g = kdrag && kdrag.grp, i = kdrag && kdrag.idx;
+  kdrag = null;
+  if (wasSel) { render(); refocusDial(g, i); }   // rebuild dependent selector options (e.g. LFO PARAMETER)
+}
+viz.addEventListener('keydown', e => {
+  const dial = e.target.closest('.knob-dial'); if (!dial) return;
+  let dir = 0;
+  if (e.key === 'ArrowUp' || e.key === 'ArrowRight') dir = 1;
+  else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') dir = -1;
+  else return;
+  e.preventDefault(); nudgeDial(dial, dir, e.shiftKey);
+});
+viz.addEventListener('wheel', e => {
+  const dial = e.target.closest('.knob-dial'); if (!dial) return;
+  e.preventDefault(); nudgeDial(dial, e.deltaY < 0 ? 1 : -1, e.shiftKey);
+}, { passive: false });
 
 /* ── ADSR scope: pointer + keyboard (delegated, stable) ──── */
 viz.addEventListener('pointerdown', e => {
@@ -1140,9 +1257,16 @@ viz.addEventListener('keydown', e => {
   else if (hid === 'ds') {
     if (e.key === 'ArrowRight') adj(1, stepT, 64, 16320); else if (e.key === 'ArrowLeft') adj(1, -stepT, 64, 16320);
     else if (e.key === 'ArrowUp') adj(2, stepS, 0, 32767); else if (e.key === 'ArrowDown') adj(2, -stepS, 0, 32767); else used = false;
-  } else if (hid === 'r') { if (e.key === 'ArrowRight') adj(3, stepT, 64, 16320); else if (e.key === 'ArrowLeft') adj(3, -stepT, 64, 16320); else used = false; }
+  } else if (hid === 'r') {
+    if (e.key === 'ArrowLeft') adj(3, stepT, 64, 16320); else if (e.key === 'ArrowRight') adj(3, -stepT, 64, 16320);
+    else if (e.key === 'ArrowUp') adj(2, stepS, 0, 32767); else if (e.key === 'ArrowDown') adj(2, -stepS, 0, 32767); else used = false;
+  }
   if (used) { e.preventDefault(); drawScope(); syncEditor(); }
 });
+
+/* ── Raw JSON panel: size the editor to fit when the panel is opened ── */
+const rawJson = document.getElementById('rawJson');
+rawJson.addEventListener('toggle', () => { if (rawJson.open) resizeEditor(); });
 
 /* ── Init ────────────────────────────────────────────────── */
 loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
