@@ -122,7 +122,7 @@
 
     /* ── ADSR SCOPE (signature) ── */
     .scope-card { background: var(--header-bg); border-radius: 6px; padding: 16px 16px 12px; border: 1px solid var(--scope-edge); max-width: 620px; }
-    .scope-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+    .scope-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
     .scope-title { font-size: 10px; font-weight: 700; letter-spacing: .2em; color: var(--scope-label); text-transform: uppercase; }
     .scope-sub { font-size: 9px; font-weight: 300; color: var(--scope-sub); letter-spacing: .05em; }
     .scope-svg { width: 100%; aspect-ratio: 560 / 200; display: block; touch-action: none; }
@@ -218,7 +218,7 @@
     #undoBtn:disabled, #redoBtn:disabled { opacity: .38; }
 
     /* ── PASTE BUTTONS ── */
-    .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; line-height: 1.5; }
+    .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
     .paste-btn:hover { background: rgba(59,158,234,.24); }
     .has-clipboard .paste-btn { display: inline-flex; align-items: center; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
@@ -1281,9 +1281,15 @@ editorPanel.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; i
 
 /* ── Clipboard manager ── */
 const CLIP_KEY = 'te-op1-clips';
+const CLIP_SEL_KEY = 'te-op1-clip-sel';
 var clips = [];
 try { clips = JSON.parse(localStorage.getItem(CLIP_KEY) || '[]'); } catch (_) {}
-var activeClipIdx = 0;
+var activeClipIdx = -1;
+try {
+  const _s = parseInt(localStorage.getItem(CLIP_SEL_KEY), 10);
+  if (!isNaN(_s) && _s >= 0 && _s < clips.length) activeClipIdx = _s;
+} catch (_) {}
+function saveClipSel() { localStorage.setItem(CLIP_SEL_KEY, String(activeClipIdx)); }
 function activeClip() { return clips[activeClipIdx] || null; }
 function clipEsc(s) {
   return String(s).replace(/[&<>"']/g, function (c) {
@@ -1325,13 +1331,16 @@ function clipPush(name, preset) {
   if (clips.length > 10) clips.length = 10;
   localStorage.setItem(CLIP_KEY, JSON.stringify(clips));
   activeClipIdx = 0;
+  saveClipSel();
   renderClipboard();
   updateActiveClipChips();
 }
 function clipRemove(i) {
   clips.splice(i, 1);
-  if (activeClipIdx >= clips.length) activeClipIdx = Math.max(0, clips.length - 1);
+  if (clips.length === 0) activeClipIdx = -1;
+  else if (activeClipIdx >= clips.length) activeClipIdx = clips.length - 1;
   localStorage.setItem(CLIP_KEY, JSON.stringify(clips));
+  saveClipSel();
   renderClipboard();
 }
 function updatePasteVisibility() {
@@ -1351,7 +1360,7 @@ document.getElementById('clipPanel').addEventListener('click', function (e) {
     const idx = parseInt(item.dataset.clipIdx, 10);
     // Clicking the focused item unfocuses it (hides paste chips); clicking another focuses it.
     activeClipIdx = idx === activeClipIdx ? -1 : idx;
-    renderClipboard(); updateActiveClipChips();
+    saveClipSel(); renderClipboard(); updateActiveClipChips();
   }
 });
 

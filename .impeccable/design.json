@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-06-29T00:00:00Z",
+  "title": "Design System: OP-1 Field Reference",
+  "extensions": {
+    "colorMeta": {
+      "signal-orange": { "role": "primary", "displayName": "Signal Orange", "canonical": "#FF4800", "tonalRamp": ["#2a0c00", "#4d1600", "#732100", "#9e2d00", "#cc3a00", "#FF4800", "#ff6a33", "#ff9166", "#ffc1a3"] },
+      "blue": { "role": "secondary", "displayName": "Trace Blue", "canonical": "#3B9EEA", "tonalRamp": ["#0a1f2e", "#103349", "#174a6b", "#1f648f", "#2a83bd", "#3B9EEA", "#66b4ef", "#94ccf4", "#c2e3f9"] },
+      "bg": { "role": "neutral", "displayName": "Panel Black", "canonical": "#15161A", "tonalRamp": ["#0d0e11", "#15161A", "#1F2127", "#2a2d34", "#31343C", "#474b54", "#6a6e78", "#8C8A86", "#E7E5E0"] },
+      "surface": { "role": "neutral", "displayName": "Surface Graphite", "canonical": "#1F2127", "tonalRamp": ["#0d0e11", "#15161A", "#1F2127", "#2a2d34", "#31343C", "#474b54", "#6a6e78", "#8C8A86", "#b5b3ae"] },
+      "text": { "role": "neutral", "displayName": "Readout White", "canonical": "#E7E5E0", "tonalRamp": ["#3a3935", "#55534e", "#706e68", "#8C8A86", "#a8a6a1", "#c5c3bd", "#E7E5E0", "#f1f0ec", "#fafaf8"] },
+      "muted": { "role": "neutral", "displayName": "Muted Gray", "canonical": "#8C8A86", "tonalRamp": ["#2a2926", "#3f3e3a", "#55534e", "#706e68", "#8C8A86", "#a8a6a1", "#c5c3bd", "#dddbd5", "#efeeeb"] },
+      "green": { "role": "tertiary", "displayName": "Confirm Green", "canonical": "#22C55E", "tonalRamp": ["#06210f", "#0a3719", "#0f4f25", "#156b33", "#1c8e44", "#22C55E", "#52d57f", "#85e3a5", "#b9f1cb"] },
+      "danger": { "role": "tertiary", "displayName": "Danger Red", "canonical": "#F87171", "tonalRamp": ["#2a0d0d", "#451414", "#631c1c", "#882626", "#b53434", "#F87171", "#fa9494", "#fcb8b8", "#fddcdc"] },
+      "orange-ink": { "role": "tertiary", "displayName": "Orange Ink", "canonical": "#E3A87E", "tonalRamp": ["#2e1d12", "#46301f", "#60432c", "#7e5a3c", "#a8794f", "#E3A87E", "#ebbf9d", "#f2d5bd", "#f8eadd"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Page hero titles only. 30px ceiling — never larger." },
+      "title": { "displayName": "Title", "purpose": "Card titles, patch names, primary row labels." },
+      "section": { "displayName": "Section", "purpose": "Tracked uppercase panel dividers (h2)." },
+      "body": { "displayName": "Body", "purpose": "Lead/intro prose, light weight, capped ~65-75ch." },
+      "label": { "displayName": "Label", "purpose": "Eyebrows, nav, button text, chips — small tracked uppercase." }
+    },
+    "shadows": [
+      { "name": "hover-lift", "value": "0 6px 24px rgba(0,0,0,0.5)", "purpose": "Cards on hover, paired with -2px translate — the card rises." },
+      { "name": "header-seat", "value": "0 2px 16px rgba(0,0,0,0.3)", "purpose": "Sticky header seam against scrolling content." },
+      { "name": "floating-bar", "value": "0 8px 30px rgba(0,0,0,0.55)", "purpose": "Selection bar and popover menus — detached, hovering above the field." }
+    ],
+    "motion": [
+      { "name": "card-transition", "value": "box-shadow .18s, transform .18s, border-color .18s", "purpose": "Card hover lift." },
+      { "name": "nav-transition", "value": "color .15s, border-color .15s", "purpose": "Nav tab hover/active." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single primary action per context — Signal Orange fill, near-black text.",
+      "html": "<button class=\"ds-btn-primary\">UPLOAD PRESET</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #160a04; background: #FF4800; border: 1px solid #FF4800; border-radius: 4px; padding: 9px 14px; cursor: pointer; transition: filter .15s; } .ds-btn-primary:hover { filter: brightness(1.08); } .ds-btn-primary:focus-visible { outline: 2px solid #FF4800; outline-offset: 2px; }"
+    },
+    {
+      "name": "Default Button",
+      "kind": "button",
+      "refersTo": "button-default",
+      "description": "Secondary action — graphite fill, hairline border that lights up on hover.",
+      "html": "<button class=\"ds-btn\">DOWNLOAD .AIF</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #E7E5E0; background: #1F2127; border: 1px solid #31343C; border-radius: 4px; padding: 9px 14px; cursor: pointer; transition: border-color .15s; } .ds-btn:hover { border-color: #E7E5E0; } .ds-btn:focus-visible { outline: 2px solid #FF4800; outline-offset: 2px; }"
+    },
+    {
+      "name": "Patch Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Flat at rest, lifts on hover. Eyebrow + title + description.",
+      "html": "<a class=\"ds-card\" href=\"#\"><div class=\"ds-card-eyebrow\">COMMUNITY</div><div class=\"ds-card-title\">Brass Stab</div><div class=\"ds-card-desc\">Cluster engine, derived tags: brass, stab, bright.</div></a>",
+      "css": ".ds-card { display: block; text-decoration: none; background: #1F2127; border: 1px solid #31343C; border-radius: 6px; padding: 18px 20px 16px; font-family: 'JetBrains Mono', monospace; transition: box-shadow .18s, transform .18s, border-color .18s; } .ds-card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474b54; } .ds-card-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: #8C8A86; margin-bottom: 8px; text-transform: uppercase; } .ds-card-title { font-size: 16px; font-weight: 700; color: #E7E5E0; margin-bottom: 6px; } .ds-card-desc { font-size: 12px; font-weight: 300; color: #8C8A86; line-height: 1.6; }"
+    },
+    {
+      "name": "Search Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Graphite field with Signal Orange focus outline.",
+      "html": "<input class=\"ds-input\" type=\"search\" placeholder=\"SEARCH PATCHES\" />",
+      "css": ".ds-input { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #E7E5E0; background: #1F2127; border: 1px solid #31343C; border-radius: 4px; padding: 8px 10px; } .ds-input::placeholder { color: #8C8A86; letter-spacing: .06em; } .ds-input:focus-visible { outline: 2px solid #FF4800; outline-offset: 2px; }"
+    },
+    {
+      "name": "Action Chip",
+      "kind": "chip",
+      "refersTo": "chip-action",
+      "description": "Translucent Signal Orange engine/category marker.",
+      "html": "<span class=\"ds-chip\">CLUSTER</span>",
+      "css": ".ds-chip { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; text-transform: uppercase; background: rgba(255,72,0,.18); color: #FF4800; }"
+    },
+    {
+      "name": "Tag Chip",
+      "kind": "chip",
+      "refersTo": "chip-tag",
+      "description": "Translucent Trace Blue derived-tag marker.",
+      "html": "<span class=\"ds-chip-tag\">BRIGHT</span>",
+      "css": ".ds-chip-tag { display: inline-block; font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; text-transform: uppercase; background: rgba(91,141,239,.18); color: #3B9EEA; }"
+    },
+    {
+      "name": "Nav Tabs",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Flat tab row; active tab is full white with Signal Orange underline.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-btn active\">BROWSE</a><a class=\"ds-nav-btn\">PARAMS</a><a class=\"ds-nav-btn\">MAPPINGS</a></nav>",
+      "css": ".ds-nav { display: flex; gap: 2px; background: #0D0E11; padding: 0 8px; } .ds-nav-btn { font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px; text-decoration: none; transition: color .15s, border-color .15s; } .ds-nav-btn:hover { color: rgba(255,255,255,.72); } .ds-nav-btn.active { color: #fff; border-bottom-color: #FF4800; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Oscilloscope",
+    "overview": "This is an instrument readout, not a website. A near-black field holds a single hot signal color — Signal Orange — while small, precise, monospace labels glow against the dark. Everything reads like the panel of a measurement device: the data is the figure, the surface is ground, and the one accent is the live trace. Density is deliberate; variety comes from the scale-type color system, not from new shapes or decoration. Color here is data, not mood. The system rejects the generic SaaS dashboard, the cutesy toy aesthetic, and any impersonation of teenage.engineering's first-party site.",
+    "keyCharacteristics": [
+      "Near-black surface with one hot accent (Signal Orange, ≤10% of any screen)",
+      "Monospace everywhere — JetBrains Mono is the entire type voice",
+      "Small, tracked, uppercase labels as the dominant UI text",
+      "Color is classification (the scale-type system), not decoration",
+      "Flat surfaces; depth appears only on interaction",
+      "Tactile, mechanical controls — hairline borders, tight radii"
+    ],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Signal Orange appears on ≤10% of any screen. It marks exactly one thing per context — the primary action, the active tab, the focus ring. If two oranges compete on a screen, one is wrong.", "section": "colors" },
+      { "name": "The Color-Is-Data Rule", "body": "The eight scale-type colors are forbidden as UI chrome. They classify value mappings and nothing else. A scale-type color on a button or a nav item is a bug.", "section": "colors" },
+      { "name": "The Orange-Is-Not-Error Rule", "body": "Signal Orange is the brand color — primary, active, focus, selection. It is never an error color. Errors and failures use Danger Red (--danger). Orange-tinted info notices are allowed (brand emphasis, not failure) and use Orange Ink for text; an error in orange is a bug.", "section": "colors" },
+      { "name": "The One Family Rule", "body": "JetBrains Mono is the entire type system. Adding a second family — a serif for elegance, a humanist sans for warmth — breaks the instrument metaphor. Forbidden.", "section": "typography" },
+      { "name": "The Tracked-Label Rule", "body": "Small UI text (≤11px) is always uppercase with ≥0.14em tracking. At this size the tracking is what makes mono legible; never ship tight small-caps.", "section": "typography" },
+      { "name": "The Flat-At-Rest Rule", "body": "Surfaces are flat until touched. Any element with a resting drop shadow is wrong unless it is a transient floating control. Depth at rest comes from the tonal ramp, not from shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep Signal Orange (#FF4800) to ≤10% of any screen — one live signal per context.",
+      "Do use Danger Red (--danger, #F87171) for every error/failure state; keep Signal Orange for brand/primary/active/focus only.",
+      "Do use JetBrains Mono for everything; express hierarchy through weight, size, tracking, and case.",
+      "Do uppercase and track (≥0.14em) any UI text ≤11px.",
+      "Do keep surfaces flat at rest; let depth come from the tonal ramp and reserve shadow for hover and floating bars.",
+      "Do reserve the eight scale-type colors strictly for value-mapping data.",
+      "Do keep prose columns ≤~620px (≈65-75ch) against the dark field."
+    ],
+    "donts": [
+      "Don't build the generic SaaS dashboard — no gradient hero metrics, no rounded-purple startup chrome, no card-grid-as-homepage as the default answer.",
+      "Don't drift into a cutesy/toy aesthetic — no emoji-as-UI, no over-rounded gamified flourishes.",
+      "Don't imitate teenage.engineering's first-party site; this is a distinct, fan-made tool.",
+      "Don't introduce a second font family for elegance or warmth.",
+      "Don't use a scale-type classification color as UI chrome (button, nav, border).",
+      "Don't put a resting drop shadow on a static surface — flat at rest, lift on interaction.",
+      "Don't use pure #FFFFFF on the body field; Readout White (#E7E5E0) is the text white.",
+      "Don't signal an error with orange — orange is the brand. Errors are Danger Red (--danger)."
+    ]
+  }
+}
