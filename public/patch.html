@@ -74,11 +74,15 @@
     .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px rgba(255,72,0,.25); }
     .code-layer {
       position: absolute; inset: 0; margin: 0; border: 0;
-      font-family: 'JetBrains Mono','Courier New',monospace; font-size: 12.5px; line-height: 1.55;
+      font-family: 'JetBrains Mono','Courier New',monospace; font-size: 12.5px; line-height: normal;
       letter-spacing: 0; tab-size: 2; padding: 14px 16px;
       white-space: pre; overflow: auto; word-wrap: normal;
     }
     #jsonHighlight { color: var(--text); pointer-events: none; z-index: 1; }
+    /* The highlight text lives in <code>, which browsers force to their default
+       monospace — overriding JetBrains Mono and making glyph widths differ from
+       the textarea, so the highlight drifts right. Inherit the editor font. */
+    #jsonHighlight code { font: inherit; }
     #jsonInput { z-index: 2; resize: none; background: transparent; color: transparent; caret-color: var(--orange); outline: none; }
     #jsonInput::selection { background: rgba(255,72,0,.18); }
     .tok-key { color: var(--tok-key); } .tok-str { color: var(--tok-str); }
