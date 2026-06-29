@@ -35,14 +35,15 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   if (!Number.isInteger(id)) return json({ error: "Bad id." }, { status: 400 })
   const row = await load(env, id)
   if (!row) return json({ error: "Not found." }, { status: 404 })
+  const user = await getSessionUser(request, env)
   if (!row.is_public) {
-    const user = await getSessionUser(request, env)
     if (!user || user.uid !== row.user_id) return json({ error: "Not found." }, { status: 404 })
   }
+  const is_owner = !!(user && user.uid === row.user_id)
   return json({
     id: row.id, name: row.name, type: row.type, fx_type: row.fx_type, lfo_type: row.lfo_type,
     octave: row.octave, tags: row.tags, author: row.author, created_at: row.created_at,
-    download_count: row.download_count, preset: JSON.parse(row.json),
+    download_count: row.download_count, preset: JSON.parse(row.json), is_owner,
   })
 }
 
