@@ -11,7 +11,7 @@
 :root {
   --bg: #15161A; --surface: #1F2127; --border: #31343C;
   --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
-  --orange: #FF4800; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
+  --orange: #FF4800; --orange-on: #160a04; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
   /* --orange is the brand color, never an error color. --danger (red) is the one
      error/failure color; --orange-ink is readable amber text on orange-tinted info notices. */
   --danger: #F87171; --orange-ink: #E3A87E;

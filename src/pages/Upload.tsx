@@ -63,7 +63,6 @@ export default function Upload() {
 
   return (
     <>
-      <p className="eyebrow">Contribute</p>
       <h1 className="hero-title">Upload a patch</h1>
       <p className="lead">
         Drop an OP-1 Field <b>.aif</b> file (or choose one). We read the patch settings out of it and

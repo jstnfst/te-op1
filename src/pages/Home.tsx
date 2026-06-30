@@ -3,7 +3,6 @@ import { Link } from "react-router-dom"
 export default function Home() {
   return (
     <>
-      <p className="eyebrow">OP-1 Field</p>
       <h1 className="hero-title">A reference and community library for OP-1 Field presets.</h1>
       <p className="lead">
         Explore how the OP-1 Field preset format works &mdash; the knob layout, value mappings,

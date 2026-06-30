@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
@@ -9,6 +9,11 @@ export default function MyPatches() {
   const [items, setItems] = useState<PatchSummary[]>([])
   const [err, setErr] = useState("")
   const [busy, setBusy] = useState(true)
+  const [pendingDel, setPendingDel] = useState<number | null>(null)
+  const [pendingPublic, setPendingPublic] = useState<number | null>(null)
+  const [toggling, setToggling] = useState<number | null>(null)
+  const delTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const publicTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selection = useSelection()
 
   async function load() {
@@ -23,6 +28,10 @@ export default function MyPatches() {
   }
 
   useEffect(() => { if (user) load() }, [user])
+  useEffect(() => () => {
+    if (delTimer.current) clearTimeout(delTimer.current)
+    if (publicTimer.current) clearTimeout(publicTimer.current)
+  }, [])
 
   if (loading) return <p className="muted">Loading…</p>
   if (!user) {
@@ -35,19 +44,46 @@ export default function MyPatches() {
   }
 
   async function del(id: number) {
-    if (!window.confirm("Delete this patch?")) return
-    await apiSend(`/api/patches/${id}`, "DELETE")
-    setItems((i) => i.filter((p) => p.id !== id))
+    if (pendingDel !== id) {
+      if (delTimer.current) clearTimeout(delTimer.current)
+      setPendingDel(id)
+      delTimer.current = setTimeout(() => setPendingDel(null), 2000)
+      return
+    }
+    if (delTimer.current) clearTimeout(delTimer.current)
+    setPendingDel(null)
+    try {
+      await apiSend(`/api/patches/${id}`, "DELETE")
+      setItems((i) => i.filter((p) => p.id !== id))
+    } catch (e) {
+      setErr((e as Error).message)
+    }
   }
+
   async function toggle(p: PatchSummary) {
+    // "Make public" is irreversible — require a second tap
+    if (!p.is_public && pendingPublic !== p.id) {
+      if (publicTimer.current) clearTimeout(publicTimer.current)
+      setPendingPublic(p.id)
+      publicTimer.current = setTimeout(() => setPendingPublic(null), 3000)
+      return
+    }
+    if (publicTimer.current) clearTimeout(publicTimer.current)
+    setPendingPublic(null)
     const np = !p.is_public
-    await apiSend(`/api/patches/${p.id}`, "PATCH", { is_public: np })
-    setItems((i) => i.map((x) => (x.id === p.id ? { ...x, is_public: np ? 1 : 0 } : x)))
+    setToggling(p.id)
+    try {
+      await apiSend(`/api/patches/${p.id}`, "PATCH", { is_public: np })
+      setItems((i) => i.map((x) => (x.id === p.id ? { ...x, is_public: np ? 1 : 0 } : x)))
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setToggling(null)
+    }
   }
 
   return (
     <>
-      <p className="eyebrow">Account</p>
       <h1 className="hero-title">My patches</h1>
       {err && <p className="error">{err}</p>}
       {busy ? (
@@ -60,11 +96,10 @@ export default function MyPatches() {
             <div className={"card" + (selection.has(p.id) ? " selected" : "")} key={p.id}>
               <div className="card-eyebrow">
                 <label className="card-check">
-                  <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} /> select
+                  <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} aria-label={`Select ${p.name}`} />
                 </label>
-              </div>
-              <div className="card-eyebrow">
-                <span className="chip">{p.type}</span> {p.is_public ? "public" : "private"}
+                <span className="chip">{p.type}</span>
+                <span>{p.is_public ? "public" : "private"}</span>
               </div>
               <div className="card-title">{p.name}</div>
               {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
@@ -76,9 +111,17 @@ export default function MyPatches() {
               )}
               <div className="row" style={{ marginTop: 12 }}>
                 <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-                <a className="btn" href={`/api/patches/${p.id}/download`}>.aif</a>
-                <button className="btn" onClick={() => toggle(p)}>{p.is_public ? "Make private" : "Make public"}</button>
-                <button className="btn" onClick={() => del(p.id)}>Delete</button>
+                <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+                <button
+                  className={"btn" + (pendingPublic === p.id ? " primary" : "")}
+                  onClick={() => toggle(p)}
+                  disabled={toggling === p.id}
+                >
+                  {pendingPublic === p.id ? "Make public?" : p.is_public ? "Make private" : "Make public"}
+                </button>
+                <button className={"btn" + (pendingDel === p.id ? " danger" : "")} onClick={() => del(p.id)}>
+                  {pendingDel === p.id ? "Confirm?" : "Delete"}
+                </button>
               </div>
             </div>
           ))}

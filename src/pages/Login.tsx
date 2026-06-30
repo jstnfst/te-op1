@@ -20,7 +20,6 @@ export default function Login() {
 
   return (
     <>
-      <p className="eyebrow">Account</p>
       <h1 className="hero-title">Log in</h1>
       <p className="lead">
         Sign in to browse the community library, upload presets, and manage your own. The format

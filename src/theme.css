@@ -2,7 +2,6 @@
    are in public/site.css (shared with the static reference pages). */
 
 /* hero / typography */
-.eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .2em; color: var(--orange); margin-bottom: 12px; }
 h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-height: 1.15; margin-bottom: 16px; }
 .lead { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.85; max-width: 620px; }
 
@@ -11,7 +10,8 @@ h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-h
 .card { display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--border);
   border-radius: 6px; padding: 18px 20px 16px; transition: box-shadow .18s, transform .18s, border-color .18s; }
 .card:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474b54; }
-.card-eyebrow { font-size: 9px; font-weight: 700; letter-spacing: .2em; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
+.card:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.card-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 700; letter-spacing: .2em; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
 .card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; word-break: break-word; }
 .card-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
 .chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px;
@@ -23,8 +23,11 @@ h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-h
   text-transform: uppercase; color: var(--text); background: var(--surface); border: 1px solid var(--border);
   border-radius: 4px; padding: 9px 14px; text-decoration: none; }
 .btn:hover { border-color: var(--text); }
-.btn.primary { background: var(--orange); color: #160a04; border-color: var(--orange); }
+.btn.primary { background: var(--orange); color: var(--orange-on); border-color: var(--orange); }
 .btn.primary:hover { filter: brightness(1.08); }
+.btn.danger { background: rgba(248,113,113,.12); color: var(--danger); border-color: var(--danger); }
+.btn.danger:hover { background: rgba(248,113,113,.22); }
+.btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 input[type=text], input[type=search], select, textarea {
   font-family: inherit; font-size: 12px; color: var(--text); background: var(--surface);
@@ -59,3 +62,6 @@ details.adv a { color: var(--orange); text-decoration: none; font-weight: 700; }
 .menu-item { text-align: left; background: none; border: none; color: var(--text); font-size: 12px;
   padding: 8px 10px; border-radius: 4px; cursor: pointer; }
 .menu-item:hover { background: var(--bg); }
+.menu-new-pack { display: flex; gap: 6px; padding: 6px 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
+.menu-new-pack input { font-size: 11px; padding: 5px 8px; flex: 1; min-width: 0; }
+.menu-new-pack .btn { padding: 5px 10px; flex-shrink: 0; font-size: 10px; }

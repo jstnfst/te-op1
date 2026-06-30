@@ -22,6 +22,8 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
   const [packs, setPacks] = useState<Pack[] | null>(null)
   const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState("")
+  const [newPackName, setNewPackName] = useState("")
+  const [creating, setCreating] = useState(false)
   if (!ids.length) return null
 
   async function downloadSelected() {
@@ -48,13 +50,16 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
   }
 
   async function createAndAdd() {
-    const name = window.prompt("New pack name:")?.trim()
+    const name = newPackName.trim()
     if (!name) return
+    setCreating(true)
     try {
       const p = await apiSend<{ id: number }>("/api/packs", "POST", { name })
+      setNewPackName("")
       setPacks(null)
       await addTo(p.id)
     } catch (e) { setMsg((e as Error).message) }
+    finally { setCreating(false) }
   }
 
   return (
@@ -65,7 +70,20 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
         <button className="btn" onClick={openMenu}>Add to pack ▾</button>
         {open && (
           <div className="selbar-menu">
-            <button className="menu-item" onClick={createAndAdd}>+ New pack…</button>
+            <div className="menu-new-pack">
+              <input
+                type="text"
+                placeholder="New pack name…"
+                value={newPackName}
+                onChange={(e) => setNewPackName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") createAndAdd() }}
+                aria-label="New pack name"
+                autoFocus
+              />
+              <button className="btn primary" onClick={createAndAdd} disabled={!newPackName.trim() || creating}>
+                {creating ? "…" : "Create"}
+              </button>
+            </div>
             {packs === null ? (
               <div className="menu-item muted">Loading…</div>
             ) : packs.length === 0 ? (

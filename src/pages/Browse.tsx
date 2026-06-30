@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 import { apiGet, type PatchSummary } from "../api"
 import { useSelection, SelectionBar } from "../packs"
 
@@ -13,12 +14,10 @@ function Card({ p, selected, onToggle, onTagClick }: { p: PatchSummary; selected
     <div className={"card" + (selected ? " selected" : "")}>
       <div className="card-eyebrow">
         <label className="card-check">
-          <input type="checkbox" checked={selected} onChange={onToggle} /> select
+          <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
         </label>
-      </div>
-      <div className="card-eyebrow">
         <span className="chip">{p.type}</span>
-        {p.author ? ` by ${p.author}` : ""}
+        {p.author ? <span>by {p.author}</span> : null}
       </div>
       <div className="card-title">{p.name}</div>
       <div className="card-desc">
@@ -42,16 +41,19 @@ export default function Browse() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const selection = useSelection()
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const filtersRef = useRef({ type: "", q: "", tag: "" })
+  filtersRef.current = { type, q, tag }
+  const isFirstQTagRender = useRef(true)
 
-  async function load(overrides?: { tag?: string }) {
+  async function load(filters = filtersRef.current) {
     setLoading(true)
     setErr("")
     try {
-      const effectiveTag = overrides?.tag ?? tag
       const params = new URLSearchParams()
-      if (type) params.set("type", type)
-      if (q.trim()) params.set("q", q.trim())
-      if (effectiveTag.trim()) params.set("tag", effectiveTag.trim())
+      if (filters.type) params.set("type", filters.type)
+      if (filters.q.trim()) params.set("q", filters.q.trim())
+      if (filters.tag.trim()) params.set("tag", filters.tag.trim())
       const data = await apiGet<{ items: PatchSummary[] }>(`/api/patches?${params.toString()}`)
       setItems(data.items)
     } catch (e) {
@@ -61,19 +63,39 @@ export default function Browse() {
     }
   }
 
+  // Type: immediate, cancels any pending debounce
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    load()
+  }, [type])
+
+  // Q and tag: 300ms debounce; skip the initial mount (type effect owns the first load)
+  useEffect(() => {
+    if (isFirstQTagRender.current) { isFirstQTagRender.current = false; return }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => load(), 300)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [q, tag])
+
   function handleTagClick(t: string) {
     setTag(t)
-    load({ tag: t })
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    load({ ...filtersRef.current, tag: t })
   }
 
-  useEffect(() => { load() }, [type])
+  function clearFilters() {
+    setType("")
+    setQ("")
+    setTag("")
+  }
+
+  const hasFilters = type !== "" || q !== "" || tag !== ""
 
   return (
     <>
-      <p className="eyebrow">Community</p>
       <h1 className="hero-title">Browse patches</h1>
-      <div className="row" style={{ margin: "16px 0" }}>
-        <select value={type} onChange={(e) => setType(e.target.value)}>
+      <div className="row" style={{ margin: "16px 0 8px" }}>
+        <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Filter by engine">
           <option value="">All engines</option>
           {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
         </select>
@@ -82,29 +104,39 @@ export default function Browse() {
           placeholder="Search name…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") load() }}
+          aria-label="Search by name"
         />
         <input
           type="search"
           placeholder="Filter by tag…"
           value={tag}
           onChange={(e) => setTag(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") load() }}
-          style={{ width: 140 }}
+          aria-label="Filter by tag"
         />
-        <button className="btn" onClick={() => load()}>Search</button>
+        {hasFilters && (
+          <button className="btn" onClick={clearFilters}>Clear</button>
+        )}
       </div>
       {err && <p className="error">{err}</p>}
       {loading ? (
         <p className="muted">Loading…</p>
       ) : items.length === 0 ? (
-        <p className="muted">No patches found.</p>
+        <>
+          <p className="muted">No patches found.</p>
+          {hasFilters
+            ? <p style={{ marginTop: 8 }}><button className="btn" onClick={clearFilters}>Clear filters</button></p>
+            : <p className="muted" style={{ marginTop: 4 }}>No community patches yet — <Link to="/upload">upload the first one</Link>.</p>
+          }
+        </>
       ) : (
-        <div className="grid">
-          {items.map((p) => (
-            <Card key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} />
-          ))}
-        </div>
+        <>
+          <p className="muted" style={{ marginBottom: 12 }}>{items.length} {items.length === 1 ? "patch" : "patches"}</p>
+          <div className="grid">
+            {items.map((p) => (
+              <Card key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} />
+            ))}
+          </div>
+        </>
       )}
       <SelectionBar ids={selection.ids} onClear={selection.clear} />
     </>

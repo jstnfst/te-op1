@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
@@ -19,6 +19,8 @@ export default function Pack() {
   const [pack, setPack] = useState<PackDetail | null>(null)
   const [err, setErr] = useState("")
   const [busy, setBusy] = useState(true)
+  const [pendingDel, setPendingDel] = useState(false)
+  const delTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function load() {
     setBusy(true)
@@ -27,6 +29,7 @@ export default function Pack() {
     finally { setBusy(false) }
   }
   useEffect(() => { load() }, [id])
+  useEffect(() => () => { if (delTimer.current) clearTimeout(delTimer.current) }, [])
 
   if (busy) return <p className="muted">Loading…</p>
   if (err || !pack) {
@@ -40,28 +43,54 @@ export default function Pack() {
   }
 
   async function remove(patchId: number) {
-    await apiSend(`/api/packs/${pack!.id}/items`, "DELETE", { patch_id: patchId })
-    load()
+    try {
+      await apiSend(`/api/packs/${pack!.id}/items`, "DELETE", { patch_id: patchId })
+      load()
+    } catch (e) {
+      setErr((e as Error).message)
+    }
   }
+
   async function togglePublic() {
-    await apiSend(`/api/packs/${pack!.id}`, "PATCH", { is_public: !pack!.is_public })
-    load()
+    try {
+      await apiSend(`/api/packs/${pack!.id}`, "PATCH", { is_public: !pack!.is_public })
+      load()
+    } catch (e) {
+      setErr((e as Error).message)
+    }
   }
+
   async function del() {
-    if (!window.confirm("Delete this pack? (The patches themselves are not deleted.)")) return
-    await apiSend(`/api/packs/${pack!.id}`, "DELETE")
-    window.location.href = "/packs"
+    if (!pendingDel) {
+      if (delTimer.current) clearTimeout(delTimer.current)
+      setPendingDel(true)
+      delTimer.current = setTimeout(() => setPendingDel(false), 2000)
+      return
+    }
+    if (delTimer.current) clearTimeout(delTimer.current)
+    setPendingDel(false)
+    try {
+      await apiSend(`/api/packs/${pack!.id}`, "DELETE")
+      window.location.href = "/packs"
+    } catch (e) {
+      setErr((e as Error).message)
+    }
   }
 
   const shareUrl = `${location.origin}/packs/${pack.id}`
   return (
     <>
-      <p className="eyebrow">Pack{pack.author ? ` · by ${pack.author}` : ""}</p>
+      {pack.author && <p className="lead" style={{ marginBottom: 4, fontSize: 12 }}>by {pack.author}</p>}
       <h1 className="hero-title">{pack.name}</h1>
+      {err && <p className="error">{err}</p>}
       <div className="row" style={{ margin: "12px 0" }}>
         <a className="btn primary" href={`/api/packs/${pack.id}/download`}>Download .zip</a>
         {pack.is_owner && <button className="btn" onClick={togglePublic}>{pack.is_public ? "Make private" : "Make public"}</button>}
-        {pack.is_owner && <button className="btn" onClick={del}>Delete pack</button>}
+        {pack.is_owner && (
+          <button className={"btn" + (pendingDel ? " danger" : "")} onClick={del}>
+            {pendingDel ? "Confirm?" : "Delete pack"}
+          </button>
+        )}
       </div>
       {pack.is_public ? (
         <p className="muted">Public — anyone with the link can download: <code>{shareUrl}</code></p>
@@ -78,12 +107,13 @@ export default function Pack() {
           {pack.items.map((p) => (
             <div className="card" key={p.id}>
               <div className="card-eyebrow">
-                <span className="chip">{p.type}</span>{p.author ? ` by ${p.author}` : ""}
+                <span className="chip">{p.type}</span>
+                {p.author ? <span>by {p.author}</span> : null}
               </div>
               <div className="card-title">{p.name}</div>
               <div className="row" style={{ marginTop: 12 }}>
                 <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-                <a className="btn" href={`/api/patches/${p.id}/download`}>.aif</a>
+                <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
                 {pack.is_owner && <button className="btn" onClick={() => remove(p.id)}>Remove</button>}
               </div>
             </div>

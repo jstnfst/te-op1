@@ -9,6 +9,7 @@ colors:
   muted: "#8C8A86"
   header-bg: "#0D0E11"
   signal-orange: "#FF4800"
+  orange-on: "#160a04"
   blue: "#3B9EEA"
   purple: "#8B5CF6"
   green: "#22C55E"

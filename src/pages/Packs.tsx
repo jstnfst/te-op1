@@ -36,7 +36,6 @@ export default function Packs() {
 
   return (
     <>
-      <p className="eyebrow">Account</p>
       <h1 className="hero-title">Packs</h1>
       <p className="lead">Group patches into a pack and share it as a single .zip of .aif files.</p>
       <div className="row" style={{ margin: "16px 0" }}>
