@@ -111,6 +111,13 @@ export default function Pack() {
                 {p.author ? <span>by {p.author}</span> : null}
               </div>
               <div className="card-title">{p.name}</div>
+              {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
+                <div className="card-tags" style={{ marginTop: 6 }}>
+                  {p.tags.split(",").filter(Boolean).slice(0, 6).map((t) => (
+                    <span key={t} className="chip tag">{t}</span>
+                  ))}
+                </div>
+              )}
               <div className="row" style={{ marginTop: 12 }}>
                 <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
                 <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
