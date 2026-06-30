@@ -16,9 +16,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   let body: { ids?: unknown }
   try { body = (await request.json()) as { ids?: unknown } } catch { return json({ error: "Expected a JSON body." }, { status: 400 }) }
   const ids = Array.isArray(body.ids)
-    ? (body.ids.filter((x) => Number.isInteger(x)) as number[]).slice(0, MAX_IDS)
+    ? (body.ids.filter((x) => Number.isInteger(x)) as number[])
     : []
   if (!ids.length) return json({ error: "No patches selected." }, { status: 400 })
+  if (ids.length > MAX_IDS) return json({ error: `Select at most ${MAX_IDS} patches at a time.` }, { status: 400 })
 
   const placeholders = ids.map((_, i) => `?${i + 1}`).join(",")
   const rows = await env.DB

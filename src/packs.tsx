@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { apiGet, apiSend, downloadZip, type Pack } from "./api"
 
+export const MAX_SELECTION = 200
+
 /** Multi-select state shared by Browse and My patches. */
 export function useSelection() {
   const [sel, setSel] = useState<Set<number>>(new Set())
@@ -10,7 +12,7 @@ export function useSelection() {
     toggle: (id: number) =>
       setSel((s) => {
         const n = new Set(s)
-        n.has(id) ? n.delete(id) : n.add(id)
+        if (n.has(id)) { n.delete(id) } else if (n.size < MAX_SELECTION) { n.add(id) }
         return n
       }),
     clear: () => setSel(new Set()),
@@ -64,7 +66,7 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
 
   return (
     <div className="selbar">
-      <span><b>{ids.length}</b> selected</span>
+      <span><b>{ids.length} / {MAX_SELECTION}</b> selected</span>
       <button className="btn primary" onClick={downloadSelected}>Download .zip</button>
       <div className="selbar-pack">
         <button className="btn" onClick={openMenu}>Add to pack ▾</button>

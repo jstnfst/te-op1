@@ -1,6 +1,8 @@
 import type { Env } from "../../../_shared/env"
 import { getSessionUser, json } from "../../../_shared/session"
 
+const MAX_PACK_SIZE = 200
+
 function ownedPack(env: Env, packId: number, uid: number) {
   return env.DB.prepare("SELECT user_id FROM packs WHERE id = ?1").bind(packId).first<{ user_id: number }>()
     .then((p) => (p && p.user_id === uid ? p : null))
@@ -21,6 +23,10 @@ export const onRequestPost: PagesFunction<Env> = async ({ params, env, request }
   const patch = await env.DB.prepare("SELECT id, is_public, user_id FROM patches WHERE id = ?1")
     .bind(patchId).first<{ id: number; is_public: number; user_id: number }>()
   if (!patch || (!patch.is_public && patch.user_id !== user.uid)) return json({ error: "Patch not found." }, { status: 404 })
+
+  const count = await env.DB.prepare("SELECT COUNT(*) AS c FROM pack_items WHERE pack_id = ?1")
+    .bind(packId).first<{ c: number }>()
+  if ((count?.c ?? 0) >= MAX_PACK_SIZE) return json({ error: `Packs are limited to ${MAX_PACK_SIZE} patches.` }, { status: 400 })
 
   const pos = await env.DB.prepare("SELECT COALESCE(MAX(position), -1) + 1 AS p FROM pack_items WHERE pack_id = ?1")
     .bind(packId).first<{ p: number }>()
