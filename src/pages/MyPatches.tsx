@@ -150,7 +150,7 @@ export default function MyPatches() {
                   </div>
                   <div className="card-title">{p.name}</div>
                   {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
-                    <div className="card-desc" style={{ marginTop: 6 }}>
+                    <div className="card-tags" style={{ marginTop: 6 }}>
                       {p.tags.split(",").filter(Boolean).slice(0, 6).map((t) => (
                         <span key={t} className="chip tag">{t}</span>
                       ))}

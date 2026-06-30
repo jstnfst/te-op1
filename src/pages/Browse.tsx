@@ -23,7 +23,7 @@ function GridCard({ p, selected, onToggle, onTagClick }: { p: PatchSummary; sele
         {p.author ? <span>by {p.author}</span> : null}
       </div>
       <div className="card-title">{p.name}</div>
-      <div className="card-desc">
+      <div className="card-tags">
         {tags.map((t) => (
           <span key={t} className="chip tag" style={{ cursor: "pointer" }} onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
         ))}
