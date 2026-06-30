@@ -227,12 +227,17 @@
     .has-clipboard .scope-head .paste-btn { visibility: visible; pointer-events: auto; }
     .copy-pad-btn { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
     .copy-pad-btn:hover { color: var(--text); border-color: var(--text); }
-    /* drum box paste button: hidden for generic clipboard; shown only for dbox/dsynth/pad clips */
+    /* pad paste: hidden for generic clipboard; shown only for dbox/dsynth/pad clips */
     .has-clipboard .paste-btn[data-paste="pad"] { display: none; }
     .has-dbox-clip .paste-btn[data-paste="pad"] { display: inline-flex; align-items: center; }
+    .has-dsynth-clip .paste-btn[data-paste="pad"] { display: inline-flex; align-items: center; }
     .has-pad-clip .paste-btn[data-paste="pad"] { display: inline-flex; align-items: center; }
-    /* dbox clips cannot paste into another synth's knobs */
+    /* dbox clips: knobs and adsr don't translate to dbox */
     .has-dbox-clip .paste-btn[data-paste="knobs"] { display: none; }
+    .has-dbox-clip .paste-btn[data-paste="adsr"] { display: none; }
+    /* dyna paste: only meaningful when a dbox clip is active */
+    .has-clipboard .paste-btn[data-paste="dyna"] { display: none; }
+    .has-dbox-clip .paste-btn[data-paste="dyna"] { display: inline-flex; align-items: center; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
     .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
@@ -1412,10 +1417,11 @@ function updatePasteVisibility() {
   const active = activeClipIdx >= 0 && activeClipIdx < clips.length;
   const clip = active ? clips[activeClipIdx] : null;
   const isPad = !!clip && clip.kind === 'pad';
-  const isDboxCompat = !!clip && !isPad && !!clip.preset &&
-    (clip.preset.type === 'dbox' || clip.preset.type === 'dsynth');
+  const isDbox = !!clip && !isPad && !!clip.preset && clip.preset.type === 'dbox';
+  const isDsynth = !!clip && !isPad && !!clip.preset && clip.preset.type === 'dsynth';
   v.classList.toggle('has-clipboard', active && !isPad);
-  v.classList.toggle('has-dbox-clip', isDboxCompat);
+  v.classList.toggle('has-dbox-clip', isDbox);
+  v.classList.toggle('has-dsynth-clip', isDsynth);
   v.classList.toggle('has-pad-clip', isPad);
   // Keep the drum box paste button label in sync with the active clip type
   const padPasteBtn = v.querySelector('[data-paste="pad"]');
@@ -1462,6 +1468,7 @@ function pasteSection(key) {
   const src = clip.preset; if (!src) return;
   pushUndo();
   if (key === 'adsr') {
+    if (src.type === 'dbox') return;
     for (var i = 0; i < 4; i++) { if (src.adsr && src.adsr[i] != null) state.adsr[i] = src.adsr[i]; }
   } else if (key === 'keyboard') {
     for (var i = 4; i < 8; i++) { if (src.adsr && src.adsr[i] != null) state.adsr[i] = src.adsr[i]; }
@@ -1478,6 +1485,7 @@ function pasteSection(key) {
     if (src.lfo_params) state.lfo_params = src.lfo_params.slice();
     if (src.lfo_active != null) state.lfo_active = src.lfo_active;
   } else if (key === 'dyna') {
+    if (src.type !== 'dbox') return;
     if (src.dyna_env) {
       for (var i = 0; i < 4; i++) { if (src.dyna_env[i] != null) state.dyna_env[i] = src.dyna_env[i]; }
     }
