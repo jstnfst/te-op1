@@ -226,8 +226,10 @@
     .scope-head .paste-btn { display: inline-flex; align-items: center; visibility: hidden; pointer-events: none; }
     .has-clipboard .scope-head .paste-btn { visibility: visible; pointer-events: auto; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
-    .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
-    .clip-active-chip:empty { display: none; }
+    .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+    /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
+    .clip-panel > summary .clip-active-chip { visibility: hidden; pointer-events: none; }
+    .clip-panel > summary.has-chip .clip-active-chip { visibility: visible; pointer-events: auto; }
 
     /* ── CLIPBOARD PANEL ── */
     .clip-panel { border-top: 1px solid var(--border); padding: 14px 0 6px; margin-top: 6px; }
@@ -1354,7 +1356,10 @@ function updatePasteVisibility() {
 }
 function updateActiveClipChips() {
   const el = document.getElementById('clipActiveChip');
-  if (el) el.textContent = clips[activeClipIdx] ? (clips[activeClipIdx].name || 'untitled') : '';
+  const name = clips[activeClipIdx] ? (clips[activeClipIdx].name || 'untitled') : '';
+  if (el) el.textContent = name || ' '; // placeholder keeps chip height stable when empty
+  const summary = document.querySelector('#clipPanel > summary');
+  if (summary) summary.classList.toggle('has-chip', !!name);
 }
 document.getElementById('clipPanel').addEventListener('click', function (e) {
   const del = e.target.closest('[data-del-idx]');
