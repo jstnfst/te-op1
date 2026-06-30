@@ -24,6 +24,7 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
   const [packs, setPacks] = useState<Pack[] | null>(null)
   const [open, setOpen] = useState(false)
   const [msg, setMsg] = useState("")
+  const [adding, setAdding] = useState("")
   const [newPackName, setNewPackName] = useState("")
   const [creating, setCreating] = useState(false)
   if (!ids.length) return null
@@ -44,11 +45,24 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
 
   async function addTo(packId: number) {
     setMsg("")
+    const total = ids.length
+    let added = 0
+    setAdding(`Adding 1 / ${total}…`)
     try {
-      for (const id of ids) await apiSend(`/api/packs/${packId}/items`, "POST", { patch_id: id })
-      setMsg(`Added ${ids.length} to pack.`)
+      for (const id of ids) {
+        await apiSend(`/api/packs/${packId}/items`, "POST", { patch_id: id })
+        added++
+        setAdding(`Adding ${added} / ${total}…`)
+      }
+      setAdding("")
+      setMsg(added === total ? `Added ${added} to pack.` : `Added ${added} of ${total} to pack.`)
       setOpen(false)
-    } catch (e) { setMsg((e as Error).message) }
+    } catch (e) {
+      setAdding("")
+      setMsg(added > 0
+        ? `Added ${added} of ${total}. ${(e as Error).message}`
+        : (e as Error).message)
+    }
   }
 
   async function createAndAdd() {
@@ -99,7 +113,7 @@ export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => v
         )}
       </div>
       <button className="btn" onClick={onClear}>Clear</button>
-      {msg && <span className="muted">{msg}</span>}
+      {(adding || msg) && <span className="muted">{adding || msg}</span>}
     </div>
   )
 }

@@ -14,11 +14,14 @@ h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-h
 .card-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 9px; font-weight: 700; letter-spacing: .2em; color: var(--muted); margin-bottom: 8px; text-transform: uppercase; }
 .card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; word-break: break-word; }
 .card-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
-.card-tags { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 4px; }
+.card-tags { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 4px; margin-top: 6px; }
 .card-tags > .chip { flex-shrink: 0; }
+.card-actions { margin-top: 12px; }
 .chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px;
   border-radius: 2px; text-transform: uppercase; background: rgba(255,72,0,.18); color: var(--orange); margin-right: 4px; }
 .chip.tag { background: rgba(91,141,239,.18); color: var(--blue); }
+.chip.chip-filter { cursor: pointer; }
+.chip.chip-filter:hover { filter: brightness(1.3); }
 
 /* buttons / forms */
 .btn { display: inline-flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; letter-spacing: .06em;
@@ -93,6 +96,13 @@ a.list-row { text-decoration: none; color: inherit; }
 .list-tags { display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; max-width: 180px; flex-shrink: 0; }
 .list-tags > .chip { flex-shrink: 0; }
 .list-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* pack detail */
+.pack-author { font-size: 12px; font-weight: 300; color: var(--muted); margin-bottom: 4px; }
+.pack-actions { margin: 12px 0; }
+.pack-grid { margin-top: 16px; }
+.pack-empty { margin-top: 16px; }
+.pack-login { margin-top: 16px; }
 
 @media (max-width: 640px) {
   .list-author { display: none; }

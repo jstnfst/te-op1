@@ -1,4 +1,4 @@
-import { useState } from "react"
+﻿import { useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiSend } from "../api"
@@ -12,6 +12,7 @@ export default function Upload() {
   const [text, setText] = useState("") // advanced: paste JSON
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<{ ok?: string; err?: string; note?: string }>({})
+  const [publishedId, setPublishedId] = useState<number | null>(null)
 
   if (loading) return <p className="muted">Loading…</p>
   if (!user) {
@@ -25,6 +26,7 @@ export default function Upload() {
 
   async function readAif(file: File) {
     setMsg({})
+    setPublishedId(null)
     try {
       const buf = new Uint8Array(await file.arrayBuffer())
       const parsed = JSON.parse(window.OP1Aif.aifToJson(buf)) as Preset
@@ -44,7 +46,8 @@ export default function Upload() {
     setBusy(true)
     try {
       const r = await apiSend<{ id: number; name: string }>("/api/patches", "POST", { json })
-      setMsg({ ok: `Published “${r.name}” (#${r.id}).` })
+      setMsg({ ok: `Published "${r.name}".` })
+      setPublishedId(r.id)
       setPreset(null)
       setFileName("")
       setText("")
@@ -117,7 +120,12 @@ export default function Upload() {
       </details>
 
       {msg.note && <p className="muted" style={{ marginTop: 12 }}>{msg.note}</p>}
-      {msg.ok && <p className="ok" style={{ marginTop: 12 }}>{msg.ok}</p>}
+      {msg.ok && (
+        <p className="ok" style={{ marginTop: 12 }}>
+          {msg.ok}{" "}
+          {publishedId && <a href={`/patch.html?id=${publishedId}`} style={{ color: "inherit", fontWeight: 700 }}>View patch →</a>}
+        </p>
+      )}
       {msg.err && <p className="error" style={{ marginTop: 12 }}>{msg.err}</p>}
     </>
   )

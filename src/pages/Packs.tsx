@@ -56,6 +56,7 @@ export default function Packs() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") create() }}
+          aria-label="New pack name"
         />
         <button className="btn primary" onClick={create} disabled={!name.trim()}>Create pack</button>
       </div>

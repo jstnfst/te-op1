@@ -25,10 +25,10 @@ function GridCard({ p, selected, onToggle, onTagClick }: { p: PatchSummary; sele
       <div className="card-title">{p.name}</div>
       <div className="card-tags">
         {tags.map((t) => (
-          <span key={t} className="chip tag" style={{ cursor: "pointer" }} onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
+          <span key={t} className="chip tag chip-filter" onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
         ))}
       </div>
-      <div className="row" style={{ marginTop: 12 }}>
+      <div className="row card-actions">
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
         <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
       </div>
@@ -48,7 +48,7 @@ function ListRow({ p, selected, onToggle, onTagClick }: { p: PatchSummary; selec
       {p.author ? <span className="list-author">by {p.author}</span> : null}
       <div className="list-tags">
         {tags.map((t) => (
-          <span key={t} className="chip tag" style={{ cursor: "pointer" }} onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
+          <span key={t} className="chip tag chip-filter" onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
         ))}
       </div>
       <div className="list-actions">
