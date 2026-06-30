@@ -913,7 +913,7 @@ const PARAM_STEPS_DBOX = [1024, 2464, 4384, 6304, 8224, 10624, 12544, 14464];
 const DEST_ENVELOPE = ['ATTACK', 'DECAY', 'SUSTAIN', 'RELEASE'];
 const DEST_ENVELOPE_DBOX = ['ATTACK', 'GAIN', 'RELEASE', 'SMOOTH'];
 const DEST_MIX = ['VOLUME', 'PITCH', 'PAN', null];
-const LFO_DEST_PARAM = { element: { d: 2, p: 3 }, value: { d: 2, p: 3 }, velocity: { d: 2, p: 3 } };
+const LFO_DEST_PARAM = { element: { d: 2, p: 3 }, random: { d: 2, p: 4 }, value: { d: 2, p: 3 }, velocity: { d: 2, p: 3 } };
 function destNames(label) {
   if (label == null) return null;
   const base = String(label).replace(' free', '');
