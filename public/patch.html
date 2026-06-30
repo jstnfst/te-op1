@@ -170,15 +170,15 @@
 
     /* Raw JSON shows in a full-width advanced panel at the bottom (see details.raw-json above). */
 
-    /* ── DBOX SUMMARY ── */
-    .dbox-note { background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; padding: 14px 16px;
-      font-size: 11px; font-weight: 300; color: var(--orange-ink); line-height: 1.6; }
-    .dbox-note b { font-weight: 700; }
-    .dyna-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 14px; }
-    .dyna-cell { background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; }
-    .dyna-cell .dn { font-size: 9px; font-weight: 700; letter-spacing: .12em; color: var(--muted); text-transform: uppercase; }
-    .dyna-cell .dv { font-size: 16px; font-weight: 800; color: var(--text); margin-top: 3px; }
-    .dyna-cell .dr { font-size: 9px; color: var(--muted); margin-top: 2px; }
+    /* ── DBOX KEYBOARD + PAD EDITOR ── */
+    .dbox-keyboard-wrap { padding: 8px 0 12px; }
+    .dbox-keyboard { width: 100%; max-width: 196px; cursor: pointer; display: block; }
+    .dbox-key { fill: var(--surface); stroke: var(--border); stroke-width: 1; transition: fill .08s; }
+    .dbox-key.black { fill: var(--bg); }
+    .dbox-key.selected { fill: var(--orange); opacity: .9; }
+    .dbox-key:hover:not(.selected) { fill: var(--border); }
+    .dbox-pad-label { font-size: 10px; font-weight: 700; letter-spacing: .1em; color: var(--muted);
+      text-transform: uppercase; padding: 4px 0 0; }
 
     /* Large: 3 columns - editor | viz(2 cols, groups wrap) */
     @media (max-width: 640px) {
@@ -396,6 +396,7 @@ const PARAM_NAMES = {
   'lfo.tremolo':     ['SPEED','PITCH AMOUNT','VOLUME LEVEL','PITCH ENVELOPE',null,null,null,'LFO SHAPE'],
   'lfo.value':       ['SPEED','AMOUNT','DESTINATION','PARAMETER','LFO SHAPE'],
   'lfo.velocity':    ['AMP','VOLUME AMOUNT','DESTINATION','PARAMETER'],
+  'dbox.dyna_env':   ['ATTACK','GAIN','RELEASE','SMOOTH'],
 };
 
 /* ── Raw→display sample table (from display.html) ────────── */
@@ -501,6 +502,8 @@ const RANGES = {
   'lfo.value': {0:[0,16384],1:[-32767,32767],2:[1024,11264],3:[1024,15360],4:[0,28086]},
   'lfo.velocity': {2:[1024,15360],3:[1024,15360]},
   'adsr': {0:[64,16320],1:[64,16320],3:[64,16320],5:[64,16448]},
+  'dbox.dyna_env': {0:[-32768,32767],1:[0,8192],2:[-32768,32767],3:[0,32767]},
+  'synth.dbox': {0:[0,24832]},
 };
 function getRange(eng, idx) {
   const r = RANGES[eng] && RANGES[eng][idx];
@@ -717,6 +720,7 @@ const SAMPLES = {
 
 /* ── State ───────────────────────────────────────────────── */
 let state = {};
+let dboxPad = 0;
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
 function normalize(o) {
   o = o || {};
@@ -725,6 +729,12 @@ function normalize(o) {
   if (!Array.isArray(o.lfo_params)) o.lfo_params = [0,0,0,0,0,0,0,0];
   const isDbox = o.type === 'dbox' || 'drum_version' in o;
   if (!isDbox && !Array.isArray(o.adsr)) o.adsr = [64,4000,32767,4000,2048,64,2048,16384];
+  if (isDbox) {
+    if (!Array.isArray(o.dbox_data) || o.dbox_data.length < 24)
+      o.dbox_data = Array.from({length: 24}, () => new Array(8).fill(0));
+    if (!Array.isArray(o.dyna_env)) o.dyna_env = [0, 8192, 0, 6912, 0, 0, 0, 0];
+    if (!o.drum_version) o.drum_version = 2;
+  }
   if (!o.type) o.type = 'fm';
   if (!o.fx_type) o.fx_type = 'mother';
   if (!o.lfo_type) o.lfo_type = 'tremolo';
@@ -990,19 +1000,39 @@ function adsrExtrasHtml() {
   return `<div class="pgroup"><div class="pgroup-head"><h2>Keyboard</h2><button type="button" class="paste-btn" data-paste="keyboard">Paste</button></div>
     <div class="knob-grid">${rows}</div></div>`;
 }
-function dboxHtml() {
-  const dyna = state.dyna_env || [0,0,0,0,0,0,0,0];
-  const cell = (i) => {
-    const e = LOOKUP['dbox.dyna_env|' + i];
-    const [min, max] = e.scale === 'centered' ? [-32768, 32767] : (i === 1 ? [0, 8192] : [0, 32767]);
-    return `<div class="dyna-cell"><div class="dn">${e.name}</div><div class="dv">${dyna[i]}</div><div class="dr">${min} … ${max}</div></div>`;
-  };
-  const pads = (state.dbox_data || []).length;
+function dboxDynaEnvHtml() {
+  const rows = [0,1,2,3].map(i =>
+    rowHtml('dyna', 'dbox.dyna_env', i, (state.dyna_env || [])[i] ?? 0)
+  ).join('');
   return `<div class="pgroup">
-    <div class="pgroup-head"><h2>Drum box</h2></div>
-    <div class="dbox-note"><b>Drum patch.</b> This engine stores ${pads} pads × 8 parameters in <b>dbox_data</b> and uses a dynamic envelope instead of ADSR. Per-pad editing is out of scope for now - edit the JSON directly to change pads. FX and LFO below remain fully editable.</div>
-    <div class="dyna-grid">${[0,1,2,3].map(cell).join('')}</div>
-  </div>`;
+    <div class="pgroup-head"><h2>Dyna Env</h2>
+      <button type="button" class="paste-btn" data-paste="dyna">Paste</button></div>
+    <div class="knob-grid">${rows}</div></div>`;
+}
+function dboxKeyboardSvg() {
+  const WHITE_PADS = [0,2,4,5,7,9,11,12,14,16,17,19,21,23];
+  const BLACK_PADS_X = [[1,9],[3,23],[6,51],[8,65],[10,79],[13,107],[15,121],[18,149],[20,163],[22,177]];
+  const ws = WHITE_PADS.map((p,i) => {
+    const cls = 'dbox-key' + (p === dboxPad ? ' selected' : '');
+    return `<rect class="${cls}" data-pad="${p}" x="${i*14}" y="0" width="13" height="64" rx="2"/>`;
+  }).join('');
+  const bs = BLACK_PADS_X.map(([p,x]) => {
+    const cls = 'dbox-key black' + (p === dboxPad ? ' selected' : '');
+    return `<rect class="${cls}" data-pad="${p}" x="${x}" y="0" width="9" height="40" rx="1"/>`;
+  }).join('');
+  const NOTE_NAMES = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  const noteName = p => NOTE_NAMES[p % 12] + (Math.floor(p / 12) + 2);
+  return `<svg class="dbox-keyboard" viewBox="0 0 196 64" role="group" aria-label="Pad selector">${ws}${bs}</svg>
+  <div class="dbox-pad-label">PAD ${String(dboxPad + 1).padStart(2, '0')} · ${noteName(dboxPad)}</div>`;
+}
+function dboxPadHtml() {
+  const pad = (state.dbox_data || [])[dboxPad] || new Array(8).fill(0);
+  const rows = [0,1,2,3,4,5,6,7].map(i => rowHtml('pad', 'synth.dbox', i, pad[i] ?? 0)).join('');
+  return `<div class="pgroup">
+    <div class="pgroup-head"><h2>Drum box</h2>
+      <button type="button" class="paste-btn" data-paste="pad">Paste</button></div>
+    <div class="dbox-keyboard-wrap">${dboxKeyboardSvg()}</div>
+    <div class="knob-grid">${rows}</div></div>`;
 }
 
 /* ── Render ──────────────────────────────────────────────── */
@@ -1031,9 +1061,9 @@ function render() {
   </div>`;
   if (isDbox()) {
     html += `<div class="param-cols">
-      <div class="param-col">${tbHtml}${dboxHtml()}</div>
-      <div class="param-col">${fxG}</div>
-      <div class="param-col">${lfoG}</div>
+      <div class="param-col">${tbHtml}${dboxDynaEnvHtml()}</div>
+      <div class="param-col">${dboxPadHtml()}</div>
+      <div class="param-col">${fxG}${lfoG}</div>
     </div>`;
   } else {
     const synthG = groupHtml('knobs', 'Synth', 'knobs', 'synth', 'type', SYNTH_TYPES);
@@ -1079,6 +1109,8 @@ function knobSVG(frac, detents, active) {
   </svg>`;
 }
 function engFor(grp) {
+  if (grp === 'pad')  return 'synth.dbox';
+  if (grp === 'dyna') return 'dbox.dyna_env';
   return grp === 'knobs' ? 'synth.' + state.type : grp === 'fx' ? 'fx.' + state.fx_type : grp === 'lfo' ? 'lfo.' + state.lfo_type : 'adsr';
 }
 /* Selector option list for a control (handles the dynamic LFO PARAMETER case), or null. */
@@ -1394,6 +1426,14 @@ function pasteSection(key) {
     if (src.lfo_type != null) state.lfo_type = src.lfo_type;
     if (src.lfo_params) state.lfo_params = src.lfo_params.slice();
     if (src.lfo_active != null) state.lfo_active = src.lfo_active;
+  } else if (key === 'dyna') {
+    if (src.dyna_env) {
+      for (var i = 0; i < 4; i++) { if (src.dyna_env[i] != null) state.dyna_env[i] = src.dyna_env[i]; }
+    }
+  } else if (key === 'pad') {
+    if (src.dbox_data && src.dbox_data[dboxPad]) {
+      state.dbox_data[dboxPad] = src.dbox_data[dboxPad].slice();
+    }
   }
   syncEditor(); render();
 }
@@ -1515,6 +1555,8 @@ document.getElementById('octSel').addEventListener('change', e => { pushUndo(); 
 /* ── Delegated control handlers (viz panel) ──────────────── */
 const viz = document.getElementById('viz');
 function arrFor(grp) {
+  if (grp === 'pad')  return (state.dbox_data || [])[dboxPad] || [];
+  if (grp === 'dyna') return state.dyna_env || [];
   return grp === 'knobs' ? state.knobs : grp === 'fx' ? state.fx_params : grp === 'lfo' ? state.lfo_params : state.adsr;
 }
 viz.addEventListener('input', e => {
@@ -1536,6 +1578,7 @@ viz.addEventListener('change', e => {
   if (t.classList.contains('gsel')) {            // engine type switch
     pushUndo();
     state[t.dataset.typekey] = t.value;
+    if (t.dataset.typekey === 'type') dboxPad = 0;
     syncEditor(); render();
   } else if (t.classList.contains('asel')) {     // selector dropdown
     pushUndo();
@@ -1623,6 +1666,13 @@ viz.addEventListener('wheel', e => {
 }, { passive: false });
 
 viz.addEventListener('click', e => {
+  const dk = e.target.closest('.dbox-key');
+  if (dk && dk.dataset.pad != null) {
+    dboxPad = parseInt(dk.dataset.pad, 10);
+    const padCol = document.querySelector('#viz .param-col:nth-child(2)');
+    if (padCol) { padCol.innerHTML = dboxPadHtml(); renderAllDials(); }
+    return;
+  }
   if (e.target.closest('.paste-btn')) { pasteSection(e.target.closest('.paste-btn').dataset.paste); return; }
   if (e.target.closest('.tb-copy')) { clipPush(state.name || 'untitled', state); setToolbarStatus('Copied to clipboard.', true); return; }
   if (e.target.closest('.tb-undo')) { undo(); return; }
