@@ -206,6 +206,7 @@
     .patch-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-bottom: 14px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
     .tb-update, .tb-save { display: none; }
     .has-community-patch .tb-update, .has-community-patch .tb-save { display: inline-flex; }
+    .is-logged-in .tb-save { display: inline-flex; }
     .owner-only { display: none; }
     .is-owner .owner-only { display: inline-flex; }
     /* Floating status toast: absolutely positioned so it never reflows the toolbar or pushes the page. */
@@ -1489,7 +1490,12 @@ if (userSel) {
   // Only reveal (and fill) the USER picker when a session exists.
   fetch('/api/auth/me', { credentials: 'same-origin' })
     .then(r => (r.ok ? r.json() : { user: null }))
-    .then(d => { if (d && d.user) loadUserPicker(); })
+    .then(d => {
+      if (d && d.user) {
+        document.getElementById('viz').classList.add('is-logged-in');
+        loadUserPicker();
+      }
+    })
     .catch(() => {});
 }
 
