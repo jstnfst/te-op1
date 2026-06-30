@@ -28,3 +28,4 @@ dist/
 *.local
 seed.generated.sql
 tsconfig.tsbuildinfo
+.impeccable/
