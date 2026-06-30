@@ -1265,7 +1265,7 @@ function downloadAif() {
   const json = jsonInput.value;
   let bytes;
   try { JSON.parse(json); bytes = window.OP1Aif.jsonToAif(json); }
-  catch (err) { setFileMsg('Can't export .aif: ' + err.message, 'err'); return; }
+  catch (err) { setFileMsg("Can't export .aif: " + err.message, 'err'); return; }
   const slug = (document.getElementById('nameInput').value || 'patch').trim().toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'patch';
   const a = document.createElement('a');
