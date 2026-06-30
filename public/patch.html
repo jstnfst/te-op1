@@ -222,6 +222,9 @@
     .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
     .paste-btn:hover { background: rgba(59,158,234,.24); }
     .has-clipboard .paste-btn { display: inline-flex; align-items: center; }
+    /* scope-head paste-btn stays in flow at all times so it doesn't change the row height */
+    .scope-head .paste-btn { display: inline-flex; align-items: center; visibility: hidden; pointer-events: none; }
+    .has-clipboard .scope-head .paste-btn { visibility: visible; pointer-events: auto; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
     .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     .clip-active-chip:empty { display: none; }
