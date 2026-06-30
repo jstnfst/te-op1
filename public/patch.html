@@ -225,6 +225,10 @@
     /* scope-head paste-btn stays in flow at all times so it doesn't change the row height */
     .scope-head .paste-btn { display: inline-flex; align-items: center; visibility: hidden; pointer-events: none; }
     .has-clipboard .scope-head .paste-btn { visibility: visible; pointer-events: auto; }
+    .copy-pad-btn { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
+    .copy-pad-btn:hover { color: var(--text); border-color: var(--text); }
+    /* when a pad clip is active, show only the drum box paste button */
+    .has-pad-clip .paste-btn[data-paste="pad"] { display: inline-flex; align-items: center; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
     .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
@@ -1028,9 +1032,12 @@ function dboxKeyboardSvg() {
 function dboxPadHtml() {
   const pad = (state.dbox_data || [])[dboxPad] || new Array(8).fill(0);
   const rows = [0,1,2,3,4,5,6,7].map(i => rowHtml('pad', 'synth.dbox', i, pad[i] ?? 0)).join('');
+  const clip = activeClip();
+  const pasteLabel = clip && clip.kind === 'pad' ? 'Paste Pad' : 'Paste';
   return `<div class="pgroup">
     <div class="pgroup-head"><h2>Drum box</h2>
-      <button type="button" class="paste-btn" data-paste="pad">Paste</button></div>
+      <button type="button" class="copy-pad-btn" data-copy-pad>Copy Pad</button>
+      <button type="button" class="paste-btn" data-paste="pad">${pasteLabel}</button></div>
     <div class="dbox-keyboard-wrap">${dboxKeyboardSvg()}</div>
     <div class="knob-grid">${rows}</div></div>`;
 }
@@ -1356,14 +1363,29 @@ function renderClipboard() {
       return '<span class="clip-eng"><span class="clip-eng-k">' + k + '</span>' +
         '<span class="clip-eng-v">' + clipEsc(v || '-') + '</span></span>';
     }
+    var engHtml = c.kind === 'pad'
+      ? eng('type', 'pad')
+      : eng('synth', p.type) + eng('fx', p.fx_type) + eng('lfo', p.lfo_type);
     return '<div class="clip-item' + (i === activeClipIdx ? ' active' : '') + '" data-clip-idx="' + i + '">' +
       '<span class="clip-item-name">' + clipEsc(c.name || 'untitled') + '</span>' +
-      eng('synth', p.type) + eng('fx', p.fx_type) + eng('lfo', p.lfo_type) +
+      engHtml +
       '<span class="clip-item-time">' + timeAgo(c.ts) + '</span>' +
       '<button type="button" class="clip-item-del" data-del-idx="' + i + '" title="Remove">×</button>' +
     '</div>';
   }).join('');
   updatePasteVisibility();
+}
+function clipPushPad(padIdx, padValues) {
+  var noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+  var noteName = function(p) { return noteNames[p % 12] + (Math.floor(p / 12) + 2); };
+  var label = 'PAD ' + String(padIdx + 1).padStart(2, '0') + ' · ' + noteName(padIdx);
+  clips.unshift({ kind: 'pad', name: label, padIndex: padIdx, pad: padValues.slice(), ts: Date.now() });
+  if (clips.length > 10) clips.length = 10;
+  localStorage.setItem(CLIP_KEY, JSON.stringify(clips));
+  activeClipIdx = 0;
+  saveClipSel();
+  renderClipboard();
+  updateActiveClipChips();
 }
 function clipPush(name, preset) {
   clips.unshift({ name: name, preset: JSON.parse(JSON.stringify(preset)), ts: Date.now() });
@@ -1384,8 +1406,14 @@ function clipRemove(i) {
 }
 function updatePasteVisibility() {
   const v = document.getElementById('viz');
-  // Paste chips only appear when a clip is focused (activeClipIdx points at a real clip).
-  if (v) v.classList.toggle('has-clipboard', activeClipIdx >= 0 && activeClipIdx < clips.length);
+  if (!v) return;
+  const active = activeClipIdx >= 0 && activeClipIdx < clips.length;
+  const isPad = active && clips[activeClipIdx] && clips[activeClipIdx].kind === 'pad';
+  v.classList.toggle('has-clipboard', active && !isPad);
+  v.classList.toggle('has-pad-clip', isPad);
+  // Keep the drum box paste button label in sync with the active clip type
+  const padPasteBtn = v.querySelector('[data-paste="pad"]');
+  if (padPasteBtn) padPasteBtn.textContent = isPad ? 'Paste Pad' : 'Paste';
 }
 function updateActiveClipChips() {
   const el = document.getElementById('clipActiveChip');
@@ -1409,7 +1437,21 @@ document.getElementById('clipPanel').addEventListener('click', function (e) {
 /* ── Section paste ── */
 function pasteSection(key) {
   const clip = activeClip(); if (!clip) return;
-  const src = clip.preset;
+  if (key === 'pad') {
+    pushUndo();
+    if (clip.kind === 'pad' && clip.pad) {
+      if (!state.dbox_data) state.dbox_data = [];
+      state.dbox_data[dboxPad] = clip.pad.slice();
+    } else {
+      const src = clip.preset;
+      if (src && src.dbox_data && src.dbox_data[dboxPad]) {
+        state.dbox_data[dboxPad] = src.dbox_data[dboxPad].slice();
+      }
+    }
+    syncEditor(); render();
+    return;
+  }
+  const src = clip.preset; if (!src) return;
   pushUndo();
   if (key === 'adsr') {
     for (var i = 0; i < 4; i++) { if (src.adsr && src.adsr[i] != null) state.adsr[i] = src.adsr[i]; }
@@ -1429,10 +1471,6 @@ function pasteSection(key) {
   } else if (key === 'dyna') {
     if (src.dyna_env) {
       for (var i = 0; i < 4; i++) { if (src.dyna_env[i] != null) state.dyna_env[i] = src.dyna_env[i]; }
-    }
-  } else if (key === 'pad') {
-    if (src.dbox_data && src.dbox_data[dboxPad]) {
-      state.dbox_data[dboxPad] = src.dbox_data[dboxPad].slice();
     }
   }
   syncEditor(); render();
@@ -1671,6 +1709,12 @@ viz.addEventListener('click', e => {
     dboxPad = parseInt(dk.dataset.pad, 10);
     const padCol = document.querySelector('#viz .param-col:nth-child(2)');
     if (padCol) { padCol.innerHTML = dboxPadHtml(); renderAllDials(); }
+    return;
+  }
+  if (e.target.closest('[data-copy-pad]')) {
+    const pad = (state.dbox_data || [])[dboxPad] || new Array(8).fill(0);
+    clipPushPad(dboxPad, pad);
+    setToolbarStatus('Copied PAD ' + String(dboxPad + 1).padStart(2, '0') + ' to clipboard.', true);
     return;
   }
   if (e.target.closest('.paste-btn')) { pasteSection(e.target.closest('.paste-btn').dataset.paste); return; }
