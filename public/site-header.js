@@ -38,7 +38,7 @@
 
   var SUBTITLE = {
     home: "preset library", layout: "knob layout", mappings: "value mappings",
-    patch: "patch", browse: "library", upload: "upload", mypatches: "my patches",
+    patch: "patch editor", browse: "patch library", upload: "upload patches", mypatches: "my patches",
     packs: "packs", login: "account"
   };
 
