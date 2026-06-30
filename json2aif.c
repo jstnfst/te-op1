@@ -1,12 +1,12 @@
 /*
- * json2aif.c — create an OP-1 Field AIFF-C patch file from a JSON file
+ * json2aif.c - create an OP-1 Field AIFF-C patch file from a JSON file
  *
  * Usage:
- *   json2aif <patch.json> [output.aif]           — pass-through
- *   json2aif zero <patch.json> [output.aif]      — zero knobs/fx_params/lfo_params
- *   json2aif max  <patch.json> [output.aif]      — set all three arrays to 32767
+ *   json2aif <patch.json> [output.aif]           - pass-through
+ *   json2aif zero <patch.json> [output.aif]      - zero knobs/fx_params/lfo_params
+ *   json2aif max  <patch.json> [output.aif]      - set all three arrays to 32767
  *   json2aif explore [-dest <synth|envelope|fx|mix>] [-param <N>]
- *                                                — generate all 810x2 boundary patches
+ *                                                - generate all 810x2 boundary patches
  *
  * Build: cl json2aif.c /Fe:json2aif.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  */
@@ -106,7 +106,7 @@ static char *make_wav_path(const char *json_path) {
 }
 
 /* True if the JSON's "type" value equals `want`, tolerating whitespace around
-   the colon — compact ("type":"x") and pretty ("type" : "x") JSON both work.
+   the colon - compact ("type":"x") and pretty ("type" : "x") JSON both work.
    The quoted "type" token can't match inside "fx_type"/"lfo_type". */
 static int json_type_is(const char *json, const char *want) {
     const char *p = strstr(json, "\"type\"");
@@ -497,7 +497,7 @@ static void get_slug(const char *name, char *out) {
 static const int DBOX_DYNA_ENV_MIN[8] = {-32768,     0, -32768,     0, 0, 0, 0, 0};
 static const int DBOX_DYNA_ENV_MAX[8] = { 32767,  8192,  32767, 32767, 0, 0, 0, 0};
 
-/* 24 per-pad rows, all zeros — min explore */
+/* 24 per-pad rows, all zeros - min explore */
 static const char DBOX_DATA_ZEROS[] =
     "[[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"
     "[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0],"

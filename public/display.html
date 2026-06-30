@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Raw-to-display value mappings for OP-1 Field parameters. Scale types, sample points, and behavioral notes per engine.">
-  <title>OP-1 Field — Value Mappings</title>
+  <title>OP-1 Field - Value Mappings</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
@@ -129,7 +129,7 @@
 
   // ── PARAMETER DATA ──────────────────────────────────────
   // Each entry: [engine, idx, name, scaleType, samples[], info]
-  // samples: [[raw, display], ...]  — display can be number or string
+  // samples: [[raw, display], ...]  - display can be number or string
   const DATA = [
     ['synth.amp', 0, 'VOLUME',     'percent', [[16415, 50]], ''],
     ['synth.amp', 1, 'COMPRESSOR', 'percent', [[16416, 50]], ''],
@@ -320,7 +320,7 @@
   Object.entries(SCALE_META).forEach(([type, meta]) => {
     legendEl.innerHTML += `<div class="legend-item">
       <div class="legend-dot" style="background:${meta.color}"></div>
-      <span><strong>${meta.label}</strong> — ${meta.desc}</span>
+      <span><strong>${meta.label}</strong> - ${meta.desc}</span>
     </div>`;
   });
 
@@ -350,7 +350,7 @@
   }
 
   function samplesHtml(samples) {
-    if (!samples.length) return '<span style="color:#5A5E66">—</span>';
+    if (!samples.length) return '<span style="color:#5A5E66">-</span>';
     return samples.map(([raw, disp]) =>
       `<span class="sample-pair"><span class="raw">${raw}</span><span class="arrow">→</span><span class="disp">${disp}</span></span>`
     ).join('');
@@ -377,7 +377,7 @@
         <td>${name}</td>
         <td>${chipFor(type)}</td>
         <td class="samples-cell">${samplesHtml(samples)}</td>
-        <td class="info-cell">${info || '—'}</td>`;
+        <td class="info-cell">${info || '-'}</td>`;
       tbody.appendChild(row);
     });
   }

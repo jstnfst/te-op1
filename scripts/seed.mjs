@@ -10,7 +10,7 @@ if (!fs.existsSync("samples.js")) {
   process.exit(1)
 }
 
-// samples.js is `const SAMPLES = { ... }` — load it without importing.
+// samples.js is `const SAMPLES = { ... }` - load it without importing.
 const txt = fs.readFileSync("samples.js", "utf8")
 const SAMPLES = eval("(function(){" + txt + ";return SAMPLES;})()")
 

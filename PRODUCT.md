@@ -8,7 +8,7 @@ product
 
 OP-1 Field owners and the people reverse-engineering its preset format: synth
 hobbyists, sound designers, and developers. They arrive with a specific job in
-mind — look up what a knob actually does on a given engine, see how a raw value
+mind - look up what a knob actually does on a given engine, see how a raw value
 maps to the displayed one, inspect a `.aif` patch live, or browse and publish
 presets to a shared community library. They are technical, impatient with fluff,
 and trust the site only as far as the data is correct. Most sessions are
@@ -18,8 +18,8 @@ Microsoft, Yahoo, GitHub), everything else is public.
 ## Product Purpose
 
 A reference and community library for OP-1 Field presets. It documents the
-preset format that Teenage Engineering never published — knob layouts per synth/
-FX/LFO engine, raw-to-display value mappings, and a live patch viewer — and pairs
+preset format that Teenage Engineering never published - knob layouts per synth/
+FX/LFO engine, raw-to-display value mappings, and a live patch viewer - and pairs
 that with a community library where users upload presets as JSON (validated,
 tagged, and rebuilt into downloadable `.aif` on demand). Success is a musician
 finding the exact parameter answer in seconds, or pulling a working patch onto
@@ -31,7 +31,7 @@ Technical and precise. An engineer's reference, not a marketing page. Voice is
 terse, accurate, and unembellished; the design earns trust by being correct and
 fast, not by being persuasive. Three words: **precise, instrument-grade,
 unembellished.** The dark monospace surface and single TE-orange accent are the
-whole personality — restraint is the point. No hype, no celebration animations,
+whole personality - restraint is the point. No hype, no celebration animations,
 no convincing the user of anything the data doesn't already prove.
 
 ## Anti-references
@@ -41,7 +41,7 @@ no convincing the user of anything the data doesn't already prove.
 - **Cutesy / toy aesthetic.** No over-rounded shapes, emoji-as-UI, or gamified
   flourishes. Playfulness that undercuts technical credibility is wrong here.
 - **Official TE clone.** Do not imitate teenage.engineering's own site. This is a
-  distinct, fan-made reference — it should never be mistaken for first-party.
+  distinct, fan-made reference - it should never be mistaken for first-party.
 
 ## Design Principles
 
@@ -65,6 +65,6 @@ no convincing the user of anything the data doesn't already prove.
 Best-effort, not a gating constraint. The dark monospace aesthetic and its small
 chip/label type are intentional and take priority over strict WCAG conformance.
 Keep keyboard navigation working and honor `prefers-reduced-motion` where motion
-exists, and prefer the more legible choice when it costs nothing — but do not
+exists, and prefer the more legible choice when it costs nothing - but do not
 lighten the design or enlarge type purely to hit AA contrast numbers. Known
 trade-offs (muted text near 4.5:1, 8–10px chip labels) are accepted.

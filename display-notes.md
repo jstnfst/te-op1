@@ -61,7 +61,7 @@ parameter type.
 | 1 | PUNCH | `%` | 24512 → 74; hardware max=32767 |
 | 2 | ROUNDS | `discrete-24` | 1–24 inclusive; non-linear; hardware min=1536 (step 1), hardware max=25088 (step 24) |
 | 3 | POWER | `%` | 29159 → 88; hardware max=32767 |
-| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
+| 4–7 | - | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### fx.phone
 | Index | Name | Scale | Notes |
@@ -70,7 +70,7 @@ parameter type.
 | 1 | GSM | `%` | Confirmed linear %; display=(raw−3072)/14336×100; 6712→26, 10352→51 (oracle captures 10+11) |
 | 2 | BAUD | `%` | Confirmed linear %; display=(raw−1536)/15360×100; 5466→26, 9426→52 (oracle captures 10+11) |
 | 3 | TELEMATIC | `%` | Confirmed linear %; full 0–32767 range; 8441→26, 16876→52 (oracle captures 10+11) |
-| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
+| 4–7 | - | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### lfo.value
 | Index | Name | Scale | Notes |
@@ -121,7 +121,7 @@ parameter type.
 | 2 | DESTINATION | `selector-4` | 4 options in order: **synth, envelope, fx, mix**. raw 1024 → synth (min), raw 7168 → mix (max). Changing this changes what PARAMETER (index 3) can select. |
 | 3 | PARAMETER | `selector` | Context-dependent on DESTINATION. raw 1024 → first knob (min), raw 15360 → last option (max). When dest=synth: options are the active synth engine's knob names. See table below. |
 
-#### lfo.element PARAMETER — dest=synth mapping
+#### lfo.element PARAMETER - dest=synth mapping
 
 4-param synths use raw values: **1024, 4864, 8704, 15360** (confirmed via oracle: cluster; predicted for others).
 
@@ -190,10 +190,10 @@ parameter type.
 | 1 | FREQUENCY | `discrete-99` | 0–99; 17352 → 52 |
 | 2 | TOPOLOGY | `selector` | Hardware min=1024, max=17408 (oracle min3+synthmax(8)); 9 options; 13312 → 6 |
 | 3 | DETUNE | `discrete-99` | 0–99; 0 → 0 |
-| 4 | — | `fixed` | Firmware-managed FM operator constant; always 15000 across all oracle captures |
-| 5 | — | `fixed` | Firmware-managed FM operator constant; always 0 across all oracle captures |
-| 6 | — | `fixed` | Firmware-managed FM operator constant; always 100 across all oracle captures |
-| 7 | — | `fixed` | Firmware-managed FM operator constant; always 1500 across all oracle captures |
+| 4 | - | `fixed` | Firmware-managed FM operator constant; always 15000 across all oracle captures |
+| 5 | - | `fixed` | Firmware-managed FM operator constant; always 0 across all oracle captures |
+| 6 | - | `fixed` | Firmware-managed FM operator constant; always 100 across all oracle captures |
+| 7 | - | `fixed` | Firmware-managed FM operator constant; always 1500 across all oracle captures |
 
 ### synth.string
 | Index | Name | Scale | Notes |
@@ -210,7 +210,7 @@ parameter type.
 | 1 | Y SIZE | `discrete-99` | 0–99; non-linear; 6032 → 30; hardware min=1344, hardware max=16704 |
 | 2 | Z FEEDBACK | `discrete-99` | 0–99; ~linear; 23248 → 72; hardware max=32767 |
 | 3 | MIX | `%` | approximately linear; hardware max=32767 |
-| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
+| 4–7 | - | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### fx.spring
 | Index | Name | Scale | Notes |
@@ -219,7 +219,7 @@ parameter type.
 | 1 | TURNS | `%` | Hardware min=7744, hardware max=16448 |
 | 2 | DAMPING | `%` | 4096 → ~12%; hardware max=16384 |
 | 3 | MIX | `%` | Hardware max=32767 |
-| 4–7 | — | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
+| 4–7 | - | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
@@ -320,10 +320,10 @@ settings, not synth-type-specific. Baseline `[64, 64, 0, 64, 2048, 64, 2048, 327
 ## General observations
 
 - Parameters that are **selector/discrete** types cannot be verified by
-  percentage alone — need to check the named option displayed.
+  percentage alone - need to check the named option displayed.
 - FILTER FREQ-style params likely use a logarithmic Hz mapping.
 - The `AMOUNT` parameter on LFOs commonly uses a 0–24 scale.
 - Negative raw values appear for centered/bipolar params (e.g. DETUNE).
 - FX and LFO param arrays are always 8 elements long in the JSON, but the
   number of *active* indices varies by type. Do not assume indices 4–7 are
-  unused for any type — verify each type independently.
+  unused for any type - verify each type independently.

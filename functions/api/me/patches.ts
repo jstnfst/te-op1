@@ -7,7 +7,7 @@ interface PackGroup {
   patch_ids: number[]
 }
 
-// GET /api/me/patches — the signed-in user's own patches, plus their packs with
+// GET /api/me/patches - the signed-in user's own patches, plus their packs with
 // the patch ids each contains (so pickers can group patches by pack).
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)

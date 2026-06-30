@@ -1,5 +1,5 @@
 /*
- * op1_aif.h — shared binary helpers for OP-1 Field AIFF-C file tools
+ * op1_aif.h - shared binary helpers for OP-1 Field AIFF-C file tools
  */
 #ifndef OP1_AIF_H
 #define OP1_AIF_H

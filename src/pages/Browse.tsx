@@ -186,7 +186,7 @@ export default function Browse() {
           <p className="muted">No patches found.</p>
           {hasFilters
             ? <p style={{ marginTop: 8 }}><button className="btn" onClick={clearFilters}>Clear filters</button></p>
-            : <p className="muted" style={{ marginTop: 4 }}>No community patches yet — <Link to="/upload">upload the first one</Link>.</p>
+            : <p className="muted" style={{ marginTop: 4 }}>No community patches yet - <Link to="/upload">upload the first one</Link>.</p>
           }
         </>
       ) : (

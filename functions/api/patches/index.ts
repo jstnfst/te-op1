@@ -5,7 +5,7 @@ import { deriveTags } from "../../_shared/tags"
 
 const PER_PAGE = 24
 
-// GET /api/patches — public, filterable list.
+// GET /api/patches - public, filterable list.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const url = new URL(request.url)
   const type = url.searchParams.get("type")
@@ -32,7 +32,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   return json({ items: all.slice(0, PER_PAGE), page, hasMore: all.length > PER_PAGE })
 }
 
-// POST /api/patches — create a patch (auth required).
+// POST /api/patches - create a patch (auth required).
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in to upload." }, { status: 401 })

@@ -1,5 +1,5 @@
 /*
- * summarize.c — summarize all OP-1 Field presets in presets/*.json
+ * summarize.c - summarize all OP-1 Field presets in presets/*.json
  *
  * Build: cl summarize.c cJSON.c /Fe:summarize.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  * Usage: summarize.exe   (run from project root)

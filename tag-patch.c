@@ -1,5 +1,5 @@
 /*
- * tag-patch.c — generate musical descriptor tags from an OP-1 Field JSON patch
+ * tag-patch.c - generate musical descriptor tags from an OP-1 Field JSON patch
  *
  * Reads each .json patch, interprets parameter values across synth engine,
  * envelope, FX, and LFO domains, and outputs a comma-separated tag list.

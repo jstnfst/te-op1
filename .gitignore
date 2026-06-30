@@ -6,11 +6,11 @@
 # generated boundary-exploration patches (can be regenerated with gen-explore.ps1)
 /explore/
 
-# oracle/ contains hardware-verified reference exports — tracked in git, never generated
+# oracle/ contains hardware-verified reference exports - tracked in git, never generated
 # (oracle/ is intentionally NOT listed here)
 /sandbox/
 
-# external dependency clones — source is vendored into the repo root
+# external dependency clones - source is vendored into the repo root
 /repos/
 /explore-minmax/
 *.exp

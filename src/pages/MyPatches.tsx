@@ -72,7 +72,7 @@ export default function MyPatches() {
   }
 
   async function toggle(p: PatchSummary) {
-    // "Make public" is irreversible — require a second tap
+    // "Make public" is irreversible - require a second tap
     if (!p.is_public && pendingPublic !== p.id) {
       if (publicTimer.current) clearTimeout(publicTimer.current)
       setPendingPublic(p.id)

@@ -3,7 +3,7 @@ import { buildAif } from "../../../_shared/aif"
 import { getSessionUser } from "../../../_shared/session"
 import { slug } from "../../../_shared/util"
 
-// GET /api/patches/:id/download — reconstruct and return the .aif.
+// GET /api/patches/:id/download - reconstruct and return the .aif.
 export const onRequestGet: PagesFunction<Env> = async ({ params, env, request }) => {
   const id = parseInt(String(params.id), 10)
   if (!Number.isInteger(id)) return new Response("Bad id", { status: 400 })

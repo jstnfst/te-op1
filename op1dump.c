@@ -1,8 +1,8 @@
 /*
- * op1dump.c — dump OP-1 Field synth metadata from an AIFF file
+ * op1dump.c - dump OP-1 Field synth metadata from an AIFF file
  *
  * Reads knob/param labels from op1-params.json in the current directory.
- * To add a new synth type, edit op1-params.json — no recompile needed.
+ * To add a new synth type, edit op1-params.json - no recompile needed.
  *
  * Build: cl op1dump.c /Fe:op1dump.exe /D_CRT_SECURE_NO_WARNINGS
  * Usage: op1dump <file.aif>
@@ -29,7 +29,7 @@
 
 static const char *json_find_value(const char *json, const char *key) {
     /* Match the quoted key, then tolerate whitespace around the colon so both
-       compact ("type":"x") and pretty-printed ("type" : "x") JSON work — the
+       compact ("type":"x") and pretty-printed ("type" : "x") JSON work - the
        latter is what hardware-exported patches use. */
     char search[128];
     snprintf(search, sizeof(search), "\"%s\"", key);
@@ -135,7 +135,7 @@ static char *g_params_json = NULL;  /* loaded once, kept for lifetime */
 
 static void load_params_file(void) {
     FILE *f = fopen(PARAMS_FILE, "rb");
-    if (!f) return;  /* not found — all types will show as unmapped */
+    if (!f) return;  /* not found - all types will show as unmapped */
     fseek(f, 0, SEEK_END);
     long sz = ftell(f);
     rewind(f);

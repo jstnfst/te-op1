@@ -1,5 +1,5 @@
 /* ====================================================================
-   OP-1 Field — shared site styles
+   OP-1 Field - shared site styles
    Single source of truth for the theme tokens and the global header /
    nav / footer chrome. Canonical values come from the patch page.
    Page-specific rules live with their page (static pages: inline <style>;

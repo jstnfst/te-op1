@@ -17,7 +17,7 @@ function loadPack(env: Env, id: number) {
     .first<PackRow>()
 }
 
-// GET /api/packs/:id — detail + items. Public packs are visible to anyone; a
+// GET /api/packs/:id - detail + items. Public packs are visible to anyone; a
 // non-owner viewing a public pack only sees its public patches.
 export const onRequestGet: PagesFunction<Env> = async ({ params, env, request }) => {
   const id = parseInt(String(params.id), 10)
@@ -48,7 +48,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   })
 }
 
-// PATCH /api/packs/:id — owner: rename or toggle public.
+// PATCH /api/packs/:id - owner: rename or toggle public.
 export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })
@@ -69,7 +69,7 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request 
   return json({ ok: true })
 }
 
-// DELETE /api/packs/:id — owner only.
+// DELETE /api/packs/:id - owner only.
 export const onRequestDelete: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })

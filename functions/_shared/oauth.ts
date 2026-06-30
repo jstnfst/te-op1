@@ -149,7 +149,7 @@ export async function fetchUser(
   const u = (await res.json()) as Record<string, unknown>
 
   if (provider === "github") {
-    // /user.email is null when the user keeps it private — fall back to the
+    // /user.email is null when the user keeps it private - fall back to the
     // primary verified address from /user/emails (needs the user:email scope).
     let email = (u.email as string) ?? null
     if (!email) {

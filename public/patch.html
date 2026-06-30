@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Interactive OP-1 Field patch viewer. Load a preset JSON and explore its synth engine, ADSR envelope, and every knob, FX, and LFO parameter — edited live in both directions.">
-  <title>OP-1 Field — Patch</title>
+  <meta name="description" content="Interactive OP-1 Field patch viewer. Load a preset JSON and explore its synth engine, ADSR envelope, and every knob, FX, and LFO parameter - edited live in both directions.">
+  <title>OP-1 Field - Patch</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;800&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
       /* JSON token colors (tuned for the dark editor) */
       --tok-key: #E0973D; --tok-str: #6FCB7F; --tok-num: #6AA8FF;
       --tok-bool: #C58BF5; --tok-punct: #6B6E74;
-      /* Oscilloscope scope card — a white-on-near-black instrument screen.
+      /* Oscilloscope scope card - a white-on-near-black instrument screen.
          Its ink is white at graded opacity; full-strength ink = readout values. */
       --scope-edge: #000;                       /* 1px black rim */
       --scope-ink: #fff;                         /* readout values (AA: 19:1) */
@@ -75,7 +75,7 @@
     /* Three columns: ADSR | Effect+Keyboard (always 4) | Synth+LFO (can exceed 4). */
     .param-cols { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 320px) minmax(0, 1.3fr); gap: 24px 26px; align-items: start; }
     .param-col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
-    /* Medium: two columns — col 1 = ADSR + Effect + Keyboard, col 2 = Synth + LFO. */
+    /* Medium: two columns - col 1 = ADSR + Effect + Keyboard, col 2 = Synth + LFO. */
     @media (min-width: 721px) and (max-width: 1024px) {
       .param-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
       .param-col:nth-child(1) { grid-column: 1; grid-row: 1; }
@@ -105,7 +105,7 @@
     }
     #jsonHighlight { color: var(--text); pointer-events: none; z-index: 1; }
     /* The highlight text lives in <code>, which browsers force to their default
-       monospace — overriding JetBrains Mono and making glyph widths differ from
+       monospace - overriding JetBrains Mono and making glyph widths differ from
        the textarea, so the highlight drifts right. Inherit the editor font. */
     #jsonHighlight code { font: inherit; }
     #jsonInput { z-index: 2; resize: none; background: transparent; color: transparent; caret-color: var(--orange); outline: none; }
@@ -180,7 +180,7 @@
     .dyna-cell .dv { font-size: 16px; font-weight: 800; color: var(--text); margin-top: 3px; }
     .dyna-cell .dr { font-size: 9px; color: var(--muted); margin-top: 2px; }
 
-    /* Large: 3 columns — editor | viz(2 cols, groups wrap) */
+    /* Large: 3 columns - editor | viz(2 cols, groups wrap) */
     @media (max-width: 640px) {
       main { padding: 18px 16px 60px; }
       .ph-actions { margin-left: 0; }
@@ -247,7 +247,7 @@
     .clip-eng-k { flex-shrink: 0; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
     .clip-eng-v { min-width: 0; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .clip-item-time { margin-left: auto; flex-shrink: 0; font-size: 9px; color: var(--muted); white-space: nowrap; }
-    /* On mobile, drop the SYNTH/FX/LFO labels — the engine names alone fit the tight row. */
+    /* On mobile, drop the SYNTH/FX/LFO labels - the engine names alone fit the tight row. */
     @media (max-width: 640px) { .clip-eng-k { display: none; } }
 
     /* ── COMMUNITY PATCH TAGS ── */
@@ -280,7 +280,7 @@
           <div class="id-art" id="idArt" aria-hidden="true"></div>
           <div class="ph-id-text">
             <div class="ph-engine-row">
-              <span class="id-engine" id="idEngine">—</span>
+              <span class="id-engine" id="idEngine">-</span>
               <span class="lbl">oct</span>
               <select id="octSel" aria-label="Octave">
                 <option value="-4">-4</option><option value="-3">-3</option>
@@ -349,7 +349,7 @@
 
 <script>
 /* ===================================================================
-   OP-1 Field — Patch page
+   OP-1 Field - Patch page
    Standalone. Data baked inline (matches the rest of the site).
    =================================================================== */
 
@@ -508,18 +508,18 @@ function getRange(eng, idx) {
 /* ── Sample presets (baked in) ───────────────────────────── */
 /*
 const SAMPLES = {
-  'cluster — cluster pad': {"adsr":[1600,10688,32767,14272,2048,4160,4000,4000],"fx_active":false,"fx_params":[4132,13409,2048,16392,8000,8000,8000,8000],"fx_type":"delay","knobs":[15616,30271,12288,309,0,0,0,0],"lfo_active":false,"lfo_params":[7168,32767,1024,11040,0,0,0,0],"lfo_type":"element","mtime":1782342081.0,"name":"cluster pad","octave":0,"synth_version":2,"type":"cluster"},
-  'dbox — drum kit': {"dbox_data":[[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[-24320,0,0,0,0,0,0,0],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607]],"drum_version":2,"dyna_env":[-32768,0,-32768,0,0,0,0,0],"fx_active":false,"fx_params":[0,0,0,0,0,0,0,0],"fx_type":"cwo","lfo_active":false,"lfo_params":[1024,-32767,1024,2464,0,0,0,0],"lfo_type":"element","mtime":1782233500,"name":"drum kit","octave":0,"type":"dbox"},
-  'digital — digital': {"adsr":[2112,8128,0,7232,2048,6464,4000,4000],"fx_active":true,"fx_params":[8000,11447,10660,18368,0,0,0,0],"fx_type":"delay","knobs":[31743,7424,-25088,0,0,0,0,0],"lfo_active":true,"lfo_params":[5808,-21615,4480,15360,0,0,0,0],"lfo_type":"element","name":"digital","octave":0,"synth_version":2,"type":"digital"},
-  'dimension — kaini': {"adsr":[64,5440,22016,4672,6144,5440,18432,21093],"fx_active":true,"fx_params":[17059,0,17704,15325,0,0,0,0],"fx_type":"mother","knobs":[9309,0,10560,26609,0,0,0,0],"lfo_active":true,"lfo_params":[7680,2617,2816,10560,0,0,0,0],"lfo_type":"value","mtime":1657634875.0,"name":"kaini","octave":0,"synth_version":3,"type":"dimension"},
-  'dna — 20130528_1601': {"adsr":[64,64,21504,7616,2048,6432,4000,4000],"fx_active":true,"fx_params":[5184,17408,7095,9856,0,0,0,0],"fx_type":"nitro","knobs":[-14131,10608,0,30720,0,0,0,0],"lfo_active":true,"lfo_params":[1024,19744,4928,15360,0,0,0,0],"lfo_type":"element","name":"20130528_1601","octave":1,"synth_version":1,"type":"dna"},
-  'drwave — 8bit water level': {"adsr":[2112,4544,0,15296,2048,4544,4000,4000],"fx_active":false,"fx_params":[5620,0,10500,11392,0,0,0,0],"fx_type":"nitro","knobs":[16409,204,8167,0,32767,0,0,0],"lfo_active":true,"lfo_params":[23168,1604,4534,14068,0,0,0,0],"lfo_type":"tremolo","name":"8bit water level dr wave","octave":1,"synth_version":2,"type":"drwave"},
-  'dsynth — 20181230_0340': {"adsr":[8768,16320,10240,4160,8192,8896,4000,4000],"fx_active":true,"fx_params":[8000,10624,8328,10168,0,0,0,0],"fx_type":"delay","knobs":[5576,0,32767,32767,23255,0,0,15743],"lfo_active":true,"lfo_params":[4912,8265,2000,2000,0,0,0,0],"lfo_type":"element","name":"20181230_0340","octave":2,"synth_version":2,"type":"dsynth"},
-  'fm — 20180804_0241': {"adsr":[64,9664,0,2112,4077,64,4000,4000],"fx_active":true,"fx_params":[12720,10668,2000,12801,8000,8000,8000,8000],"fx_type":"spring","knobs":[25600,28505,12800,0,15000,0,100,1500],"lfo_active":true,"lfo_params":[19914,1953,0,10742,0,0,0,0],"lfo_type":"tremolo","name":"20180804_0241","octave":0,"synth_version":2,"type":"fm"},
-  'phase — blade_bubbles': {"adsr":[2959,8104,31066,206,2048,3591,4000,4000],"fx_active":true,"fx_params":[667,256,29784,10744,0,0,0,0],"fx_type":"cwo","knobs":[9291,18038,17567,30729,0,0,0,0],"lfo_active":true,"lfo_params":[1783,29728,1517,31953,0,0,0,0],"lfo_type":"random","name":"blade_bubbles","octave":-4,"synth_version":2,"type":"phase"},
-  'pulse — 20200216_1415': {"adsr":[12224,16320,0,64,2048,64,4000,4000],"fx_active":true,"fx_params":[7168,15360,22527,13312,0,0,0,0],"fx_type":"cwo","knobs":[19328,13904,7584,-8192,0,0,0,0],"lfo_active":true,"lfo_params":[0,12825,9744,4320,0,0,0,0],"lfo_type":"value","name":"20200216_1415","octave":-1,"synth_version":2,"type":"pulse"},
-  'string — acguitar': {"adsr":[3648,64,32767,3008,4000,6464,4000,4000],"fx_active":true,"fx_params":[4608,7493,4497,8494,8000,8000,8000,8000],"fx_type":"delay","knobs":[3648,4192,8192,11328,0,0,0,0],"lfo_active":true,"lfo_params":[6120,15184,1648,12960,0,0,0,0],"lfo_type":"value","name":"acguitar","octave":0,"synth_version":1,"type":"string"},
-  'voltage — arp1lead': {"adsr":[4672,9664,7168,7744,5120,64,4000,4000],"fx_active":true,"fx_params":[3136,-15360,13545,10048,0,0,0,0],"fx_type":"nitro","knobs":[6336,0,22527,0,0,0,0,0],"lfo_active":true,"lfo_params":[10728,6952,10208,13984,0,0,0,0],"lfo_type":"value","name":"arp1lead","octave":0,"synth_version":2,"type":"voltage"},
+  'cluster - cluster pad': {"adsr":[1600,10688,32767,14272,2048,4160,4000,4000],"fx_active":false,"fx_params":[4132,13409,2048,16392,8000,8000,8000,8000],"fx_type":"delay","knobs":[15616,30271,12288,309,0,0,0,0],"lfo_active":false,"lfo_params":[7168,32767,1024,11040,0,0,0,0],"lfo_type":"element","mtime":1782342081.0,"name":"cluster pad","octave":0,"synth_version":2,"type":"cluster"},
+  'dbox - drum kit': {"dbox_data":[[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[-24320,0,0,0,0,0,0,0],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607]],"drum_version":2,"dyna_env":[-32768,0,-32768,0,0,0,0,0],"fx_active":false,"fx_params":[0,0,0,0,0,0,0,0],"fx_type":"cwo","lfo_active":false,"lfo_params":[1024,-32767,1024,2464,0,0,0,0],"lfo_type":"element","mtime":1782233500,"name":"drum kit","octave":0,"type":"dbox"},
+  'digital - digital': {"adsr":[2112,8128,0,7232,2048,6464,4000,4000],"fx_active":true,"fx_params":[8000,11447,10660,18368,0,0,0,0],"fx_type":"delay","knobs":[31743,7424,-25088,0,0,0,0,0],"lfo_active":true,"lfo_params":[5808,-21615,4480,15360,0,0,0,0],"lfo_type":"element","name":"digital","octave":0,"synth_version":2,"type":"digital"},
+  'dimension - kaini': {"adsr":[64,5440,22016,4672,6144,5440,18432,21093],"fx_active":true,"fx_params":[17059,0,17704,15325,0,0,0,0],"fx_type":"mother","knobs":[9309,0,10560,26609,0,0,0,0],"lfo_active":true,"lfo_params":[7680,2617,2816,10560,0,0,0,0],"lfo_type":"value","mtime":1657634875.0,"name":"kaini","octave":0,"synth_version":3,"type":"dimension"},
+  'dna - 20130528_1601': {"adsr":[64,64,21504,7616,2048,6432,4000,4000],"fx_active":true,"fx_params":[5184,17408,7095,9856,0,0,0,0],"fx_type":"nitro","knobs":[-14131,10608,0,30720,0,0,0,0],"lfo_active":true,"lfo_params":[1024,19744,4928,15360,0,0,0,0],"lfo_type":"element","name":"20130528_1601","octave":1,"synth_version":1,"type":"dna"},
+  'drwave - 8bit water level': {"adsr":[2112,4544,0,15296,2048,4544,4000,4000],"fx_active":false,"fx_params":[5620,0,10500,11392,0,0,0,0],"fx_type":"nitro","knobs":[16409,204,8167,0,32767,0,0,0],"lfo_active":true,"lfo_params":[23168,1604,4534,14068,0,0,0,0],"lfo_type":"tremolo","name":"8bit water level dr wave","octave":1,"synth_version":2,"type":"drwave"},
+  'dsynth - 20181230_0340': {"adsr":[8768,16320,10240,4160,8192,8896,4000,4000],"fx_active":true,"fx_params":[8000,10624,8328,10168,0,0,0,0],"fx_type":"delay","knobs":[5576,0,32767,32767,23255,0,0,15743],"lfo_active":true,"lfo_params":[4912,8265,2000,2000,0,0,0,0],"lfo_type":"element","name":"20181230_0340","octave":2,"synth_version":2,"type":"dsynth"},
+  'fm - 20180804_0241': {"adsr":[64,9664,0,2112,4077,64,4000,4000],"fx_active":true,"fx_params":[12720,10668,2000,12801,8000,8000,8000,8000],"fx_type":"spring","knobs":[25600,28505,12800,0,15000,0,100,1500],"lfo_active":true,"lfo_params":[19914,1953,0,10742,0,0,0,0],"lfo_type":"tremolo","name":"20180804_0241","octave":0,"synth_version":2,"type":"fm"},
+  'phase - blade_bubbles': {"adsr":[2959,8104,31066,206,2048,3591,4000,4000],"fx_active":true,"fx_params":[667,256,29784,10744,0,0,0,0],"fx_type":"cwo","knobs":[9291,18038,17567,30729,0,0,0,0],"lfo_active":true,"lfo_params":[1783,29728,1517,31953,0,0,0,0],"lfo_type":"random","name":"blade_bubbles","octave":-4,"synth_version":2,"type":"phase"},
+  'pulse - 20200216_1415': {"adsr":[12224,16320,0,64,2048,64,4000,4000],"fx_active":true,"fx_params":[7168,15360,22527,13312,0,0,0,0],"fx_type":"cwo","knobs":[19328,13904,7584,-8192,0,0,0,0],"lfo_active":true,"lfo_params":[0,12825,9744,4320,0,0,0,0],"lfo_type":"value","name":"20200216_1415","octave":-1,"synth_version":2,"type":"pulse"},
+  'string - acguitar': {"adsr":[3648,64,32767,3008,4000,6464,4000,4000],"fx_active":true,"fx_params":[4608,7493,4497,8494,8000,8000,8000,8000],"fx_type":"delay","knobs":[3648,4192,8192,11328,0,0,0,0],"lfo_active":true,"lfo_params":[6120,15184,1648,12960,0,0,0,0],"lfo_type":"value","name":"acguitar","octave":0,"synth_version":1,"type":"string"},
+  'voltage - arp1lead': {"adsr":[4672,9664,7168,7744,5120,64,4000,4000],"fx_active":true,"fx_params":[3136,-15360,13545,10048,0,0,0,0],"fx_type":"nitro","knobs":[6336,0,22527,0,0,0,0,0],"lfo_active":true,"lfo_params":[10728,6952,10208,13984,0,0,0,0],"lfo_type":"value","name":"arp1lead","octave":0,"synth_version":2,"type":"voltage"},
 };
 */
 const SAMPLES = {
@@ -830,7 +830,7 @@ function computeEnv() {
   const rw = r / SC.maxT * SC.segMax;
   const x0 = SC.padL, x1 = x0 + aw, x2 = x1 + dw;
   const x4 = SC.W - SC.padR;          // release END is always pinned to the far right
-  const x3 = Math.max(x2, x4 - rw);   // sustain end / release start — sustain stretches to fill the gap
+  const x3 = Math.max(x2, x4 - rw);   // sustain end / release start - sustain stretches to fill the gap
   const susY = SC.baseY - (s / 32767) * (SC.baseY - SC.topY);
   return { x0, x1, x2, x3, x4, susY, baseY: SC.baseY, topY: SC.topY };
 }
@@ -906,7 +906,7 @@ function applyHandle(h, x, y) {
      8-param synths  : 1024 / 2944 / 4384 / 6304 / 8224 / 10624 / 13024 / 15360
      dbox synth      : 1024 / 2464 / 4384 / 6304 / 8224 / 10624 / 12544 / 14464
    DESTINATION resolves to the synth/fx engine's knobs, the envelope
-   (ADSR — or the dbox dynamic envelope), or the mix bus. */
+   (ADSR - or the dbox dynamic envelope), or the mix bus. */
 const PARAM_STEPS_4 = [1024, 4864, 8704, 15360];
 const PARAM_STEPS_8 = [1024, 2944, 4384, 6304, 8224, 10624, 13024, 15360];
 const PARAM_STEPS_DBOX = [1024, 2464, 4384, 6304, 8224, 10624, 12544, 14464];
@@ -994,7 +994,7 @@ function dboxHtml() {
   const pads = (state.dbox_data || []).length;
   return `<div class="pgroup">
     <div class="pgroup-head"><h2>Drum box</h2></div>
-    <div class="dbox-note"><b>Drum patch.</b> This engine stores ${pads} pads × 8 parameters in <b>dbox_data</b> and uses a dynamic envelope instead of ADSR. Per-pad editing is out of scope for now — edit the JSON directly to change pads. FX and LFO below remain fully editable.</div>
+    <div class="dbox-note"><b>Drum patch.</b> This engine stores ${pads} pads × 8 parameters in <b>dbox_data</b> and uses a dynamic envelope instead of ADSR. Per-pad editing is out of scope for now - edit the JSON directly to change pads. FX and LFO below remain fully editable.</div>
     <div class="dyna-grid">${[0,1,2,3].map(cell).join('')}</div>
   </div>`;
 }
@@ -1244,7 +1244,7 @@ const fileMsg = document.getElementById('fileMsg');
 function setFileMsg(msg, kind) { fileMsg.textContent = msg || ''; fileMsg.className = 'file-msg' + (msg ? ' ' + kind : ''); }
 function updateFileMsg() {
   if (state && state.type === 'sampler')
-    setFileMsg('Sampler audio isn’t stored — only the patch settings. A downloaded .aif contains a placeholder tone.', 'note');
+    setFileMsg('Sampler audio isn\'t stored - only the patch settings. A downloaded .aif contains a placeholder tone.', 'note');
   else setFileMsg('', 'note');
 }
 function handleFile(file) {
@@ -1265,7 +1265,7 @@ function downloadAif() {
   const json = jsonInput.value;
   let bytes;
   try { JSON.parse(json); bytes = window.OP1Aif.jsonToAif(json); }
-  catch (err) { setFileMsg('Can’t export .aif: ' + err.message, 'err'); return; }
+  catch (err) { setFileMsg('Can't export .aif: ' + err.message, 'err'); return; }
   const slug = (document.getElementById('nameInput').value || 'patch').trim().toLowerCase()
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'patch';
   const a = document.createElement('a');
@@ -1316,7 +1316,7 @@ function renderClipboard() {
     var p = c.preset || {};
     function eng(k, v) {
       return '<span class="clip-eng"><span class="clip-eng-k">' + k + '</span>' +
-        '<span class="clip-eng-v">' + clipEsc(v || '—') + '</span></span>';
+        '<span class="clip-eng-v">' + clipEsc(v || '-') + '</span></span>';
     }
     return '<div class="clip-item' + (i === activeClipIdx ? ' active' : '') + '" data-clip-idx="' + i + '">' +
       '<span class="clip-item-name">' + clipEsc(c.name || 'untitled') + '</span>' +

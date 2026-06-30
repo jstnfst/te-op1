@@ -93,14 +93,14 @@ export default function Pack() {
         )}
       </div>
       {pack.is_public ? (
-        <p className="muted">Public — anyone with the link can download: <code>{shareUrl}</code></p>
+        <p className="muted">Public - anyone with the link can download: <code>{shareUrl}</code></p>
       ) : (
-        <p className="muted">Private — only you can download.</p>
+        <p className="muted">Private - only you can download.</p>
       )}
 
       {pack.items.length === 0 ? (
         <p className="muted" style={{ marginTop: 16 }}>
-          No patches in this pack yet{pack.is_owner ? " — add some from Browse or My patches." : "."}
+          No patches in this pack yet{pack.is_owner ? " - add some from Browse or My patches." : "."}
         </p>
       ) : (
         <div className="grid" style={{ marginTop: 16 }}>

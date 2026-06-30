@@ -1,5 +1,5 @@
 /*
- * diff-patches.c — diff two OP-1 Field patch JSON files
+ * diff-patches.c - diff two OP-1 Field patch JSON files
  *
  * Build: cl diff-patches.c cJSON.c /Fe:diff-patches.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  * Usage: diff-patches.exe <file_a> <file_b>

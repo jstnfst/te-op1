@@ -6,7 +6,7 @@ function ownedPack(env: Env, packId: number, uid: number) {
     .then((p) => (p && p.user_id === uid ? p : null))
 }
 
-// POST /api/packs/:id/items { patch_id } — owner adds a patch (must be public or owned).
+// POST /api/packs/:id/items { patch_id } - owner adds a patch (must be public or owned).
 export const onRequestPost: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })
@@ -29,7 +29,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ params, env, request }
   return json({ ok: true })
 }
 
-// DELETE /api/packs/:id/items { patch_id } — owner removes a patch.
+// DELETE /api/packs/:id/items { patch_id } - owner removes a patch.
 export const onRequestDelete: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })

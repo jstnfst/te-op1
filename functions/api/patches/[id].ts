@@ -29,7 +29,7 @@ async function load(env: Env, id: number) {
     .first<PatchRow>()
 }
 
-// GET /api/patches/:id — detail (public patches, or the owner's own).
+// GET /api/patches/:id - detail (public patches, or the owner's own).
 export const onRequestGet: PagesFunction<Env> = async ({ params, env, request }) => {
   const id = parseInt(String(params.id), 10)
   if (!Number.isInteger(id)) return json({ error: "Bad id." }, { status: 400 })
@@ -47,7 +47,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   })
 }
 
-// PATCH /api/patches/:id — owner: rename, toggle public, or replace JSON.
+// PATCH /api/patches/:id - owner: rename, toggle public, or replace JSON.
 export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })
@@ -80,7 +80,7 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request 
   return json({ ok: true })
 }
 
-// DELETE /api/patches/:id — owner only.
+// DELETE /api/patches/:id - owner only.
 export const onRequestDelete: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })

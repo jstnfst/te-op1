@@ -6,7 +6,7 @@ import { slug } from "../../_shared/util"
 
 const MAX_IDS = 200
 
-// POST /api/patches/zip { ids: number[] } — bundle the selected patches' .aif
+// POST /api/patches/zip { ids: number[] } - bundle the selected patches' .aif
 // files into a .zip. Gated by functions/api/patches/_middleware.ts (session
 // required); a patch is included only if it's public or owned by the requester.
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {

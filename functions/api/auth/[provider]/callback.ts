@@ -11,7 +11,7 @@ function redirect(location: string, extraCookies: string[] = []): Response {
   return new Response(null, { status: 302, headers })
 }
 
-// GET /api/auth/:provider/callback — exchange the code, upsert the user, set session.
+// GET /api/auth/:provider/callback - exchange the code, upsert the user, set session.
 export const onRequestGet: PagesFunction<Env> = async ({ params, env, request }) => {
   const provider = String(params.provider)
   if (!isProvider(provider)) return new Response("Unknown provider", { status: 404 })

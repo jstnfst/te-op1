@@ -11,10 +11,10 @@ Web pages: `index.html` (home), `params.html` (knob layout), `display.html` (val
 
 31 parameter types across 15 synth engines, 9 FX, 6 LFO, and global ADSR.
 
-**synth** — amp, cluster, dbox, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
-**fx** — cwo, delay, grid, mother, nitro, phone, punch, spring, terminal  
-**lfo** — element, midi, random, tremolo, value, velocity  
-**adsr** — attack, decay, sustain, release, play mode, portamento, bend range, volume
+**synth** - amp, cluster, dbox, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
+**fx** - cwo, delay, grid, mother, nitro, phone, punch, spring, terminal  
+**lfo** - element, midi, random, tremolo, value, velocity  
+**adsr** - attack, decay, sustain, release, play mode, portamento, bend range, volume
 
 ---
 
@@ -26,7 +26,7 @@ in this order:
 
 | Chunk | Size | Contents |
 |-------|------|----------|
-| `FVER` | 4 bytes | AIFC version constant `0xA2805140` — always this value |
+| `FVER` | 4 bytes | AIFC version constant `0xA2805140` - always this value |
 | `COMM` | 64 bytes | Audio format: mono, 16-bit, 22050 Hz, `sowt` (little-endian signed PCM) |
 | `APPL` | 1028 bytes | OP-1 synth metadata (see below) |
 | `SSND` | varies | Raw PCM audio sample data used by the synth engine |
@@ -80,13 +80,13 @@ Most numeric parameters are **16-bit integers in the range 0–32767**
 ```
 
 > **Key order:** The OP-1 Field firmware uses a streaming JSON parser that requires keys in
-> strict **alphabetical order**. `json2aif.exe` passes JSON through as-is — callers must order
+> strict **alphabetical order**. `json2aif.exe` passes JSON through as-is - callers must order
 > keys correctly. Required order:
 > `adsr, fx_active, fx_params, fx_type, knobs, lfo_active, lfo_params, lfo_type, mtime, name, octave, synth_version, type`
 
 ### ADSR
 
-Always 8 values — global keyboard settings, shared across all patches:
+Always 8 values - global keyboard settings, shared across all patches:
 
 `0` ATTACK · `1` DECAY · `2` SUSTAIN · `3` RELEASE  
 `4` PLAY MODE · `5` PORTAMENTO · `6` BEND RANGE · `7` VOLUME
@@ -126,7 +126,7 @@ Uses `drum_version: 2` instead of `synth_version`. No `adsr` field. Unique JSON 
 | `fademode`  | `null`       | Fade mode (optional) |
 | `stereo`    | `bool`       | Stereo flag (optional) |
 
-`dyna_env` — 4 active params (indices 4–7 unused):
+`dyna_env` - 4 active params (indices 4–7 unused):
 
 | Index | Name | Min | Max |
 |-------|------|-----|-----|
@@ -263,7 +263,7 @@ op1dump.exe presets/             → dumps all .aif files recursively, prints st
 - Reads `op1-params.json` from the **current working directory** (not the file's directory)
 - Console output: container info, audio format, synth knobs, ADSR, FX params, LFO params, raw JSON
 - Each parameter printed as `name : raw_value  (normalized)` where normalized = raw / 32767
-- Non-zero unnamed slots printed as `knob N [unknown]` — add them to `op1-params.json` once identified
+- Non-zero unnamed slots printed as `knob N [unknown]` - add them to `op1-params.json` once identified
 - Always writes a `.json` sidecar at the same path as the input file
 - Directory mode prints a final summary: `=== Done: N processed, N failed (X.XX sec) ===`
 
@@ -297,7 +297,7 @@ json2aif.exe explore -dest fx -param 5824
 - Strips UTF-8 BOM from input JSON if present
 - **Sampler patches:** looks for a `.wav` sidecar at the same path; embeds it if found, falls back to a 440 Hz sine tone if not
 
-**`explore` subcommand** — generates min and max boundary patches for all 15 × 9 × 6 = 810 synth/FX/LFO combinations (3240 files total):
+**`explore` subcommand** - generates min and max boundary patches for all 15 × 9 × 6 = 810 synth/FX/LFO combinations (3240 files total):
 
 - Deletes and recreates `explore\` at the start of each run
 - Output structure: `explore\aif\[mode]\[synth]\[lfo]\*.aif` and `explore\json\[mode]\[synth]\[lfo]\*.json`
@@ -339,7 +339,7 @@ sort-synths.exe collection\_anonymized-popular
 ```
 
 - Skips any subdirectory named `synth` to avoid re-processing already-sorted files
-- Never overwrites an existing destination file — prints `skip (exists)` and moves on
+- Never overwrites an existing destination file - prints `skip (exists)` and moves on
 - `.aif` sidecars are moved alongside their `.json`; missing sidecars are silently skipped
 - Directory mode prints a final summary: `=== Done: N moved, N skipped, N failed ===`
 
@@ -360,7 +360,7 @@ tag-patch.exe collection\synth\
   → (tags every .json recursively, writes .tags sidecars, prints stats)
 ```
 
-Tags are derived from six domains — engine type, envelope shape, FX character, LFO motion, octave register, and composite combinations:
+Tags are derived from six domains - engine type, envelope shape, FX character, LFO motion, octave register, and composite combinations:
 
 | Domain | Example tags |
 |--------|-------------|
@@ -371,7 +371,7 @@ Tags are derived from six domains — engine type, envelope shape, FX character,
 | Octave | `low register`, `sub`, `upper register` |
 | Composite | `ambient`, `stab`, `cinematic`, `lead`, `bell` |
 
-The `.tags` sidecar is a single comma-separated line — grep-friendly:
+The `.tags` sidecar is a single comma-separated line - grep-friendly:
 ```
 grep "bell\|metallic" collection\synth\fm\*.tags
 ```
@@ -386,7 +386,7 @@ summarize.exe
 
 - **Prerequisite:** run `dump-all.bat` first to generate the `.json` sidecars
 - Reads: `presets/*.json`, `op1-params.json`, `op1-params-ok.json`
-- Output sections: **Synth Engines**, **FX**, **LFO** — each type shows per-knob min/max raw + normalized ranges and patch count
+- Output sections: **Synth Engines**, **FX**, **LFO** - each type shows per-knob min/max raw + normalized ranges and patch count
 - Trailing **"Missing from op1-params.json"** section prints exact stub lines to paste in
 
 ### `diff-patches.exe`
@@ -402,7 +402,7 @@ diff-patches.exe presets\name0001.json presets\name0002.json
 diff-patches.exe sandbox\epiphany.aif  presets\epiphany0005.aif
 ```
 
-- Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it — run `op1dump.exe` first if the sidecar is missing
+- Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it - run `op1dump.exe` first if the sidecar is missing
 - Skips `name`, `mtime`, and `_file` automatically (they always differ between snapshots)
 - For array fields: lists each changed index with before and after values and signed delta (`+N` / `-N`)
 - Prints "No differences" if the patches are identical (excluding skipped fields)
@@ -428,7 +428,7 @@ explore-aif.exe <file.aif> [flags]
 | Flag | Description |
 |------|-------------|
 | `--read-bytes [N]` | Hex + ASCII dump of the first N bytes of the file (default: 128) |
-| `--parse-chunks` | Walk the IFF chunk tree — prints chunk ID, file offset, and size for every chunk |
+| `--parse-chunks` | Walk the IFF chunk tree - prints chunk ID, file offset, and size for every chunk |
 | `--dump-chunk <ID>` | Hex + ASCII dump of a specific chunk by its 4-char ID (e.g. `APPL`, `COMM`, `SSND`, `FVER`) |
 | `--show-json` | Scan the file for `{...}` blocks and print each one found |
 | `--decode-fver` | Print the FVER version constant and confirm whether it matches `0xA2805140` |
@@ -450,23 +450,23 @@ explore-aif.exe epiphany.aif --parse-chunks --decode-comm --show-json
 
 ```
 te-op1/
-  op1dump.c          source — patch dumper (file or directory)
+  op1dump.c          source - patch dumper (file or directory)
   op1dump.exe        compiled dumper
-  json2aif.c         source — JSON to AIF writer + explore generator (file or directory)
+  json2aif.c         source - JSON to AIF writer + explore generator (file or directory)
   json2aif.exe       compiled writer/generator
-  rename-patch.c     source — rename "name" field to filename (file or directory)
+  rename-patch.c     source - rename "name" field to filename (file or directory)
   rename-patch.exe   compiled renamer
-  sort-synths.c      source — sort patches into synth/<engine>/ folders (file or directory)
+  sort-synths.c      source - sort patches into synth/<engine>/ folders (file or directory)
   sort-synths.exe    compiled sorter
-  tag-patch.c        source — generate musical descriptor tags (file or directory)
+  tag-patch.c        source - generate musical descriptor tags (file or directory)
   tag-patch.exe      compiled tagger
-  test_aif.c         source — AIF validator
+  test_aif.c         source - AIF validator
   test_aif.exe       compiled validator
-  diff-patches.c     source — patch diff tool
+  diff-patches.c     source - patch diff tool
   diff-patches.exe   compiled diff tool
-  explore-aif.c      source — low-level AIF inspector
+  explore-aif.c      source - low-level AIF inspector
   explore-aif.exe    compiled inspector
-  summarize.c        source — preset report tool
+  summarize.c        source - preset report tool
   summarize.exe      compiled report tool
   op1_aif.h          shared binary helpers (big-endian reads, hex dump, 80-bit float)
   cJSON.c            vendored JSON library (from github.com/DaveGamble/cJSON)
@@ -474,14 +474,14 @@ te-op1/
   op1-params.json    knob/param name database (edit freely, no recompile)
   op1-params-ok.json tracks which param indices have been mapped per type
   build.bat          recompile all tools (requires MSVC)
-  index.html         home — coverage overview and file format summary
-  params.html        knob layout — all 31 types with named knob diagrams
-  display.html       value mappings — raw-to-display mappings per parameter
+  index.html         home - coverage overview and file format summary
+  params.html        knob layout - all 31 types with named knob diagrams
+  display.html       value mappings - raw-to-display mappings per parameter
   presets/           .aif patch files and their .json sidecars
   oracle/            reference exports from hardware (tracked in git, never regenerated)
-  collection/        patch collections — .aif, .json, and .tags sidecars per preset
+  collection/        patch collections - .aif, .json, and .tags sidecars per preset
                      collection\synth\<engine>\*.{aif,json,tags}
-  explore/           generated boundary patches — gitignored, recreate with: json2aif.exe explore
+  explore/           generated boundary patches - gitignored, recreate with: json2aif.exe explore
                      explore\aif\[min|max]\[synth]\[lfo]\*.aif
                      explore\json\[min|max]\[synth]\[lfo]\*.json
 ```
@@ -490,7 +490,7 @@ te-op1/
 
 ## Oracle Workflow
 
-`oracle/` stores reference exports — patch files saved directly from the
+`oracle/` stores reference exports - patch files saved directly from the
 OP-1 Field with known knob positions. These are the ground truth for parameter values.
 
 **Rules:**

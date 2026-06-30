@@ -1,5 +1,5 @@
 /*
- * test_aif.c — validates OP-1 Field .aif patch files against hardware-verified invariants.
+ * test_aif.c - validates OP-1 Field .aif patch files against hardware-verified invariants.
  *
  * Usage: test_aif.exe <file.aif> [file2.aif ...]
  * Exit : 0 = all tests passed, 1 = one or more failures.

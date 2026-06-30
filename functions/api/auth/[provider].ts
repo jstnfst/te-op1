@@ -4,7 +4,7 @@ import { randomToken, sha256Base64Url } from "../../_shared/crypto"
 import { signJwt } from "../../_shared/jwt"
 import { serializeCookie, OAUTH_TX_COOKIE, isHttps } from "../../_shared/cookies"
 
-// GET /api/auth/:provider — start the OAuth flow.
+// GET /api/auth/:provider - start the OAuth flow.
 export const onRequestGet: PagesFunction<Env> = async ({ params, env }) => {
   const provider = String(params.provider)
   if (!isProvider(provider)) return new Response("Unknown provider", { status: 404 })

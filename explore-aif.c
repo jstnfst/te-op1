@@ -1,5 +1,5 @@
 /*
- * explore-aif.c — OP-1 Field .aif file explorer
+ * explore-aif.c - OP-1 Field .aif file explorer
  *
  * Build: cl explore-aif.c /Fe:explore-aif.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  * Usage: explore-aif.exe <file.aif> [flags]

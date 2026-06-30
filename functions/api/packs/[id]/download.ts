@@ -4,7 +4,7 @@ import { buildAif } from "../../../_shared/aif"
 import { buildZip } from "../../../_shared/zip"
 import { slug } from "../../../_shared/util"
 
-// GET /api/packs/:id/download — zip of the pack's .aif files. Public packs are
+// GET /api/packs/:id/download - zip of the pack's .aif files. Public packs are
 // downloadable by anyone (only their public patches are included); private packs
 // only by the owner.
 export const onRequestGet: PagesFunction<Env> = async ({ params, env, request }) => {

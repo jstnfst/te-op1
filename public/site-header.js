@@ -1,5 +1,5 @@
 /* ====================================================================
-   OP-1 Field — shared site header + footer
+   OP-1 Field - shared site header + footer
    Single source of truth for the global navigation. Every page (the
    React SPA and the static reference pages) renders the header from
    here, so changing a destination, the firmware tag, or the footer is
@@ -28,7 +28,7 @@
     { label: "MAPPINGS", href: "/display.html", section: "mappings" },
     { label: "PATCH",    href: "/patch.html",   section: "patch" }
   ];
-  // Community library — shown only when signed in.
+  // Community library - shown only when signed in.
   var LIBRARY = [
     { label: "BROWSE",     href: "/browse", section: "browse" },
     { label: "UPLOAD",     href: "/upload", section: "upload" },

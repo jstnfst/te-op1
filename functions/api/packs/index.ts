@@ -1,7 +1,7 @@
 import type { Env } from "../../_shared/env"
 import { getSessionUser, json } from "../../_shared/session"
 
-// GET /api/packs — the signed-in user's packs (with item counts).
+// GET /api/packs - the signed-in user's packs (with item counts).
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })
@@ -16,7 +16,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   return json({ items: rows.results })
 }
 
-// POST /api/packs { name } — create a pack.
+// POST /api/packs { name } - create a pack.
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })

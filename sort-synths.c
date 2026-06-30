@@ -1,5 +1,5 @@
 /*
- * sort-synths.c — organize OP-1 preset files by synth engine type
+ * sort-synths.c - organize OP-1 preset files by synth engine type
  *
  * Reads each .aif preset, extracts the "type" field from its embedded op-1
  * metadata, and moves the .aif into:
@@ -101,7 +101,7 @@ static int get_synth_type(const char *json, char *out, size_t outsz) {
 /* Returns 0=moved, 1=failed, 2=skipped(exists). */
 static int move_one(const char *src, const char *dst) {
     if (GetFileAttributesA(src) == INVALID_FILE_ATTRIBUTES)
-        return 2;  /* source doesn't exist — nothing to move */
+        return 2;  /* source doesn't exist - nothing to move */
 
     if (GetFileAttributesA(dst) != INVALID_FILE_ATTRIBUTES) {
         printf("  skip (exists) : %s\n", dst);

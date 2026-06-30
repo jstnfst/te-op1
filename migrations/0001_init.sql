@@ -1,4 +1,4 @@
--- te-op1 community patch site — initial schema
+-- te-op1 community patch site - initial schema
 
 CREATE TABLE IF NOT EXISTS users (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -31,12 +31,12 @@ export default function Upload() {
       setPreset(parsed)
       setFileName(file.name)
       if (parsed.type === "sampler") {
-        setMsg({ note: "Sampler audio isn’t stored — only the patch settings will be saved." })
+        setMsg({ note: "Sampler audio isn't stored - only the patch settings will be saved." })
       }
     } catch (e) {
       setPreset(null)
       setFileName("")
-      setMsg({ err: `Couldn’t read that .aif: ${(e as Error).message}` })
+      setMsg({ err: `Couldn't read that .aif: ${(e as Error).message}` })
     }
   }
 
@@ -57,7 +57,7 @@ export default function Upload() {
 
   function publishJson() {
     let parsed: unknown
-    try { parsed = JSON.parse(text) } catch { setMsg({ err: "That isn’t valid JSON." }); return }
+    try { parsed = JSON.parse(text) } catch { setMsg({ err: "That isn't valid JSON." }); return }
     publish(parsed)
   }
 
@@ -66,7 +66,7 @@ export default function Upload() {
       <h1 className="hero-title">Upload a patch</h1>
       <p className="lead">
         Drop an OP-1 Field <b>.aif</b> file (or choose one). We read the patch settings out of it and
-        add them to the community library — sampler audio isn’t included.
+        add them to the community library - sampler audio isn't included.
       </p>
 
       <div

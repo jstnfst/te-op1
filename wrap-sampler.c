@@ -1,11 +1,11 @@
 /*
- * wrap-sampler.c — wrap a raw audio file into an OP-1 Field "sampler" patch
+ * wrap-sampler.c - wrap a raw audio file into an OP-1 Field "sampler" patch
  *
  * Many audio files are just sound (a plain AIFF or WAV) with no OP-1 patch
  * metadata, so op1dump reports "no 'op-1' APPL chunk found" and they won't
  * load as patches. This tool reads such a file, converts it to the OP-1
  * sampler audio format, and writes a real .aif patch with an "op-1" APPL
- * chunk containing a default sampler JSON — the same AIFF-C 'sowt' container
+ * chunk containing a default sampler JSON - the same AIFF-C 'sowt' container
  * json2aif produces.
  *
  * Reads:  AIFF / AIFF-C (16-bit, big-endian or 'sowt' little-endian) and
@@ -30,7 +30,7 @@
 #endif
 
 #define BIT_DEPTH          16
-#define DEFAULT_BASE_FREQ  261.625550   /* Middle C — OP-1 sampler default root */
+#define DEFAULT_BASE_FREQ  261.625550   /* Middle C - OP-1 sampler default root */
 #define APPL_DATA_SIZE     1028         /* 4-byte "op-1" sig + 1024-byte JSON area */
 #define SAMPLER_WARN_SECS  6.0          /* hardware sampler patches observed at ~6 s */
 

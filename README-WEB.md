@@ -1,4 +1,4 @@
-# te-op1 web app — Cloudflare Pages + D1 + OAuth
+# te-op1 web app - Cloudflare Pages + D1 + OAuth
 
 The site is a Vite + React + TypeScript SPA served by **Cloudflare Pages**, with
 **Pages Functions** (`functions/`) for the API and **D1** for storage. Users log
@@ -33,7 +33,7 @@ node scripts/seed.mjs --local
 npm run dev    # Vite on :5173, wrangler Pages on http://localhost:8788
 ```
 
-Open **http://localhost:8788** (the wrangler origin — that's where `/api/*` and
+Open **http://localhost:8788** (the wrangler origin - that's where `/api/*` and
 cookies work). For local OAuth, register `http://localhost:8788/api/auth/<provider>/callback`
 as a redirect URI in each provider console.
 
@@ -54,7 +54,7 @@ npm run deploy        # vite build && wrangler pages deploy ./dist
 ```
 
 Bind D1 to the Pages project (Dashboard → the project → Settings → Bindings → D1,
-variable name `DB`, database `te-op1-db`) for both Production and Preview — or rely
+variable name `DB`, database `te-op1-db`) for both Production and Preview - or rely
 on the `[[d1_databases]]` block in `wrangler.toml`.
 
 ### Secrets (production)
@@ -79,12 +79,12 @@ Direct Upload (`wrangler pages deploy`), so the Pages project must already exist
 
 Add two **repository secrets** (Settings → Secrets and variables → Actions):
 
-- `CLOUDFLARE_API_TOKEN` — a token with **Account › Cloudflare Pages › Edit** and
+- `CLOUDFLARE_API_TOKEN` - a token with **Account › Cloudflare Pages › Edit** and
   **Account › D1 › Edit** (the migration step needs D1). The same token works for
-  the local `wrangler` commands above — `export CLOUDFLARE_API_TOKEN=…`.
-- `CLOUDFLARE_ACCOUNT_ID` — from the Cloudflare dashboard URL or `wrangler whoami`.
+  the local `wrangler` commands above - `export CLOUDFLARE_API_TOKEN=…`.
+- `CLOUDFLARE_ACCOUNT_ID` - from the Cloudflare dashboard URL or `wrangler whoami`.
 
-OAuth client IDs/secrets and `JWT_SECRET` are **not** CI secrets — they live on the
+OAuth client IDs/secrets and `JWT_SECRET` are **not** CI secrets - they live on the
 Pages project (`wrangler pages secret put`) and persist across deploys.
 
 ## OAuth app registration
@@ -92,10 +92,10 @@ Pages project (`wrangler pages secret put`) and persist across deploys.
 Register each app and add the redirect URI `https://<name>.pages.dev/api/auth/<provider>/callback`
 (plus the localhost one for dev):
 
-- **Google** — console.cloud.google.com → APIs & Services → Credentials → OAuth client ID (Web).
-- **Microsoft** — portal.azure.com → App registrations → New (use the `/common` tenant for personal + work accounts).
-- **Yahoo** — developer.yahoo.com/apps → Confidential Client, enable OpenID Connect + Email/Profile.
-- **GitHub** — github.com/settings/developers → OAuth Apps → New. Authorization callback URL `https://<name>.pages.dev/api/auth/github/callback` (register a second app for localhost). The `user:email` scope lets us read the primary email when it's private.
+- **Google** - console.cloud.google.com → APIs & Services → Credentials → OAuth client ID (Web).
+- **Microsoft** - portal.azure.com → App registrations → New (use the `/common` tenant for personal + work accounts).
+- **Yahoo** - developer.yahoo.com/apps → Confidential Client, enable OpenID Connect + Email/Profile.
+- **GitHub** - github.com/settings/developers → OAuth Apps → New. Authorization callback URL `https://<name>.pages.dev/api/auth/github/callback` (register a second app for localhost). The `user:email` scope lets us read the primary email when it's private.
 
 ## How it works
 
@@ -106,7 +106,7 @@ Register each app and add the redirect URI `https://<name>.pages.dev/api/auth/<p
   derives tags, and stores it. Browsing/searching is `GET /api/patches`.
 - **Download:** `GET /api/patches/:id/download` rebuilds the AIFF-C `.aif` from
   the stored JSON (`functions/_shared/aif.ts`). Note: JSON-only means **sampler
-  audio is not preserved** — sampler downloads contain a 440 Hz sine.
+  audio is not preserved** - sampler downloads contain a 440 Hz sine.
 - **Packs:** users curate patches into packs (`functions/api/packs/*`, tables in
   `migrations/0002_packs.sql`). `GET /api/packs/:id/download` streams a `.zip` of
   the pack's `.aif` files (public packs are downloadable by anyone; private by the

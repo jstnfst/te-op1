@@ -1,4 +1,4 @@
-// Derive searchable tags from a preset (simplified port of tag-patch.c — good
+// Derive searchable tags from a preset (simplified port of tag-patch.c - good
 // enough for browse filters; the C tool remains the authoritative tagger).
 
 interface Presetish {

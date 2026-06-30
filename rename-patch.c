@@ -1,5 +1,5 @@
 /*
- * rename-patch.c — replace the "name" field in an OP-1 JSON patch
+ * rename-patch.c - replace the "name" field in an OP-1 JSON patch
  *                  with the patch file's own filename (no extension).
  *
  * Build: cl rename-patch.c /Fe:rename-patch.exe /W3 /D_CRT_SECURE_NO_WARNINGS
