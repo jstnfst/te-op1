@@ -90,7 +90,8 @@ a.list-row { text-decoration: none; color: inherit; }
 .list-type { flex-shrink: 0; width: 68px; }
 .list-name { flex: 1; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .list-author { flex-shrink: 0; width: 100px; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.list-tags { display: flex; gap: 4px; overflow: hidden; max-width: 180px; flex-shrink: 0; }
+.list-tags { display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; max-width: 180px; flex-shrink: 0; }
+.list-tags > .chip { flex-shrink: 0; }
 .list-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
 @media (max-width: 640px) {
