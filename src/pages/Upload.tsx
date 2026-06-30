@@ -101,7 +101,7 @@ export default function Upload() {
       <details className="adv">
         <summary>Advanced · paste JSON</summary>
         <p className="muted" style={{ margin: "10px 0" }}>
-          Patches are stored as a small JSON blob — that’s how the library stays tiny. Curious how the
+          Patches are stored as a small JSON blob. Curious how the
           <code> .aif</code> format was reverse-engineered? See the project on{" "}
           <a href="https://github.com/jstnfst/te-op1">GitHub →</a>
         </p>
