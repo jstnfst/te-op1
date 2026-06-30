@@ -1364,7 +1364,7 @@ function renderClipboard() {
         '<span class="clip-eng-v">' + clipEsc(v || '-') + '</span></span>';
     }
     var engHtml = c.kind === 'pad'
-      ? eng('type', 'pad')
+      ? eng('pad', c.padLabel || ('PAD ' + String((c.padIndex || 0) + 1).padStart(2, '0')))
       : eng('synth', p.type) + eng('fx', p.fx_type) + eng('lfo', p.lfo_type);
     return '<div class="clip-item' + (i === activeClipIdx ? ' active' : '') + '" data-clip-idx="' + i + '">' +
       '<span class="clip-item-name">' + clipEsc(c.name || 'untitled') + '</span>' +
@@ -1376,10 +1376,8 @@ function renderClipboard() {
   updatePasteVisibility();
 }
 function clipPushPad(padIdx, padValues) {
-  var noteNames = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
-  var noteName = function(p) { return noteNames[p % 12] + (Math.floor(p / 12) + 2); };
-  var label = 'PAD ' + String(padIdx + 1).padStart(2, '0') + ' · ' + noteName(padIdx);
-  clips.unshift({ kind: 'pad', name: label, padIndex: padIdx, pad: padValues.slice(), ts: Date.now() });
+  var padLabel = 'PAD ' + String(padIdx + 1).padStart(2, '0');
+  clips.unshift({ kind: 'pad', name: state.name || 'untitled', padLabel: padLabel, padIndex: padIdx, pad: padValues.slice(), ts: Date.now() });
   if (clips.length > 10) clips.length = 10;
   localStorage.setItem(CLIP_KEY, JSON.stringify(clips));
   activeClipIdx = 0;
