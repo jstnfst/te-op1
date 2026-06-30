@@ -24,6 +24,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try { body = (await request.json()) as Record<string, unknown> } catch { return json({ error: "Bad body." }, { status: 400 }) }
   const name = typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 80) : ""
   if (!name) return json({ error: "Pack name is required." }, { status: 400 })
+  const packCount = await env.DB.prepare("SELECT COUNT(*) AS c FROM packs WHERE user_id = ?1").bind(user.uid).first<{ c: number }>()
+  if ((packCount?.c ?? 0) >= 100) return json({ error: "Pack limit reached (100 per account)." }, { status: 429 })
   const res = await env.DB.prepare("INSERT INTO packs (user_id, name) VALUES (?1, ?2)").bind(user.uid, name).run()
   return json({ id: res.meta.last_row_id, name }, { status: 201 })
 }

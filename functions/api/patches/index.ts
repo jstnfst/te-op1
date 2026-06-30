@@ -56,11 +56,12 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const v = validatePreset(presetInput)
   if (!v.ok || !v.json || !v.meta) return json({ error: v.error || "Invalid preset." }, { status: 400 })
 
-  const recent = await env.DB
-    .prepare("SELECT COUNT(*) AS c FROM patches WHERE user_id=?1 AND created_at > datetime('now','-1 hour')")
+  const counts = await env.DB
+    .prepare("SELECT COUNT(*) AS total, SUM(created_at > datetime('now','-1 hour')) AS recent FROM patches WHERE user_id=?1")
     .bind(user.uid)
-    .first<{ c: number }>()
-  if (recent && recent.c >= 50) return json({ error: "Upload rate limit reached. Try again later." }, { status: 429 })
+    .first<{ total: number; recent: number }>()
+  if ((counts?.total ?? 0) >= 1000) return json({ error: "Patch limit reached (1000 per account)." }, { status: 429 })
+  if ((counts?.recent ?? 0) >= 50) return json({ error: "Upload rate limit reached. Try again later." }, { status: 429 })
 
   const tags = deriveTags(JSON.parse(v.json)).join(",")
   const res = await env.DB
