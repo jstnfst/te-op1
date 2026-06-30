@@ -948,10 +948,10 @@ function rowHtml(grp, eng, idx, raw) {
   const valLbl = fmtValue(eng, idx, raw);
   let field;
   if (isSel) {
-    const opts = samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv} (${rv})</option>`).join('');
+    const opts = samples.map(([rv, dv]) => `<option value="${rv}" ${rv === raw ? 'selected' : ''}>${dv}</option>`).join('');
     const exact = samples.some(s => s[0] === raw);
     const nearLbl = nearestSample(samples, raw);
-    field = `<select class="knob-num asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>~${nearLbl} (${raw})</option>`}</select>`;
+    field = `<select class="knob-num asel" data-grp="${grp}" data-idx="${idx}">${opts}${exact ? '' : `<option value="${raw}" selected>~${nearLbl}</option>`}</select>`;
   } else {
     field = `<input type="number" class="knob-num ctl" data-grp="${grp}" data-idx="${idx}" min="${min}" max="${max}" value="${raw}">`;
   }
