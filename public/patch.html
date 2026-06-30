@@ -227,8 +227,12 @@
     .has-clipboard .scope-head .paste-btn { visibility: visible; pointer-events: auto; }
     .copy-pad-btn { display: inline-flex; align-items: center; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
     .copy-pad-btn:hover { color: var(--text); border-color: var(--text); }
-    /* when a pad clip is active, show only the drum box paste button */
+    /* drum box paste button: hidden for generic clipboard; shown only for dbox/dsynth/pad clips */
+    .has-clipboard .paste-btn[data-paste="pad"] { display: none; }
+    .has-dbox-clip .paste-btn[data-paste="pad"] { display: inline-flex; align-items: center; }
     .has-pad-clip .paste-btn[data-paste="pad"] { display: inline-flex; align-items: center; }
+    /* dbox clips cannot paste into another synth's knobs */
+    .has-dbox-clip .paste-btn[data-paste="knobs"] { display: none; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
     .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
@@ -1364,8 +1368,8 @@ function renderClipboard() {
         '<span class="clip-eng-v">' + clipEsc(v || '-') + '</span></span>';
     }
     var engHtml = c.kind === 'pad'
-      ? eng('pad', c.padLabel || ('PAD ' + String((c.padIndex || 0) + 1).padStart(2, '0')))
-      : eng('synth', p.type) + eng('fx', p.fx_type) + eng('lfo', p.lfo_type);
+      ? eng('pad', String((c.padIndex != null ? c.padIndex : 0) + 1).padStart(2, '0'))
+      : eng(p.type === 'dbox' ? 'drum' : 'synth', p.type) + eng('fx', p.fx_type) + eng('lfo', p.lfo_type);
     return '<div class="clip-item' + (i === activeClipIdx ? ' active' : '') + '" data-clip-idx="' + i + '">' +
       '<span class="clip-item-name">' + clipEsc(c.name || 'untitled') + '</span>' +
       engHtml +
@@ -1406,8 +1410,12 @@ function updatePasteVisibility() {
   const v = document.getElementById('viz');
   if (!v) return;
   const active = activeClipIdx >= 0 && activeClipIdx < clips.length;
-  const isPad = active && clips[activeClipIdx] && clips[activeClipIdx].kind === 'pad';
+  const clip = active ? clips[activeClipIdx] : null;
+  const isPad = !!clip && clip.kind === 'pad';
+  const isDboxCompat = !!clip && !isPad && !!clip.preset &&
+    (clip.preset.type === 'dbox' || clip.preset.type === 'dsynth');
   v.classList.toggle('has-clipboard', active && !isPad);
+  v.classList.toggle('has-dbox-clip', isDboxCompat);
   v.classList.toggle('has-pad-clip', isPad);
   // Keep the drum box paste button label in sync with the active clip type
   const padPasteBtn = v.querySelector('[data-paste="pad"]');
@@ -1442,7 +1450,9 @@ function pasteSection(key) {
       state.dbox_data[dboxPad] = clip.pad.slice();
     } else {
       const src = clip.preset;
-      if (src && src.dbox_data && src.dbox_data[dboxPad]) {
+      if (src && src.type === 'dsynth' && src.knobs) {
+        state.dbox_data[dboxPad] = src.knobs.slice();
+      } else if (src && src.dbox_data && src.dbox_data[dboxPad]) {
         state.dbox_data[dboxPad] = src.dbox_data[dboxPad].slice();
       }
     }
@@ -1460,6 +1470,7 @@ function pasteSection(key) {
     if (src.fx_params) state.fx_params = src.fx_params.slice();
     if (src.fx_active != null) state.fx_active = src.fx_active;
   } else if (key === 'knobs') {
+    if (src.type === 'dbox' && state.type !== 'dbox') return;
     if (src.type != null) state.type = src.type;
     if (src.knobs) state.knobs = src.knobs.slice();
   } else if (key === 'lfo') {
