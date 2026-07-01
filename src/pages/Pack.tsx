@@ -44,7 +44,7 @@ export default function Pack() {
       <>
         <h1 className="hero-title">Pack</h1>
         <p className="muted">{err || "Not found."}</p>
-        <p className="muted"><Link to="/browse">Browse patches</Link></p>
+        <p className="muted"><Link to="/patches">Browse patches</Link></p>
       </>
     )
   }

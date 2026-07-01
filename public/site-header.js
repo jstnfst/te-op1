@@ -30,10 +30,9 @@
   ];
   // Community library - shown only when signed in.
   var LIBRARY = [
-    { label: "BROWSE",     href: "/browse", section: "browse" },
-    { label: "UPLOAD",     href: "/upload", section: "upload" },
-    { label: "MY PATCHES", href: "/me",     section: "mypatches" },
-    { label: "PACKS",      href: "/packs",  section: "packs" }
+    { label: "PATCHES", href: "/patches", section: "patches" },
+    { label: "UPLOAD",  href: "/upload",  section: "upload" },
+    { label: "PACKS",   href: "/packs",   section: "packs" }
   ];
   // Issues - shown only when signed in with GitHub specifically (issues are
   // filed as the viewer's own GitHub account, see functions/api/issues).
@@ -43,7 +42,7 @@
 
   var SUBTITLE = {
     home: "preset library", layout: "knob layout", mappings: "value mappings",
-    patch: "patch editor", browse: "patch library", upload: "upload patches", mypatches: "my patches",
+    patch: "patch editor", patches: "patch library", upload: "upload patches",
     packs: "packs", login: "account", issues: "changelog & issues", issuesReport: "report an issue"
   };
 
@@ -51,9 +50,12 @@
     if (path.indexOf("/params.html") === 0) return "layout";
     if (path.indexOf("/display.html") === 0) return "mappings";
     if (path.indexOf("/patch.html") === 0) return "patch";
-    if (path.indexOf("/browse") === 0) return "browse";
+    // /browse and /me redirect client-side to /patches (see src/App.tsx) - map
+    // them here too so the header doesn't flash the old section first.
+    if (path.indexOf("/patches") === 0) return "patches";
+    if (path.indexOf("/browse") === 0) return "patches";
+    if (path.indexOf("/me") === 0) return "patches";
     if (path.indexOf("/upload") === 0) return "upload";
-    if (path.indexOf("/me") === 0) return "mypatches";
     if (path.indexOf("/packs") === 0) return "packs";
     if (path.indexOf("/issues/report") === 0) return "issuesReport";
     if (path.indexOf("/issues") === 0) return "issues";

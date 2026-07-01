@@ -3,9 +3,8 @@ import type { ReactElement } from "react"
 import { useAuth } from "./auth"
 import Home from "./pages/Home"
 import Login from "./pages/Login"
-import Browse from "./pages/Browse"
+import Patches from "./pages/Patches"
 import Upload from "./pages/Upload"
-import MyPatches from "./pages/MyPatches"
 import Packs from "./pages/Packs"
 import Pack from "./pages/Pack"
 import Issues from "./pages/Issues"
@@ -28,9 +27,11 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/browse" element={<RequireAuth><Browse /></RequireAuth>} />
+        <Route path="/patches" element={<RequireAuth><Patches /></RequireAuth>} />
+        {/* Merged into /patches (My patches + Browse); redirect old bookmarks/links. */}
+        <Route path="/browse" element={<Navigate to="/patches" replace />} />
+        <Route path="/me" element={<Navigate to="/patches" replace />} />
         <Route path="/upload" element={<RequireAuth><Upload /></RequireAuth>} />
-        <Route path="/me" element={<RequireAuth><MyPatches /></RequireAuth>} />
         <Route path="/packs" element={<RequireAuth><Packs /></RequireAuth>} />
         <Route path="/packs/:id" element={<Pack />} />
         {/* Not wrapped in RequireAuth: RequireGithubIssues (in each page) already

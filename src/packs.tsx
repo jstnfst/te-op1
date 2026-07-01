@@ -3,7 +3,7 @@ import { apiGet, apiSend, downloadZip, type Pack } from "./api"
 
 export const MAX_SELECTION = 200
 
-/** Multi-select state shared by Browse and My patches. */
+/** Multi-select state shared across a page's sections (e.g. Patches' My patches + Discover). */
 export function useSelection() {
   const [sel, setSel] = useState<Set<number>>(new Set())
   return {
@@ -18,6 +18,8 @@ export function useSelection() {
     clear: () => setSel(new Set()),
   }
 }
+
+export type Selection = ReturnType<typeof useSelection>
 
 /** Floating action bar for the current selection: download a .zip or add to a pack. */
 export function SelectionBar({ ids, onClear }: { ids: number[]; onClear: () => void }) {

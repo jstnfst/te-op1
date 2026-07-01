@@ -5,6 +5,15 @@
 h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-height: 1.15; margin-bottom: 16px; }
 .lead { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.85; max-width: 620px; }
 
+/* collapsible "your own stuff" sections (My packs / My patches) */
+.collapsible { margin: 36px 0 14px; }
+.collapsible > summary { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted);
+  text-transform: uppercase; cursor: pointer; user-select: none; }
+.collapsible > summary::marker { color: var(--muted); }
+.collapsible > summary:hover { color: var(--text); }
+.collapsible > summary:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
+.collapsible-body { margin-top: 14px; }
+
 /* cards */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
 .card { display: block; text-decoration: none; background: var(--surface); border: 1px solid var(--border);

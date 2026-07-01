@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type Pack } from "../api"
+import { Collapsible } from "../collapsible"
 
 const VIEW_KEY = "te-op1-packs-view"
 const DISCOVER_VIEW_KEY = "te-op1-packs-discover-view"
@@ -105,7 +106,7 @@ function MyPacks() {
   }
 
   return (
-    <>
+    <Collapsible storageKey="te-op1-packs-mine-open" summary={`My packs${busy ? "" : ` (${packs.length})`}`}>
       <div className="row" style={{ margin: "16px 0" }}>
         <input
           type="text"
@@ -121,7 +122,7 @@ function MyPacks() {
       {busy ? (
         <p className="muted">Loading…</p>
       ) : packs.length === 0 ? (
-        <p className="muted">No packs yet. Create one above, then add patches from <Link to="/browse">Browse</Link> or <Link to="/me">My patches</Link>.</p>
+        <p className="muted">No packs yet. Create one above, then add patches from <Link to="/patches">Patches</Link>.</p>
       ) : (
         <>
           <div className="browse-head">
@@ -131,7 +132,7 @@ function MyPacks() {
           {view === "grid" ? <PackGrid packs={packs} showAuthor={false} /> : <PackList packs={packs} showAuthor={false} />}
         </>
       )}
-    </>
+    </Collapsible>
   )
 }
 
@@ -215,7 +216,6 @@ export default function Packs() {
       <h1 className="hero-title">Packs</h1>
       <p className="lead">Group patches into a pack and share it as a single .zip of .aif files.</p>
 
-      <h2>My packs</h2>
       <MyPacks />
 
       <h2>Discover public packs</h2>

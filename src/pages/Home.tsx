@@ -12,9 +12,9 @@ export default function Home() {
 
       <h2>Explore</h2>
       <div className="grid">
-        <Link className="card" to="/browse">
+        <Link className="card" to="/patches">
           <div className="card-title">Browse patches</div>
-          <div className="card-desc">Search and filter uploaded presets by engine and derived tags.</div>
+          <div className="card-desc">Search uploaded presets by engine and tags, or manage the ones you've published.</div>
         </Link>
         <Link className="card" to="/upload">
           <div className="card-title">Upload a preset</div>
