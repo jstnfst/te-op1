@@ -31,8 +31,8 @@
   // Community library - shown only when signed in.
   var LIBRARY = [
     { label: "PATCHES", href: "/patches", section: "patches" },
-    { label: "UPLOAD",  href: "/upload",  section: "upload" },
-    { label: "PACKS",   href: "/packs",   section: "packs" }
+    { label: "PACKS",   href: "/packs",   section: "packs" },
+    { label: "UPLOAD",  href: "/upload",  section: "upload" }
   ];
   // Issues - shown only when signed in with GitHub specifically (issues are
   // filed as the viewer's own GitHub account, see functions/api/issues).
