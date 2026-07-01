@@ -20,6 +20,10 @@ export default function Home() {
           <div className="card-title">Upload a preset</div>
           <div className="card-desc">Share your patch as JSON. It's validated, tagged, and added to the library.</div>
         </Link>
+        <Link className="card" to="/issues">
+          <div className="card-title">Report an issue</div>
+          <div className="card-desc">File a bug or feature request and see what's shipped. Needs a GitHub sign-in.</div>
+        </Link>
         <a className="card" href="/patch.html">
           <div className="card-title">Patch viewer</div>
           <div className="card-desc">Load a preset and explore it live: draggable ADSR, knobs, FX, and LFO.</div>

@@ -28,9 +28,14 @@ export default function Login() {
       {params.get("error") && <p className="error">Login failed. Please try again.</p>}
       <div className="provider-list">
         {PROVIDERS.map(([id, label]) => (
-          <a key={id} className="btn primary" href={`/api/auth/${id}`}>
-            {label}
-          </a>
+          <div key={id}>
+            <a className="btn primary" href={`/api/auth/${id}`}>
+              {label}
+            </a>
+            {id === "github" && (
+              <p className="muted" style={{ marginTop: 6 }}>Also unlocks Issues, for reporting bugs and requesting features.</p>
+            )}
+          </div>
         ))}
       </div>
     </>
