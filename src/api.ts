@@ -45,6 +45,7 @@ export interface Pack {
   is_public: number
   created_at: string
   item_count?: number
+  author?: string | null
 }
 
 /** POST a JSON body and save the binary response (e.g. a .zip) as a download. */

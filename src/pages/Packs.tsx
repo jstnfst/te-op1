@@ -1,42 +1,101 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type Pack } from "../api"
 
 const VIEW_KEY = "te-op1-packs-view"
+const DISCOVER_VIEW_KEY = "te-op1-packs-discover-view"
 type View = "grid" | "list"
 
-export default function Packs() {
-  const { user, loading } = useAuth()
+function useViewToggle(storageKey: string, initial: View = "grid") {
+  const [view, setView] = useState<View>(() => {
+    try { return (localStorage.getItem(storageKey) as View) || initial } catch { return initial }
+  })
+  function setViewPersisted(v: View) {
+    setView(v)
+    try { localStorage.setItem(storageKey, v) } catch {}
+  }
+  return [view, setViewPersisted] as const
+}
+
+function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void }) {
+  return (
+    <div className="view-toggle" role="group" aria-label="Display view">
+      <button
+        className={"view-btn" + (view === "grid" ? " active" : "")}
+        onClick={() => setView("grid")}
+        aria-label="Grid view"
+        title="Grid view"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <rect x="0" y="0" width="6" height="6" rx="1" fill="currentColor"/>
+          <rect x="8" y="0" width="6" height="6" rx="1" fill="currentColor"/>
+          <rect x="0" y="8" width="6" height="6" rx="1" fill="currentColor"/>
+          <rect x="8" y="8" width="6" height="6" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+      <button
+        className={"view-btn" + (view === "list" ? " active" : "")}
+        onClick={() => setView("list")}
+        aria-label="List view"
+        title="List view"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
+          <rect x="0" y="1" width="14" height="2.5" rx="1" fill="currentColor"/>
+          <rect x="0" y="5.75" width="14" height="2.5" rx="1" fill="currentColor"/>
+          <rect x="0" y="10.5" width="14" height="2.5" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+    </div>
+  )
+}
+
+function PackGrid({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean }) {
+  return (
+    <div className="grid">
+      {packs.map((p) => (
+        <Link className="card" key={p.id} to={`/packs/${p.id}`}>
+          <div className="card-eyebrow">
+            <span className="chip">{p.is_public ? "public" : "private"}</span>
+            <span>{p.item_count ?? 0} patches</span>
+            {showAuthor && p.author ? <span>by {p.author}</span> : null}
+          </div>
+          <div className="card-title">{p.name}</div>
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+function PackList({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean }) {
+  return (
+    <div className="list">
+      {packs.map((p) => (
+        <Link className="list-row" key={p.id} to={`/packs/${p.id}`}>
+          <span className="chip list-type">{p.is_public ? "public" : "private"}</span>
+          <span className="list-name">{p.name}</span>
+          {showAuthor && p.author ? <span className="list-author">by {p.author}</span> : (
+            <span className="list-author">{p.item_count ?? 0} patches</span>
+          )}
+        </Link>
+      ))}
+    </div>
+  )
+}
+
+function MyPacks() {
   const [packs, setPacks] = useState<Pack[]>([])
   const [name, setName] = useState("")
   const [busy, setBusy] = useState(true)
   const [err, setErr] = useState("")
-  const [view, setView] = useState<View>(() => {
-    try { return (localStorage.getItem(VIEW_KEY) as View) || "grid" } catch { return "grid" }
-  })
-
-  function setViewPersisted(v: View) {
-    setView(v)
-    try { localStorage.setItem(VIEW_KEY, v) } catch {}
-  }
+  const [view, setView] = useViewToggle(VIEW_KEY)
 
   async function load() {
     try { const d = await apiGet<{ items: Pack[] }>("/api/packs"); setPacks(d.items) }
     catch (e) { setErr((e as Error).message) }
     finally { setBusy(false) }
   }
-  useEffect(() => { if (user) load() }, [user])
-
-  if (loading) return <p className="muted">Loading…</p>
-  if (!user) {
-    return (
-      <>
-        <h1 className="hero-title">Packs</h1>
-        <p className="lead">Please <Link to="/login">log in</Link>.</p>
-      </>
-    )
-  }
+  useEffect(() => { load() }, [])
 
   async function create() {
     const n = name.trim()
@@ -47,8 +106,6 @@ export default function Packs() {
 
   return (
     <>
-      <h1 className="hero-title">Packs</h1>
-      <p className="lead">Group patches into a pack and share it as a single .zip of .aif files.</p>
       <div className="row" style={{ margin: "16px 0" }}>
         <input
           type="text"
@@ -69,58 +126,100 @@ export default function Packs() {
         <>
           <div className="browse-head">
             <span className="browse-count">{packs.length} {packs.length === 1 ? "pack" : "packs"}</span>
-            <div className="view-toggle" role="group" aria-label="Display view">
-              <button
-                className={"view-btn" + (view === "grid" ? " active" : "")}
-                onClick={() => setViewPersisted("grid")}
-                aria-label="Grid view"
-                title="Grid view"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                  <rect x="0" y="0" width="6" height="6" rx="1" fill="currentColor"/>
-                  <rect x="8" y="0" width="6" height="6" rx="1" fill="currentColor"/>
-                  <rect x="0" y="8" width="6" height="6" rx="1" fill="currentColor"/>
-                  <rect x="8" y="8" width="6" height="6" rx="1" fill="currentColor"/>
-                </svg>
-              </button>
-              <button
-                className={"view-btn" + (view === "list" ? " active" : "")}
-                onClick={() => setViewPersisted("list")}
-                aria-label="List view"
-                title="List view"
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true">
-                  <rect x="0" y="1" width="14" height="2.5" rx="1" fill="currentColor"/>
-                  <rect x="0" y="5.75" width="14" height="2.5" rx="1" fill="currentColor"/>
-                  <rect x="0" y="10.5" width="14" height="2.5" rx="1" fill="currentColor"/>
-                </svg>
-              </button>
-            </div>
+            <ViewToggle view={view} setView={setView} />
           </div>
-          {view === "grid" ? (
-            <div className="grid">
-              {packs.map((p) => (
-                <Link className="card" key={p.id} to={`/packs/${p.id}`}>
-                  <div className="card-eyebrow">
-                    <span className="chip">{p.is_public ? "public" : "private"}</span> {p.item_count ?? 0} patches
-                  </div>
-                  <div className="card-title">{p.name}</div>
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="list">
-              {packs.map((p) => (
-                <Link className="list-row" key={p.id} to={`/packs/${p.id}`}>
-                  <span className="chip list-type">{p.is_public ? "public" : "private"}</span>
-                  <span className="list-name">{p.name}</span>
-                  <span className="list-author">{p.item_count ?? 0} patches</span>
-                </Link>
-              ))}
-            </div>
-          )}
+          {view === "grid" ? <PackGrid packs={packs} showAuthor={false} /> : <PackList packs={packs} showAuthor={false} />}
         </>
       )}
+    </>
+  )
+}
+
+function DiscoverPacks() {
+  const [packs, setPacks] = useState<Pack[]>([])
+  const [q, setQ] = useState("")
+  const [busy, setBusy] = useState(true)
+  const [err, setErr] = useState("")
+  const [view, setView] = useViewToggle(DISCOVER_VIEW_KEY)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const isFirstRender = useRef(true)
+
+  async function load(query: string) {
+    setBusy(true)
+    setErr("")
+    try {
+      const params = new URLSearchParams()
+      if (query.trim()) params.set("q", query.trim())
+      const d = await apiGet<{ items: Pack[] }>(`/api/packs/public?${params.toString()}`)
+      setPacks(d.items)
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  useEffect(() => { load("") }, [])
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => load(q), 300)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q])
+
+  return (
+    <>
+      <div className="row" style={{ margin: "16px 0" }}>
+        <input
+          type="search"
+          placeholder="Search public packs…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search public packs"
+        />
+      </div>
+      {err && <p className="error">{err}</p>}
+      {busy && packs.length === 0 ? (
+        <p className="muted">Loading…</p>
+      ) : packs.length === 0 ? (
+        <p className="muted">{q.trim() ? `No public packs match "${q.trim()}".` : "No public packs yet."}</p>
+      ) : (
+        <>
+          <div className="browse-head">
+            <span className="browse-count">{packs.length} public {packs.length === 1 ? "pack" : "packs"}</span>
+            <ViewToggle view={view} setView={setView} />
+          </div>
+          {view === "grid" ? <PackGrid packs={packs} showAuthor /> : <PackList packs={packs} showAuthor />}
+        </>
+      )}
+    </>
+  )
+}
+
+export default function Packs() {
+  const { user, loading } = useAuth()
+
+  if (loading) return <p className="muted">Loading…</p>
+  if (!user) {
+    return (
+      <>
+        <h1 className="hero-title">Packs</h1>
+        <p className="lead">Please <Link to="/login">log in</Link>.</p>
+      </>
+    )
+  }
+
+  return (
+    <>
+      <h1 className="hero-title">Packs</h1>
+      <p className="lead">Group patches into a pack and share it as a single .zip of .aif files.</p>
+
+      <h2>My packs</h2>
+      <MyPacks />
+
+      <h2>Discover public packs</h2>
+      <DiscoverPacks />
     </>
   )
 }
