@@ -2,7 +2,7 @@
 setlocal
 set COUNT=0
 for %%f in (presets\*.aif) do (
-    "%~dp0op1dump.exe" "%%f"
+    "%~dp0mondo.exe" dump "%%f"
     set /a COUNT+=1
 )
 echo.

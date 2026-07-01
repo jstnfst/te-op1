@@ -1,4 +1,4 @@
-// Server-side preset validation, ported from the checks in op1dump.c / json2aif.c.
+// Server-side preset validation, ported from the checks in mondo.c's dump / build sections.
 
 export const SYNTH_TYPES = [
   "amp", "cluster", "dbox", "digital", "dimension", "dna", "drwave",
@@ -7,7 +7,7 @@ export const SYNTH_TYPES = [
 export const FX_TYPES = ["cwo", "delay", "grid", "mother", "nitro", "phone", "punch", "spring", "terminal"]
 export const LFO_TYPES = ["element", "midi", "random", "tremolo", "value", "velocity"]
 
-// APPL area minus the 4-byte "op-1" sig and the trailing '\n' (matches json2aif).
+// APPL area minus the 4-byte "op-1" sig and the trailing '\n' (matches mondo build).
 const APPL_JSON_MAX_SYNTH = 1023 // 1028 - 4 - 1
 const APPL_JSON_MAX_DBOX = 4095 // 4100 - 4 - 1
 

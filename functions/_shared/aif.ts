@@ -1,6 +1,6 @@
 // Reconstruct a device-loadable .aif (AIFF-C 'sowt') from a preset's JSON.
-// Ported from json2aif.c write_aif(). JSON-only means sampler audio cannot be
-// restored - sampler downloads embed a 440 Hz sine, matching json2aif's fallback.
+// Ported from mondo.c's build section (write_aif()). JSON-only means sampler audio
+// cannot be restored - sampler downloads embed a 440 Hz sine, matching mondo build's fallback.
 
 const SAMPLE_RATE = 22050
 const BIT_DEPTH = 16

@@ -1,4 +1,4 @@
-// Seed the D1 `patches` table from the generated samples.js (dump-samples output).
+// Seed the D1 `patches` table from the generated samples.js (mondo samples output).
 // Usage: node scripts/seed.mjs [--local|--remote]
 import fs from "node:fs"
 import { execSync } from "node:child_process"
@@ -6,7 +6,7 @@ import { execSync } from "node:child_process"
 const target = process.argv.includes("--remote") ? "--remote" : "--local"
 
 if (!fs.existsSync("samples.js")) {
-  console.error("samples.js not found. Generate it first: dump-samples.exe collection samples.js")
+  console.error("samples.js not found. Generate it first: mondo.exe samples collection samples.js")
   process.exit(1)
 }
 

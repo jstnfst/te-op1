@@ -1,5 +1,5 @@
-// Derive searchable tags from a preset (simplified port of tag-patch.c - good
-// enough for browse filters; the C tool remains the authoritative tagger).
+// Derive searchable tags from a preset (simplified port of mondo.c's tag section -
+// good enough for browse filters; the C tool remains the authoritative tagger).
 
 interface Presetish {
   type?: string

@@ -14,7 +14,7 @@ migrations/     D1 schema
 scripts/seed.mjs  import samples.js -> D1
 ```
 
-The C toolchain (`op1dump`, `json2aif`, …) is unchanged; the web validation/tag/
+The C toolchain (`mondo dump`, `mondo build`, …) is unchanged; the web validation/tag/
 .aif logic in `functions/_shared/` is a TypeScript port of it.
 
 ## Local development
@@ -27,7 +27,7 @@ cp .dev.vars.example .dev.vars        # fill in OAuth client IDs/secrets + JWT_S
 npx wrangler d1 migrations apply te-op1-db --local
 
 # (optional) seed the community library from the generated samples.js
-dump-samples.exe collection samples.js   # if samples.js isn't present
+mondo.exe samples collection samples.js   # if samples.js isn't present
 node scripts/seed.mjs --local
 
 npm run dev    # Vite on :5173, wrangler Pages on http://localhost:8788

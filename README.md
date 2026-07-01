@@ -46,7 +46,7 @@ to reach the 1028-byte boundary.
 
 For sample-based synths like **cluster**, the SSND contains the actual
 waveform the engine operates on. Replacing it with silence produces a
-valid but soundless patch. `json2aif.exe` writes 28896 frames of silence
+valid but soundless patch. `mondo build` writes 28896 frames of silence
 at 22050 Hz (~1.310 s), which matches hardware-exported patches.
 
 ---
@@ -80,7 +80,7 @@ Most numeric parameters are **16-bit integers in the range 0–32767**
 ```
 
 > **Key order:** The OP-1 Field firmware uses a streaming JSON parser that requires keys in
-> strict **alphabetical order**. `json2aif.exe` passes JSON through as-is - callers must order
+> strict **alphabetical order**. `mondo build` passes JSON through as-is - callers must order
 > keys correctly. Required order:
 > `adsr, fx_active, fx_params, fx_type, knobs, lfo_active, lfo_params, lfo_type, mtime, name, octave, synth_version, type`
 
@@ -245,19 +245,19 @@ lfo.element PARAMETER selector for dbox differs from other 8-param synths:
 
 ## Tools
 
-### `op1dump.exe`
+### `mondo dump`
 
 Reads a `.aif` patch file, prints all synth metadata with named parameters,
 and writes a `.json` sidecar. Pass a directory to process all `.aif` files recursively.
 
 ```
-op1dump.exe <file.aif>
-op1dump.exe <directory>
+mondo dump <file.aif>
+mondo dump <directory>
 ```
 
 ```
-op1dump.exe epiphany.aif         → prints metadata, writes epiphany.json
-op1dump.exe presets/             → dumps all .aif files recursively, prints stats
+mondo dump epiphany.aif         → prints metadata, writes epiphany.json
+mondo dump presets/             → dumps all .aif files recursively, prints stats
 ```
 
 - Reads `op1-params.json` from the **current working directory** (not the file's directory)
@@ -267,27 +267,31 @@ op1dump.exe presets/             → dumps all .aif files recursively, prints st
 - Always writes a `.json` sidecar at the same path as the input file
 - Directory mode prints a final summary: `=== Done: N processed, N failed (X.XX sec) ===`
 
-### `json2aif.exe`
+### `mondo build`
 
 Creates a valid OP-1 Field `.aif` from a `.json` patch file. Pass a directory to convert all `.json` files recursively. Also generates all 756×2 boundary patches via the `explore` subcommand.
 
+Note: `mondo build explore` (this boundary-patch generator) is unrelated to the
+top-level `mondo explore` subcommand (the low-level binary `.aif` inspector,
+formerly `explore-aif.exe`) - the shared word is a naming coincidence, not a typo.
+
 ```
-json2aif.exe <patch.json> [output.aif]
-json2aif.exe zero <patch.json> [output.aif]
-json2aif.exe max  <patch.json> [output.aif]
-json2aif.exe <directory>
-json2aif.exe explore [-dest <synth|envelope|fx|mix>] [-param <N>]
+mondo build <patch.json> [output.aif]
+mondo build zero <patch.json> [output.aif]
+mondo build max  <patch.json> [output.aif]
+mondo build <directory>
+mondo build explore [-dest <synth|envelope|fx|mix>] [-param <N>]
 ```
 
 ```
-json2aif.exe mypatch.json                → writes mypatch.aif
-json2aif.exe mypatch.json out.aif        → writes out.aif
-json2aif.exe zero mypatch.json           → zeros knobs/fx_params/lfo_params
-json2aif.exe max  mypatch.json           → sets all three arrays to 32767
-json2aif.exe presets/                    → converts all .json files recursively
-json2aif.exe explore                     → generates all 3024 files in explore\
-json2aif.exe explore -dest fx            → min patches with dest = FX
-json2aif.exe explore -dest fx -param 5824
+mondo build mypatch.json                → writes mypatch.aif
+mondo build mypatch.json out.aif        → writes out.aif
+mondo build zero mypatch.json           → zeros knobs/fx_params/lfo_params
+mondo build max  mypatch.json           → sets all three arrays to 32767
+mondo build presets/                    → converts all .json files recursively
+mondo build explore                     → generates all 3024 files in explore\
+mondo build explore -dest fx            → min patches with dest = FX
+mondo build explore -dest fx -param 5824
 ```
 
 - Output format: AIFC with FVER + COMM (mono, 16-bit, 22050 Hz, `sowt`, 28896 frames ~1.310 s) + APPL (1028 bytes) + SSND (silence)
@@ -305,34 +309,34 @@ json2aif.exe explore -dest fx -param 5824
 - **max** uses hardware maximums per type; types with ceilings below 32767 use explicit per-type values
 - ADSR is fixed to instant-attack / full-sustain values so every combination produces audible output
 
-### `rename-patch.exe`
+### `mondo rename`
 
 Renames the `"name"` field inside each `.json` patch to match the file's own filename (without extension). Edits in place.
 
 ```
-rename-patch.exe <patch.json> [patch2.json ...]
-rename-patch.exe <directory>
+mondo rename <patch.json> [patch2.json ...]
+mondo rename <directory>
 ```
 
 ```
-rename-patch.exe presets\epiphany.json         → sets name: "epiphany"
-rename-patch.exe collection\_anonymized-popular → renames all .json files recursively
+mondo rename presets\epiphany.json         → sets name: "epiphany"
+mondo rename collection\_anonymized-popular → renames all .json files recursively
 ```
 
 - Useful for normalising a batch of anonymised or exported patches before loading them on device
 - Directory mode prints a final summary: `=== Done: N processed, N failed ===`
 
-### `sort-synths.exe`
+### `mondo sort`
 
 Moves `.json` and `.aif` patch pairs into a `synth/<engine>/` folder tree, organised by synth engine type. The `synth/` folder is created as a **sibling** of the directory passed in.
 
 ```
-sort-synths.exe <patch.json>
-sort-synths.exe <directory>
+mondo sort <patch.json>
+mondo sort <directory>
 ```
 
 ```
-sort-synths.exe collection\_anonymized-popular
+mondo sort collection\_anonymized-popular
   → collection\synth\cluster\patch (1).{json,aif}
   → collection\synth\dimension\patch (2).{json,aif}
   ...
@@ -343,20 +347,20 @@ sort-synths.exe collection\_anonymized-popular
 - `.aif` sidecars are moved alongside their `.json`; missing sidecars are silently skipped
 - Directory mode prints a final summary: `=== Done: N moved, N skipped, N failed ===`
 
-### `tag-patch.exe`
+### `mondo tag`
 
 Interprets OP-1 patch parameters and outputs a comma-separated list of musical descriptor tags (e.g. `pad`, `metallic`, `lush`, `percussive`). Also writes a `.tags` sidecar file alongside each `.json` for easy grepping.
 
 ```
-tag-patch.exe <patch.json> [patch2.json ...]
-tag-patch.exe <directory>
+mondo tag <patch.json> [patch2.json ...]
+mondo tag <directory>
 ```
 
 ```
-tag-patch.exe presets\epiphany.json
+mondo tag presets\epiphany.json
   → epiphany: cluster, morphing, pad, lush, spacious, slow tremolo, ambient
 
-tag-patch.exe collection\synth\
+mondo tag collection\synth\
   → (tags every .json recursively, writes .tags sidecars, prints stats)
 ```
 
@@ -376,12 +380,12 @@ The `.tags` sidecar is a single comma-separated line - grep-friendly:
 grep "bell\|metallic" collection\synth\fm\*.tags
 ```
 
-### `summarize.exe`
+### `mondo summarize`
 
 Reads all parsed presets and produces a grouped report.
 
 ```
-summarize.exe
+mondo summarize
 ```
 
 - **Prerequisite:** run `dump-all.bat` first to generate the `.json` sidecars
@@ -389,40 +393,40 @@ summarize.exe
 - Output sections: **Synth Engines**, **FX**, **LFO** - each type shows per-knob min/max raw + normalized ranges and patch count
 - Trailing **"Missing from op1-params.json"** section prints exact stub lines to paste in
 
-### `diff-patches.exe`
+### `mondo diff`
 
 Diffs two patch files and shows exactly which fields and array indices changed.
 
 ```
-diff-patches.exe <file_a> <file_b>
+mondo diff <file_a> <file_b>
 ```
 
 ```
-diff-patches.exe presets\name0001.json presets\name0002.json
-diff-patches.exe sandbox\epiphany.aif  presets\epiphany0005.aif
+mondo diff presets\name0001.json presets\name0002.json
+mondo diff sandbox\epiphany.aif  presets\epiphany0005.aif
 ```
 
-- Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it - run `op1dump.exe` first if the sidecar is missing
+- Accepts `.json` or `.aif`; if `.aif` is given, it looks for a `.json` sidecar next to it - run `mondo dump` first if the sidecar is missing
 - Skips `name`, `mtime`, and `_file` automatically (they always differ between snapshots)
 - For array fields: lists each changed index with before and after values and signed delta (`+N` / `-N`)
 - Prints "No differences" if the patches are identical (excluding skipped fields)
 
-### `test_aif.exe`
+### `mondo test`
 
 Validates that a generated `.aif` file conforms to the OP-1 Field file spec (29 checks).
 
 ```
-test_aif.exe <file.aif>
+mondo test <file.aif>
 ```
 
 Checks include: file size, chunk order and sizes (FVER/COMM/APPL/SSND), COMM spec (22050 Hz, 28896 frames, 16-bit `sowt`), APPL JSON (all required keys present, alphabetical key order, `mtime` presence and validity, no UTF-8 BOM), and SSND audio byte count. Exits 0 on pass, non-zero on any failure.
 
-### `explore-aif.exe`
+### `mondo explore`
 
 Low-level binary inspector for `.aif` file internals. Multiple flags can be combined in one call.
 
 ```
-explore-aif.exe <file.aif> [flags]
+mondo explore <file.aif> [flags]
 ```
 
 | Flag | Description |
@@ -436,12 +440,12 @@ explore-aif.exe <file.aif> [flags]
 | `--analyze-ssnd` | SSND audio stats: byte count, sample count, min/max sample, silence %, peak level in dBFS |
 
 ```
-explore-aif.exe epiphany.aif --parse-chunks
-explore-aif.exe epiphany.aif --dump-chunk APPL
-explore-aif.exe epiphany.aif --decode-comm
-explore-aif.exe epiphany.aif --analyze-ssnd
-explore-aif.exe epiphany.aif --show-json
-explore-aif.exe epiphany.aif --parse-chunks --decode-comm --show-json
+mondo explore epiphany.aif --parse-chunks
+mondo explore epiphany.aif --dump-chunk APPL
+mondo explore epiphany.aif --decode-comm
+mondo explore epiphany.aif --analyze-ssnd
+mondo explore epiphany.aif --show-json
+mondo explore epiphany.aif --parse-chunks --decode-comm --show-json
 ```
 
 ---
@@ -450,30 +454,15 @@ explore-aif.exe epiphany.aif --parse-chunks --decode-comm --show-json
 
 ```
 te-op1/
-  op1dump.c          source - patch dumper (file or directory)
-  op1dump.exe        compiled dumper
-  json2aif.c         source - JSON to AIF writer + explore generator (file or directory)
-  json2aif.exe       compiled writer/generator
-  rename-patch.c     source - rename "name" field to filename (file or directory)
-  rename-patch.exe   compiled renamer
-  sort-synths.c      source - sort patches into synth/<engine>/ folders (file or directory)
-  sort-synths.exe    compiled sorter
-  tag-patch.c        source - generate musical descriptor tags (file or directory)
-  tag-patch.exe      compiled tagger
-  test_aif.c         source - AIF validator
-  test_aif.exe       compiled validator
-  diff-patches.c     source - patch diff tool
-  diff-patches.exe   compiled diff tool
-  explore-aif.c      source - low-level AIF inspector
-  explore-aif.exe    compiled inspector
-  summarize.c        source - preset report tool
-  summarize.exe      compiled report tool
+  mondo.c            source - all patch tools, one multi-tool (dump, build, test,
+                     diff, explore, summarize, rename, sort, tag, wrap, samples)
+  mondo.exe          compiled multi-tool
   op1_aif.h          shared binary helpers (big-endian reads, hex dump, 80-bit float)
   cJSON.c            vendored JSON library (from github.com/DaveGamble/cJSON)
   cJSON.h            vendored JSON library header
   op1-params.json    knob/param name database (edit freely, no recompile)
   op1-params-ok.json tracks which param indices have been mapped per type
-  build.bat          recompile all tools (requires MSVC)
+  build.bat          recompile mondo.exe (requires MSVC)
   index.html         home - coverage overview and file format summary
   params.html        knob layout - all 31 types with named knob diagrams
   display.html       value mappings - raw-to-display mappings per parameter
@@ -481,7 +470,7 @@ te-op1/
   oracle/            reference exports from hardware (tracked in git, never regenerated)
   collection/        patch collections - .aif, .json, and .tags sidecars per preset
                      collection\synth\<engine>\*.{aif,json,tags}
-  explore/           generated boundary patches - gitignored, recreate with: json2aif.exe explore
+  explore/           generated boundary patches - gitignored, recreate with: mondo build explore
                      explore\aif\[min|max]\[synth]\[lfo]\*.aif
                      explore\json\[min|max]\[synth]\[lfo]\*.json
 ```
@@ -494,8 +483,8 @@ te-op1/
 OP-1 Field with known knob positions. These are the ground truth for parameter values.
 
 **Rules:**
-- Never regenerate oracle files from JSON. `json2aif.exe` will refuse to overwrite them.
+- Never regenerate oracle files from JSON. `mondo build` will refuse to overwrite them.
 - To capture a new oracle: set knobs on hardware → export preset → copy `.aif` to `oracle/` →
-  run `op1dump.exe oracle\<file>.aif` → inspect the JSON sidecar for raw values.
+  run `mondo dump oracle\<file>.aif` → inspect the JSON sidecar for raw values.
 - Naming convention: `<synth>-<fx>-<lfo>-<tag>.aif` where tag is `0000` (all-min),
   `ffff` (all-max), or a short descriptor.
