@@ -58,7 +58,10 @@ const CONFIGS: Record<Provider, ProviderConfig> = {
     authorize: "https://github.com/login/oauth/authorize",
     token: "https://github.com/login/oauth/access_token",
     userinfo: "https://api.github.com/user",
-    scope: "read:user user:email",
+    // public_repo lets signed-in GitHub users file issues on the repo as themselves
+    // (see functions/_shared/github.ts). Scopes are requested per-auth for OAuth
+    // Apps, so this needs no change on github.com - just a re-consent on next login.
+    scope: "read:user user:email public_repo",
     clientId: (e) => e.GITHUB_CLIENT_ID,
     clientSecret: (e) => e.GITHUB_CLIENT_SECRET,
     tokenAuth: "body",

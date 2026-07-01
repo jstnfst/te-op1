@@ -1,5 +1,6 @@
 import type { Env, SessionUser } from "./env"
 import type { NormalizedUser, Provider } from "./oauth"
+import { encryptToken, decryptToken } from "./crypto"
 
 export async function upsertUser(env: Env, provider: Provider, u: NormalizedUser): Promise<SessionUser> {
   const existing = await env.DB
@@ -22,4 +23,32 @@ export async function upsertUser(env: Env, provider: Provider, u: NormalizedUser
     uid = res.meta.last_row_id as number
   }
   return { uid, provider, email: u.email, name: u.name, avatar: u.avatar }
+}
+
+/** Persist the GitHub access token (encrypted) so the user can file issues/react as themselves. */
+export async function setGithubToken(env: Env, uid: number, accessToken: string): Promise<void> {
+  const encrypted = await encryptToken(accessToken, env.JWT_SECRET)
+  await env.DB.prepare("UPDATE users SET github_access_token=?1 WHERE id=?2").bind(encrypted, uid).run()
+}
+
+/** Decrypted GitHub access token for a uid, or null if none is stored. */
+export async function getGithubToken(env: Env, uid: number): Promise<string | null> {
+  const row = await env.DB
+    .prepare("SELECT github_access_token FROM users WHERE id=?1")
+    .bind(uid)
+    .first<{ github_access_token: string | null }>()
+  if (!row?.github_access_token) return null
+  return decryptToken(row.github_access_token, env.JWT_SECRET)
+}
+
+/** Decrypted token + numeric GitHub user id (used to match reactions), or null if not linked. */
+export async function getGithubAuth(env: Env, uid: number): Promise<{ token: string; githubUserId: number } | null> {
+  const row = await env.DB
+    .prepare("SELECT github_access_token, provider_user_id FROM users WHERE id=?1")
+    .bind(uid)
+    .first<{ github_access_token: string | null; provider_user_id: string }>()
+  if (!row?.github_access_token) return null
+  const token = await decryptToken(row.github_access_token, env.JWT_SECRET)
+  if (!token) return null
+  return { token, githubUserId: Number(row.provider_user_id) }
 }

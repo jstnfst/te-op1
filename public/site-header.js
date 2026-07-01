@@ -35,11 +35,16 @@
     { label: "MY PATCHES", href: "/me",     section: "mypatches" },
     { label: "PACKS",      href: "/packs",  section: "packs" }
   ];
+  // Issues - shown only when signed in with GitHub specifically (issues are
+  // filed as the viewer's own GitHub account, see functions/api/issues).
+  var ISSUES = [
+    { label: "ISSUES", href: "/issues", section: "issues" }
+  ];
 
   var SUBTITLE = {
     home: "preset library", layout: "knob layout", mappings: "value mappings",
     patch: "patch editor", browse: "patch library", upload: "upload patches", mypatches: "my patches",
-    packs: "packs", login: "account"
+    packs: "packs", login: "account", issues: "changelog & issues", issuesReport: "report an issue"
   };
 
   function sectionFromPath(path) {
@@ -50,6 +55,8 @@
     if (path.indexOf("/upload") === 0) return "upload";
     if (path.indexOf("/me") === 0) return "mypatches";
     if (path.indexOf("/packs") === 0) return "packs";
+    if (path.indexOf("/issues/report") === 0) return "issuesReport";
+    if (path.indexOf("/issues") === 0) return "issues";
     if (path.indexOf("/login") === 0) return "login";
     return "home";
   }
@@ -67,9 +74,14 @@
     });
   }
 
+  // The report sub-page shares the ISSUES tab's active state.
+  function navSection(section) {
+    return section === "issuesReport" ? "issues" : section;
+  }
+
   function navBtn(item, section) {
     return '<a href="' + item.href + '" class="nav-btn' +
-      (item.section === section ? " active" : "") +
+      (item.section === navSection(section) ? " active" : "") +
       '" data-section="' + item.section + '">' + item.label + "</a>";
   }
 
@@ -87,6 +99,7 @@
         '<nav class="page-nav" aria-label="Site navigation">' +
           REFERENCE.map(function (i) { return navBtn(i, section); }).join("") +
           '<span data-nav-library></span>' +
+          '<span data-nav-issues></span>' +
         "</nav>" +
       "</header>"
     );
@@ -109,6 +122,16 @@
       : sep + '<a href="/login" class="nav-btn cta" data-section="">Log in to browse &rarr;</a>';
   }
 
+  // Fill the Issues slot: only rendered for GitHub-provider sessions, right
+  // after the Library group.
+  function fillIssues(user, section) {
+    var slot = document.querySelector("[data-nav-issues]");
+    if (!slot) return;
+    slot.innerHTML = (user && user.provider === "github")
+      ? ISSUES.map(function (i) { return navBtn(i, section); }).join("")
+      : "";
+  }
+
   function applyAuth(user) {
     var section = currentSection();
     var el = document.querySelector("[data-auth]");
@@ -120,6 +143,7 @@
         : '<a href="/login">log in</a>';
     }
     fillLibrary(user, section);
+    fillIssues(user, section);
   }
 
   function loadAuth() {
@@ -144,8 +168,9 @@
     var subEl = document.querySelector(".site-sub");
     if (subEl) subEl.textContent = SUBTITLE[section] || SUBTITLE.home;
     var btns = document.querySelectorAll(".page-nav .nav-btn");
+    var navSec = navSection(section);
     for (var i = 0; i < btns.length; i++) {
-      btns[i].classList.toggle("active", btns[i].dataset.section === section);
+      btns[i].classList.toggle("active", btns[i].dataset.section === navSec);
     }
   }
 

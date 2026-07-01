@@ -4,6 +4,8 @@ export interface User {
   email: string | null
   name: string | null
   avatar: string | null
+  /** True once a github access token is on file (provider === "github" only). */
+  githubIssuesReady?: boolean
 }
 
 export interface PatchSummary {

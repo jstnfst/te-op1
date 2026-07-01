@@ -2,7 +2,7 @@ import type { Env } from "../../../_shared/env"
 import { isProvider, exchangeCode, fetchUser } from "../../../_shared/oauth"
 import { verifyJwt } from "../../../_shared/jwt"
 import { parseCookies, serializeCookie, OAUTH_TX_COOKIE, isHttps } from "../../../_shared/cookies"
-import { upsertUser } from "../../../_shared/db"
+import { upsertUser, setGithubToken } from "../../../_shared/db"
 import { sessionCookie } from "../../../_shared/session"
 
 function redirect(location: string, extraCookies: string[] = []): Response {
@@ -34,6 +34,10 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
     const accessToken = await exchangeCode(env, provider, code, tx.codeVerifier || undefined)
     const normalized = await fetchUser(env, provider, accessToken)
     const user = await upsertUser(env, provider, normalized)
+    // GitHub tokens (with public_repo scope) let the user file issues/react as
+    // themselves later - the other providers' tokens aren't used for anything
+    // past login, so only GitHub's is worth persisting.
+    if (provider === "github") await setGithubToken(env, user.uid, accessToken)
     const clearTx = serializeCookie(OAUTH_TX_COOKIE, "", {
       maxAge: 0, httpOnly: true, secure: isHttps(env.SITE_URL), sameSite: "Lax",
     })

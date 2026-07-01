@@ -8,6 +8,8 @@ import Upload from "./pages/Upload"
 import MyPatches from "./pages/MyPatches"
 import Packs from "./pages/Packs"
 import Pack from "./pages/Pack"
+import Issues from "./pages/Issues"
+import IssueReport from "./pages/IssueReport"
 
 // Library pages require a session; send signed-out visitors to the login page.
 // The patches API is gated server-side too (functions/api/patches/_middleware.ts).
@@ -31,6 +33,11 @@ export default function App() {
         <Route path="/me" element={<RequireAuth><MyPatches /></RequireAuth>} />
         <Route path="/packs" element={<RequireAuth><Packs /></RequireAuth>} />
         <Route path="/packs/:id" element={<Pack />} />
+        {/* Not wrapped in RequireAuth: RequireGithubIssues (in each page) already
+            handles signed-out/wrong-provider/needs-reconnect with a message that
+            explains why GitHub specifically is required, instead of a bare redirect. */}
+        <Route path="/issues" element={<Issues />} />
+        <Route path="/issues/report" element={<IssueReport />} />
         <Route path="*" element={<p className="muted">Page not found.</p>} />
       </Routes>
     </main>
