@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { apiGet, apiSend } from "../api"
 import RequireGithubIssues from "../githubGate"
 
 type Kind = "bug" | "feature"
-type Status = "planned" | "in-progress" | "shipped" | "open"
+type Status = "planned" | "in-progress" | "fixed" | "closed" | "open"
+type Filter = "all" | Kind | "fixed" | "closed"
 
 interface Issue {
   number: number
@@ -25,7 +26,24 @@ const STATUS_LABEL: Record<Status, string> = {
   open: "Open",
   planned: "Planned",
   "in-progress": "In progress",
-  shipped: "Shipped",
+  fixed: "Fixed",
+  closed: "Closed",
+}
+
+const FILTERS: Array<{ id: Filter; label: string }> = [
+  { id: "all", label: "All" },
+  { id: "feature", label: "Feature" },
+  { id: "bug", label: "Bug" },
+  { id: "fixed", label: "Fixed" },
+  { id: "closed", label: "Closed" },
+]
+
+const FILTER_HEADING: Record<Filter, string> = {
+  all: "All reports",
+  feature: "Feature requests",
+  bug: "Bug reports",
+  fixed: "Fixed",
+  closed: "Closed",
 }
 
 const FOOTER_RE = /\n\n---\n_Filed via the OP-1 Field site issues page\._\s*$/
@@ -33,6 +51,12 @@ const FOOTER_RE = /\n\n---\n_Filed via the OP-1 Field site issues page\._\s*$/
 function excerpt(body: string): string {
   const stripped = body.replace(FOOTER_RE, "").trim()
   return stripped.length > 320 ? stripped.slice(0, 320).trimEnd() + "…" : stripped
+}
+
+function matchesFilter(issue: Issue, filter: Filter): boolean {
+  if (filter === "all") return true
+  if (filter === "bug" || filter === "feature") return issue.kind === filter
+  return issue.status === filter
 }
 
 function IssueUpvote({ issue, onChanged }: { issue: Issue; onChanged: (n: number, upvoted: boolean, delta: number) => void }) {
@@ -67,7 +91,7 @@ function IssueUpvote({ issue, onChanged }: { issue: Issue; onChanged: (n: number
   )
 }
 
-function ReportForm({ kind, setKind }: { kind: Kind; setKind: (k: Kind) => void }) {
+function ReportForm({ kind, setKind, onCreated }: { kind: Kind; setKind: (k: Kind) => void; onCreated: (issue: Issue) => void }) {
   const [summary, setSummary] = useState("")
   const [description, setDescription] = useState("")
   const [busy, setBusy] = useState(false)
@@ -86,7 +110,7 @@ function ReportForm({ kind, setKind }: { kind: Kind; setKind: (k: Kind) => void 
       const issue = await apiSend<Issue>("/api/issues", "POST", { kind, summary, description })
       setSummary("")
       setDescription("")
-      window.dispatchEvent(new CustomEvent("te-op1:issue-created", { detail: issue }))
+      onCreated(issue)
       setOk(issue.htmlUrl)
     } catch (e) {
       setErr((e as Error).message)
@@ -150,59 +174,78 @@ function ReportForm({ kind, setKind }: { kind: Kind; setKind: (k: Kind) => void 
   )
 }
 
-function IssueList({ kind }: { kind: Kind }) {
+function IssueFilterBar({ filter, setFilter }: { filter: Filter; setFilter: (f: Filter) => void }) {
+  return (
+    <div className="issue-filter" role="group" aria-label="Filter reports">
+      {FILTERS.map((f) => (
+        <button
+          key={f.id}
+          className={"filter-btn filter-" + f.id + (filter === f.id ? " active" : "")}
+          onClick={() => setFilter(f.id)}
+          aria-pressed={filter === f.id}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function IssueList({ createdIssue }: { createdIssue: Issue | null }) {
   const [items, setItems] = useState<Issue[] | null>(null)
   const [err, setErr] = useState("")
+  const [filter, setFilter] = useState<Filter>("all")
 
-  function load() {
-    setErr("")
-    apiGet<{ items: Issue[] }>(`/api/issues?kind=${kind}`)
+  useEffect(() => {
+    apiGet<{ items: Issue[] }>("/api/issues")
       .then((d) => setItems(d.items))
       .catch((e) => setErr((e as Error).message))
-  }
+  }, [])
 
   useEffect(() => {
-    setItems(null)
-    load()
+    if (createdIssue) setItems((prev) => (prev ? [createdIssue, ...prev] : [createdIssue]))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kind])
-
-  useEffect(() => {
-    function onCreated(e: Event) {
-      const issue = (e as CustomEvent<Issue>).detail
-      if (issue.kind === kind) setItems((prev) => (prev ? [issue, ...prev] : [issue]))
-    }
-    window.addEventListener("te-op1:issue-created", onCreated)
-    return () => window.removeEventListener("te-op1:issue-created", onCreated)
-  }, [kind])
+  }, [createdIssue])
 
   function applyVote(number: number, upvoted: boolean, delta: number) {
     setItems((prev) => prev && prev.map((i) => (i.number === number ? { ...i, upvoted, upvotes: i.upvotes + delta } : i)))
   }
 
-  if (err) return <p className="error">{err}</p>
-  if (items === null) return <p className="muted">Loading…</p>
-  if (items.length === 0) return <p className="muted">No {kind === "bug" ? "bug reports" : "feature requests"} yet - be the first.</p>
+  const visible = useMemo(() => (items ? items.filter((i) => matchesFilter(i, filter)) : null), [items, filter])
 
   return (
-    <div className="issue-list">
-      {items.map((issue) => (
-        <article className="issue-item" key={issue.number}>
-          <div className="issue-item-head">
-            <span className={"chip status-" + issue.status}>{STATUS_LABEL[issue.status]}</span>
-            <a className="issue-item-title" href={issue.htmlUrl} target="_blank" rel="noreferrer">{issue.title}</a>
-            <IssueUpvote issue={issue} onChanged={applyVote} />
-          </div>
-          {excerpt(issue.body) && <p className="issue-item-body">{excerpt(issue.body)}</p>}
-        </article>
-      ))}
-    </div>
+    <>
+      <IssueFilterBar filter={filter} setFilter={setFilter} />
+      <h2>{FILTER_HEADING[filter]}</h2>
+      {err ? (
+        <p className="error">{err}</p>
+      ) : visible === null ? (
+        <p className="muted">Loading…</p>
+      ) : visible.length === 0 ? (
+        <p className="muted">Nothing here yet.</p>
+      ) : (
+        <div className="issue-list">
+          {visible.map((issue) => (
+            <article className="issue-item" key={issue.number}>
+              <div className="issue-item-head">
+                <span className={"chip kind-" + issue.kind}>{issue.kind === "bug" ? "Bug" : "Feature"}</span>
+                <span className={"chip status-" + issue.status}>{STATUS_LABEL[issue.status]}</span>
+                <a className="issue-item-title" href={issue.htmlUrl} target="_blank" rel="noreferrer">{issue.title}</a>
+                <IssueUpvote issue={issue} onChanged={applyVote} />
+              </div>
+              {excerpt(issue.body) && <p className="issue-item-body">{excerpt(issue.body)}</p>}
+            </article>
+          ))}
+        </div>
+      )}
+    </>
   )
 }
 
 function IssueReportHome() {
   const [params, setParams] = useSearchParams()
   const kind: Kind = params.get("type") === "feature" ? "feature" : "bug"
+  const [createdIssue, setCreatedIssue] = useState<Issue | null>(null)
 
   function setKind(k: Kind) {
     setParams({ type: k }, { replace: true })
@@ -215,10 +258,9 @@ function IssueReportHome() {
         Reports post as a GitHub issue on your account, tagged {kind === "bug" ? "bug" : "enhancement"}.
       </p>
 
-      <ReportForm kind={kind} setKind={setKind} />
+      <ReportForm kind={kind} setKind={setKind} onCreated={setCreatedIssue} />
 
-      <h2>{kind === "bug" ? "Open bug reports" : "Open feature requests"}</h2>
-      <IssueList kind={kind} />
+      <IssueList createdIssue={createdIssue} />
     </>
   )
 }

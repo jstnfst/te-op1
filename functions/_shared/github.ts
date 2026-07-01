@@ -10,6 +10,8 @@ const USER_AGENT = "te-op1"
 export type IssueKind = "bug" | "feature"
 const LABEL: Record<IssueKind, string> = { bug: "bug", feature: "enhancement" }
 
+export type IssueStatus = "planned" | "in-progress" | "fixed" | "closed" | "open"
+
 export interface GithubIssue {
   number: number
   title: string
@@ -22,7 +24,7 @@ export interface GithubIssue {
   authorAvatar: string | null
   upvotes: number
   kind: IssueKind
-  status: "planned" | "in-progress" | "shipped" | "open"
+  status: IssueStatus
 }
 
 async function gh(token: string, path: string, init: RequestInit = {}): Promise<Response> {
@@ -43,8 +45,11 @@ function kindFromLabels(labels: string[]): IssueKind {
   return labels.includes("bug") ? "bug" : "feature"
 }
 
-function statusFromIssue(state: string, labels: string[]): GithubIssue["status"] {
-  if (state === "closed") return "shipped"
+// GitHub's own close reason distinguishes "fixed" from "declined" - only
+// not_planned (won't fix, duplicate, etc.) counts as Closed; completed (or the
+// null state_reason on older issues predating this field) counts as Fixed.
+function statusFromIssue(state: string, labels: string[], stateReason: string | null): IssueStatus {
+  if (state === "closed") return stateReason === "not_planned" ? "closed" : "fixed"
   if (labels.includes("in progress")) return "in-progress"
   if (labels.includes("planned")) return "planned"
   return "open"
@@ -64,21 +69,33 @@ function normalizeIssue(raw: Record<string, any>): GithubIssue {
     authorAvatar: raw.user?.avatar_url || null,
     upvotes: raw.reactions?.["+1"] || 0,
     kind: kindFromLabels(labels),
-    status: statusFromIssue(raw.state, labels),
+    status: statusFromIssue(raw.state, labels, raw.state_reason ?? null),
   }
 }
 
-// Kept small: the list handler also does one reaction-lookup subrequest per
-// issue to report the viewer's own upvote state, and Workers cap subrequests.
-const ISSUES_PER_PAGE = 15
+// GitHub's labels query param ANDs multiple values, so bug + enhancement can't
+// be fetched as one "OR" call - two per-label calls instead, merged below. Kept
+// small per label: the list handler also does one reaction-lookup subrequest
+// per shown issue to report the viewer's own upvote state, and Workers cap
+// subrequests (2 list calls + up to COMBINED_CAP reaction lookups stays well
+// under the default 50).
+const PER_LABEL_FETCH = 15
+const COMBINED_CAP = 20
 
-/** List issues for a kind (bug/feature), newest first, open and closed alike. */
-export async function listIssues(token: string, kind: IssueKind): Promise<GithubIssue[]> {
-  const res = await gh(token, `/issues?state=all&labels=${LABEL[kind]}&per_page=${ISSUES_PER_PAGE}&sort=created&direction=desc`)
+async function listIssuesByLabel(token: string, kind: IssueKind): Promise<GithubIssue[]> {
+  const res = await gh(token, `/issues?state=all&labels=${LABEL[kind]}&per_page=${PER_LABEL_FETCH}&sort=created&direction=desc`)
   if (!res.ok) throw new Error(`GitHub list issues failed (${res.status})`)
   const raw = (await res.json()) as Record<string, any>[]
   // The issues endpoint also returns PRs; those carry a pull_request key.
   return raw.filter((r) => !r.pull_request).map(normalizeIssue)
+}
+
+/** All bug + feature issues, merged and newest first, open and closed alike. */
+export async function listAllIssues(token: string): Promise<GithubIssue[]> {
+  const [bugs, features] = await Promise.all([listIssuesByLabel(token, "bug"), listIssuesByLabel(token, "feature")])
+  return [...bugs, ...features]
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+    .slice(0, COMBINED_CAP)
 }
 
 export async function createIssue(

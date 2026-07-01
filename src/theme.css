@@ -135,16 +135,31 @@ a.list-row { text-decoration: none; color: inherit; }
   color: var(--muted); margin-top: 10px; }
 .field-label:first-child { margin-top: 0; }
 
-/* issues: status + type chips */
+/* issues: status + kind chips */
 .chip.status-open { background: var(--border); color: var(--muted); }
 .chip.status-planned { background: rgba(59,158,234,.18); color: var(--blue); }
 .chip.status-in-progress { background: rgba(139,92,246,.18); color: var(--purple); }
-.chip.status-shipped { background: rgba(34,197,94,.18); color: var(--green); }
+.chip.status-fixed { background: rgba(34,197,94,.18); color: var(--green); }
+.chip.status-closed { background: var(--border); color: var(--muted); text-decoration: line-through; }
+.chip.kind-bug { background: rgba(248,113,113,.14); color: var(--danger); }
+.chip.kind-feature { background: rgba(255,72,0,.18); color: var(--orange); }
+
+/* issues: filter row (independent of the report-type toggle above) */
+.issue-filter { display: flex; gap: 6px; flex-wrap: wrap; margin: 28px 0 4px; }
+.filter-btn { font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+  color: var(--muted); background: none; border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 12px; cursor: pointer; transition: color .15s, border-color .15s, background .15s; }
+.filter-btn:hover { color: var(--text); border-color: #474b54; }
+.filter-btn.active.filter-all { color: var(--text); border-color: var(--text); }
+.filter-btn.active.filter-feature { background: rgba(255,72,0,.18); color: var(--orange); border-color: var(--orange); }
+.filter-btn.active.filter-bug { background: rgba(248,113,113,.14); color: var(--danger); border-color: var(--danger); }
+.filter-btn.active.filter-fixed { background: rgba(34,197,94,.18); color: var(--green); border-color: var(--green); }
+.filter-btn.active.filter-closed { background: var(--border); color: var(--text); text-decoration: line-through; }
 
 /* issues: list + upvote */
 .issue-list { border-top: 1px solid var(--border); margin-top: 14px; }
 .issue-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
-.issue-item-head { display: flex; align-items: center; gap: 10px; }
+.issue-item-head { display: flex; align-items: center; gap: 8px; }
 .issue-item-title { flex: 1; font-size: 13px; font-weight: 700; color: var(--text); text-decoration: none;
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .issue-item-title:hover { color: var(--orange); }

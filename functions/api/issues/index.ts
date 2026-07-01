@@ -1,31 +1,27 @@
 import type { Env } from "../../_shared/env"
 import { json } from "../../_shared/session"
 import { requireGithubSession } from "../../_shared/issuesAuth"
-import { listIssues, createIssue, findOwnReaction, type IssueKind } from "../../_shared/github"
+import { listAllIssues, createIssue, findOwnReaction } from "../../_shared/github"
 
 const SUMMARY_MAX = 200
 const DESCRIPTION_MAX = 4000
 
-function parseKind(v: string | null): IssueKind {
-  return v === "feature" ? "feature" : "bug"
-}
-
-// GET /api/issues?kind=bug|feature - list existing reports of that kind, with
-// the viewer's own upvote state attached.
+// GET /api/issues - all bug reports + feature requests (newest first), with
+// the viewer's own upvote state attached. Filtering by kind/status happens
+// client-side over this one combined list.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const auth = await requireGithubSession(request, env)
   if (auth instanceof Response) return auth
 
-  const kind = parseKind(new URL(request.url).searchParams.get("kind"))
   try {
-    const issues = await listIssues(auth.token, kind)
+    const issues = await listAllIssues(auth.token)
     const items = await Promise.all(
       issues.map(async (issue) => {
         const mine = await findOwnReaction(auth.token, issue.number, auth.githubUserId)
         return { ...issue, upvoted: Boolean(mine) }
       }),
     )
-    return json({ items, kind })
+    return json({ items })
   } catch (e) {
     return json({ error: (e as Error).message }, { status: 502 })
   }
