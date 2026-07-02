@@ -104,7 +104,8 @@ export default function Pack() {
     }
   }
 
-  // Owner curates; admin can moderate (take private / delete) any pack.
+  // Owner curates; admin can moderate any pack, but only reversibly here -
+  // Make private stays inline, Delete pack is owner-only (admins delete from /mod).
   const canModerate = pack.is_owner || !!user?.isAdmin
   const shareUrl = `${location.origin}/packs/${pack.id}`
   return (
@@ -124,7 +125,7 @@ export default function Pack() {
             {pendingPublic ? "Make public?" : pack.is_public ? "Make private" : "Make public"}
           </button>
         )}
-        {canModerate && (
+        {pack.is_owner && (
           <button className={"btn" + (pendingDel ? " danger" : "")} onClick={del}>
             {pendingDel ? "Confirm?" : "Delete pack"}
           </button>
