@@ -121,6 +121,19 @@ a.list-row { text-decoration: none; color: inherit; }
   .list-act-ext { display: none; }
 }
 
+/* like button (patches + packs) */
+.btn.like { padding: 6px 10px; gap: 5px; flex-shrink: 0; }
+.btn.like svg { flex-shrink: 0; }
+.btn.like.active { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
+.btn.like.active svg { animation: like-pop .22s cubic-bezier(.22,1,.36,1); }
+@keyframes like-pop { 0% { transform: scale(.6); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .btn.like.active svg { animation: none; }
+}
+
+/* browse sort control shares the filter-row input look */
+select.sort-select { flex-shrink: 0; }
+
 /* moderation console */
 .mod-section { margin-top: 36px; }
 .mod-section h2 { margin-bottom: 4px; }

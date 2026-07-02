@@ -44,10 +44,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   const is_owner = !!(user && user.uid === row.user_id)
   // can_edit gates the tag editor UI; the PATCH handler enforces the same rule.
   const can_edit = is_owner || isAdmin(env, user)
+  const liked = user
+    ? await env.DB
+        .prepare("SELECT 1 AS x FROM likes WHERE user_id = ?1 AND target_type = 'patch' AND target_id = ?2")
+        .bind(user.uid, id)
+        .first()
+    : null
   return json({
     id: row.id, name: row.name, type: row.type, fx_type: row.fx_type, lfo_type: row.lfo_type,
     octave: row.octave, tags: row.tags, author: row.author, created_at: row.created_at,
     download_count: row.download_count, preset: JSON.parse(row.json), is_owner, can_edit,
+    like_count: (row as PatchRow & { like_count?: number }).like_count ?? 0, liked_by_me: !!liked,
   })
 }
 

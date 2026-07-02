@@ -7,6 +7,7 @@ import Patches from "./pages/Patches"
 import Upload from "./pages/Upload"
 import Packs from "./pages/Packs"
 import Pack from "./pages/Pack"
+import Favorites from "./pages/Favorites"
 import Issues from "./pages/Issues"
 import IssueReport from "./pages/IssueReport"
 import Mod from "./pages/Mod"
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="/upload" element={<RequireAuth><Upload /></RequireAuth>} />
         <Route path="/packs" element={<RequireAuth><Packs /></RequireAuth>} />
         <Route path="/packs/:id" element={<Pack />} />
+        <Route path="/favorites" element={<RequireAuth><Favorites /></RequireAuth>} />
         {/* Not wrapped in RequireAuth: RequireGithubIssues (in each page) already
             handles signed-out/wrong-provider/needs-reconnect with a message that
             explains why GitHub specifically is required, instead of a bare redirect. */}

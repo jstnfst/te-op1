@@ -5,27 +5,34 @@ import { deriveTags } from "../../_shared/tags"
 
 const PER_PAGE = 24
 
-// GET /api/patches - public, filterable list.
+// GET /api/patches - public, filterable list. ?sort=likes orders by
+// popularity (ties break newest-first); default is newest-first.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
+  const user = await getSessionUser(request, env)
   const url = new URL(request.url)
   const type = url.searchParams.get("type")
   const tag = url.searchParams.get("tag")
   const q = url.searchParams.get("q")
+  const sort = url.searchParams.get("sort")
   const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1)
 
   const where = ["p.is_public = 1"]
-  const binds: unknown[] = []
+  const binds: unknown[] = [user?.uid ?? 0]
   if (type) { binds.push(type); where.push(`p.type = ?${binds.length}`) }
   if (tag) { binds.push(`%${tag}%`); where.push(`p.tags LIKE ?${binds.length}`) }
   if (q) { binds.push(`%${q}%`); where.push(`p.name LIKE ?${binds.length}`) }
 
+  const order = sort === "likes" ? "p.like_count DESC, p.created_at DESC" : "p.created_at DESC"
   const offset = (page - 1) * PER_PAGE
   const sql =
     `SELECT p.id, p.name, p.type, p.fx_type, p.lfo_type, p.octave, p.tags,
-            p.download_count, p.created_at, u.display_name AS author
-     FROM patches p LEFT JOIN users u ON u.id = p.user_id
+            p.download_count, p.created_at, p.like_count, u.display_name AS author,
+            (l.user_id IS NOT NULL) AS liked_by_me
+     FROM patches p
+     LEFT JOIN users u ON u.id = p.user_id
+     LEFT JOIN likes l ON l.target_type = 'patch' AND l.target_id = p.id AND l.user_id = ?1
      WHERE ${where.join(" AND ")}
-     ORDER BY p.created_at DESC
+     ORDER BY ${order}
      LIMIT ${PER_PAGE + 1} OFFSET ${offset}`
   const rows = await env.DB.prepare(sql).bind(...binds).all()
   const all = rows.results as Record<string, unknown>[]

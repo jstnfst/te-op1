@@ -7,9 +7,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!user) return json({ error: "Sign in." }, { status: 401 })
   const rows = await env.DB
     .prepare(
-      `SELECT p.id, p.name, p.is_public, p.created_at,
-              (SELECT COUNT(*) FROM pack_items pi WHERE pi.pack_id = p.id) AS item_count
-       FROM packs p WHERE p.user_id = ?1 ORDER BY p.created_at DESC`,
+      `SELECT p.id, p.name, p.is_public, p.created_at, p.like_count,
+              (SELECT COUNT(*) FROM pack_items pi WHERE pi.pack_id = p.id) AS item_count,
+              (l.user_id IS NOT NULL) AS liked_by_me
+       FROM packs p
+       LEFT JOIN likes l ON l.target_type = 'pack' AND l.target_id = p.id AND l.user_id = ?1
+       WHERE p.user_id = ?1 ORDER BY p.created_at DESC`,
     )
     .bind(user.uid)
     .all()

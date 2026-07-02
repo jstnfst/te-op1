@@ -22,6 +22,9 @@ export interface PatchSummary {
   created_at: string
   author?: string | null
   is_public?: number
+  like_count?: number
+  /** SQLite boolean: 0/1 from list queries. */
+  liked_by_me?: number | boolean
 }
 
 async function handle<T>(res: Response): Promise<T> {
@@ -48,6 +51,8 @@ export interface Pack {
   created_at: string
   item_count?: number
   author?: string | null
+  like_count?: number
+  liked_by_me?: number | boolean
 }
 
 /** POST a JSON body and save the binary response (e.g. a .zip) as a download. */

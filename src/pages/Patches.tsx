@@ -4,6 +4,7 @@ import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
 import { useSelection, SelectionBar, type Selection } from "../packs"
 import { Collapsible } from "../collapsible"
+import { LikeButton } from "../like"
 
 const TYPES = [
   "amp", "cluster", "dbox", "digital", "dimension", "dna", "drwave",
@@ -261,6 +262,7 @@ function GridCard({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary;
       <div className="row card-actions">
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
         <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
         {mod && <ModButtons mod={mod} />}
       </div>
     </div>
@@ -283,6 +285,7 @@ function ListRow({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; 
         ))}
       </div>
       <div className="list-actions">
+        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
         <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
         {mod && <ModButtons mod={mod} ext />}
@@ -297,6 +300,7 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
   const [type, setType] = useState("")
   const [q, setQ] = useState("")
   const [tag, setTag] = useState("")
+  const [sort, setSort] = useState("")
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle("te-op1-patches-discover-view")
@@ -305,8 +309,8 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
   const modTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => () => { if (modTimer.current) clearTimeout(modTimer.current) }, [])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const filtersRef = useRef({ type: "", q: "", tag: "" })
-  filtersRef.current = { type, q, tag }
+  const filtersRef = useRef({ type: "", q: "", tag: "", sort: "" })
+  filtersRef.current = { type, q, tag, sort }
   const isFirstQTagRender = useRef(true)
 
   async function load(filters = filtersRef.current) {
@@ -317,6 +321,7 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
       if (filters.type) params.set("type", filters.type)
       if (filters.q.trim()) params.set("q", filters.q.trim())
       if (filters.tag.trim()) params.set("tag", filters.tag.trim())
+      if (filters.sort) params.set("sort", filters.sort)
       const data = await apiGet<{ items: PatchSummary[] }>(`/api/patches?${params.toString()}`)
       setItems(data.items)
     } catch (e) {
@@ -330,7 +335,7 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
     if (debounceRef.current) clearTimeout(debounceRef.current)
     load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type])
+  }, [type, sort])
 
   useEffect(() => {
     if (isFirstQTagRender.current) { isFirstQTagRender.current = false; return }
@@ -416,6 +421,10 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
             onChange={(e) => setTag(e.target.value)}
             aria-label="Filter by tag"
           />
+          <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort order">
+            <option value="">Newest</option>
+            <option value="likes">Most liked</option>
+          </select>
           {hasFilters && (
             <button className="btn" onClick={clearFilters}>Clear</button>
           )}

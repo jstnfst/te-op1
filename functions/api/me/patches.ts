@@ -14,8 +14,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!user) return json({ error: "Sign in." }, { status: 401 })
   const rows = await env.DB
     .prepare(
-      `SELECT id, name, type, fx_type, lfo_type, octave, tags, is_public, download_count, created_at
-       FROM patches WHERE user_id = ?1 ORDER BY created_at DESC`,
+      `SELECT p.id, p.name, p.type, p.fx_type, p.lfo_type, p.octave, p.tags, p.is_public,
+              p.download_count, p.created_at, p.like_count,
+              (l.user_id IS NOT NULL) AS liked_by_me
+       FROM patches p
+       LEFT JOIN likes l ON l.target_type = 'patch' AND l.target_id = p.id AND l.user_id = ?1
+       WHERE p.user_id = ?1 ORDER BY p.created_at DESC`,
     )
     .bind(user.uid)
     .all()

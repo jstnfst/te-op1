@@ -3,6 +3,7 @@ import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type Pack } from "../api"
 import { Collapsible } from "../collapsible"
+import { LikeButton } from "../like"
 
 const VIEW_KEY = "te-op1-packs-view"
 const DISCOVER_VIEW_KEY = "te-op1-packs-discover-view"
@@ -62,6 +63,9 @@ function PackGrid({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
             {showAuthor && p.author ? <span>by {p.author}</span> : null}
           </div>
           <div className="card-title">{p.name}</div>
+          <div className="row card-actions">
+            <LikeButton type="pack" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
+          </div>
         </Link>
       ))}
     </div>
@@ -78,6 +82,9 @@ function PackList({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
           {showAuthor && p.author ? <span className="list-author">by {p.author}</span> : (
             <span className="list-author">{p.item_count ?? 0} patches</span>
           )}
+          <div className="list-actions">
+            <LikeButton type="pack" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
+          </div>
         </Link>
       ))}
     </div>
@@ -139,18 +146,20 @@ function MyPacks() {
 function DiscoverPacks() {
   const [packs, setPacks] = useState<Pack[]>([])
   const [q, setQ] = useState("")
+  const [sort, setSort] = useState("")
   const [busy, setBusy] = useState(true)
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle(DISCOVER_VIEW_KEY)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isFirstRender = useRef(true)
 
-  async function load(query: string) {
+  async function load(query: string, sortBy = sort) {
     setBusy(true)
     setErr("")
     try {
       const params = new URLSearchParams()
       if (query.trim()) params.set("q", query.trim())
+      if (sortBy) params.set("sort", sortBy)
       const d = await apiGet<{ items: Pack[] }>(`/api/packs/public?${params.toString()}`)
       setPacks(d.items)
     } catch (e) {
@@ -179,6 +188,15 @@ function DiscoverPacks() {
           onChange={(e) => setQ(e.target.value)}
           aria-label="Search public packs"
         />
+        <select
+          className="sort-select"
+          value={sort}
+          onChange={(e) => { setSort(e.target.value); load(q, e.target.value) }}
+          aria-label="Sort order"
+        >
+          <option value="">Newest</option>
+          <option value="likes">Most liked</option>
+        </select>
       </div>
       {err && <p className="error">{err}</p>}
       {busy && packs.length === 0 ? (

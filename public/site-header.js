@@ -30,9 +30,10 @@
   ];
   // Community library - shown only when signed in.
   var LIBRARY = [
-    { label: "PATCHES", href: "/patches", section: "patches" },
-    { label: "PACKS",   href: "/packs",   section: "packs" },
-    { label: "UPLOAD",  href: "/upload",  section: "upload" }
+    { label: "PATCHES", href: "/patches",   section: "patches" },
+    { label: "PACKS",   href: "/packs",     section: "packs" },
+    { label: "FAVES",   href: "/favorites", section: "faves" },
+    { label: "UPLOAD",  href: "/upload",    section: "upload" }
   ];
   // Issues - shown only when signed in with GitHub specifically (issues are
   // filed as the viewer's own GitHub account, see functions/api/issues).
@@ -49,7 +50,7 @@
     home: "preset library", layout: "knob layout", mappings: "value mappings",
     patch: "patch editor", patches: "patch library", upload: "upload patches",
     packs: "packs", login: "account", issues: "changelog & issues", issuesReport: "report an issue",
-    mod: "moderation"
+    mod: "moderation", faves: "favorites"
   };
 
   function sectionFromPath(path) {
@@ -63,6 +64,7 @@
     if (path.indexOf("/me") === 0) return "patches";
     if (path.indexOf("/upload") === 0) return "upload";
     if (path.indexOf("/packs") === 0) return "packs";
+    if (path.indexOf("/favorites") === 0) return "faves";
     if (path.indexOf("/issues/report") === 0) return "issuesReport";
     if (path.indexOf("/issues") === 0) return "issues";
     if (path.indexOf("/mod") === 0) return "mod";
