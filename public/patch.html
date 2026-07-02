@@ -205,7 +205,9 @@
     /* ── PATCH TOOLBAR (copy always; update/save-new only for community patches) ── */
     .patch-toolbar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding-bottom: 14px; margin-bottom: 6px; border-bottom: 1px solid var(--border); }
     .tb-update, .tb-save { display: none; }
-    .has-community-patch .tb-update, .has-community-patch .tb-save { display: inline-flex; }
+    /* Update needs .is-owner too: without it this rule out-specifies the
+       .owner-only gate and shows Update to everyone. */
+    .has-community-patch.is-owner .tb-update, .has-community-patch .tb-save { display: inline-flex; }
     .is-logged-in .tb-save { display: inline-flex; }
     .owner-only { display: none; }
     .is-owner .owner-only { display: inline-flex; }
@@ -276,6 +278,7 @@
     .tag-chip button { background: none; border: none; cursor: pointer; color: inherit; font-size: 12px; line-height: 1; padding: 0; opacity: .6; font-family: inherit; }
     .tag-chip button:hover { opacity: 1; }
     .tag-add-row { display: flex; align-items: center; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+    .tag-add-row[hidden] { display: none; }
     .tag-add-row input[type=text] { font: inherit; font-size: 11px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 4px 8px; width: 130px; }
     .tag-add-row input[type=text]:focus { outline: 1px solid var(--blue); border-color: var(--blue); }
     .tag-save-status { font-size: 10px; color: var(--muted); margin-left: 2px; }
@@ -1784,13 +1787,15 @@ loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
 renderClipboard();
 updatePasteVisibility();
 
-/* ── Community patch tag editor ── */
-var _patchId = null, _patchTags = [];
+/* ── Community patch tag editor ──
+   Tags are editable by the patch owner and admins only (the API enforces the
+   same rule); everyone else sees read-only chips. */
+var _patchId = null, _patchTags = [], _tagsEditable = false;
 
 function renderTagChips() {
   document.getElementById('tagChips').innerHTML = _patchTags.map(function (t, i) {
     return '<span class="tag-chip">' + t +
-      '<button type="button" onclick="removeTag(' + i + ')" aria-label="Remove ' + t + '">×</button>' +
+      (_tagsEditable ? '<button type="button" onclick="removeTag(' + i + ')" aria-label="Remove ' + t + '">×</button>' : '') +
       '</span>';
   }).join('');
 }
@@ -1825,11 +1830,14 @@ document.getElementById('tagSaveBtn').addEventListener('click', function () {
   }).catch(function () { st.textContent = 'Network error.'; });
 });
 
-function showPatchTags(id, tagsStr) {
+function showPatchTags(id, tagsStr, canEdit) {
   _patchId = id;
+  _tagsEditable = !!canEdit;
   _patchTags = tagsStr.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
   renderTagChips();
-  document.getElementById('patchTagsSection').hidden = false;
+  document.querySelector('.tag-add-row').hidden = !_tagsEditable;
+  // Read-only viewers with no tags to look at get no section at all.
+  document.getElementById('patchTagsSection').hidden = !_tagsEditable && _patchTags.length === 0;
 }
 
 /* ── Community / user patch loader: pulls a stored patch from the API ──
@@ -1853,7 +1861,7 @@ function loadCommunityPatch(id) {
       if (d) {
         sampleSel.selectedIndex = -1;
         if (userSel) userSel.value = String(id);   // reflect the patch in the USER picker if present
-        showPatchTags(id, d.tags || '');
+        showPatchTags(id, d.tags || '', d.can_edit != null ? d.can_edit : d.is_owner);
         _communityPatchId = id;
         var vizEl = document.getElementById('viz');
         vizEl.classList.add('has-community-patch');

@@ -42,10 +42,12 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
     if (!user || (user.uid !== row.user_id && !isAdmin(env, user))) return json({ error: "Not found." }, { status: 404 })
   }
   const is_owner = !!(user && user.uid === row.user_id)
+  // can_edit gates the tag editor UI; the PATCH handler enforces the same rule.
+  const can_edit = is_owner || isAdmin(env, user)
   return json({
     id: row.id, name: row.name, type: row.type, fx_type: row.fx_type, lfo_type: row.lfo_type,
     octave: row.octave, tags: row.tags, author: row.author, created_at: row.created_at,
-    download_count: row.download_count, preset: JSON.parse(row.json), is_owner,
+    download_count: row.download_count, preset: JSON.parse(row.json), is_owner, can_edit,
   })
 }
 
