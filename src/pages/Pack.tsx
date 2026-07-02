@@ -101,6 +101,8 @@ export default function Pack() {
     }
   }
 
+  // Owner curates; admin can moderate (take private / delete) any pack.
+  const canModerate = pack.is_owner || !!user?.isAdmin
   const shareUrl = `${location.origin}/packs/${pack.id}`
   return (
     <>
@@ -109,7 +111,7 @@ export default function Pack() {
       {err && <p className="error">{err}</p>}
       <div className="row pack-actions">
         <a className="btn primary" href={`/api/packs/${pack.id}/download`}>Download .zip</a>
-        {pack.is_owner && (
+        {canModerate && (
           <button
             className={"btn" + (pendingPublic ? " primary" : "")}
             onClick={togglePublic}
@@ -118,7 +120,7 @@ export default function Pack() {
             {pendingPublic ? "Make public?" : pack.is_public ? "Make private" : "Make public"}
           </button>
         )}
-        {pack.is_owner && (
+        {canModerate && (
           <button className={"btn" + (pendingDel ? " danger" : "")} onClick={del}>
             {pendingDel ? "Confirm?" : "Delete pack"}
           </button>
@@ -127,7 +129,7 @@ export default function Pack() {
       {pack.is_public ? (
         <p className="muted">Public - anyone with the link can download: <code>{shareUrl}</code></p>
       ) : (
-        <p className="muted">Private - only you can download.</p>
+        <p className="muted">{pack.is_owner ? "Private - only you can download." : "Private - only the owner can download."}</p>
       )}
 
       {pack.items.length === 0 ? (

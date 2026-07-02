@@ -25,6 +25,15 @@ export async function upsertUser(env: Env, provider: Provider, u: NormalizedUser
   return { uid, provider, email: u.email, name: u.name, avatar: u.avatar }
 }
 
+/** When the account was banned, or null. Checked on login and on every authed API request. */
+export async function getBannedAt(env: Env, uid: number): Promise<string | null> {
+  const row = await env.DB
+    .prepare("SELECT banned_at FROM users WHERE id=?1")
+    .bind(uid)
+    .first<{ banned_at: string | null }>()
+  return row?.banned_at ?? null
+}
+
 /** Persist the GitHub access token (encrypted) so the user can file issues/react as themselves. */
 export async function setGithubToken(env: Env, uid: number, accessToken: string): Promise<void> {
   const encrypted = await encryptToken(accessToken, env.JWT_SECRET)

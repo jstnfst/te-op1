@@ -218,7 +218,30 @@ function MyPatches({ selection }: { selection: Selection }) {
 
 // ---------- Discover patches ----------
 
-function GridCard({ p, selected, onToggle, onTagClick }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void }) {
+/** Admin-only moderation handles on community items (hidden for everyone else). */
+interface ModActions {
+  armedDel: boolean
+  busy: boolean
+  onPrivate: () => void
+  onDelete: () => void
+}
+
+function ModButtons({ mod, ext }: { mod: ModActions; ext?: boolean }) {
+  // In list view only Delete hides on mobile (list-act-ext): the reversible
+  // takedown stays reachable everywhere.
+  return (
+    <>
+      <button className="btn" onClick={mod.onPrivate} disabled={mod.busy}>
+        {mod.busy ? "Working…" : "Make private"}
+      </button>
+      <button className={"btn" + (ext ? " list-act-ext" : "") + (mod.armedDel ? " danger" : "")} onClick={mod.onDelete} disabled={mod.busy}>
+        {mod.armedDel ? "Confirm?" : "Delete"}
+      </button>
+    </>
+  )
+}
+
+function GridCard({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void; mod?: ModActions }) {
   const tags = p.tags.split(",").filter(Boolean).slice(0, 6)
   return (
     <div className={"card" + (selected ? " selected" : "")}>
@@ -238,12 +261,13 @@ function GridCard({ p, selected, onToggle, onTagClick }: { p: PatchSummary; sele
       <div className="row card-actions">
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
         <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        {mod && <ModButtons mod={mod} />}
       </div>
     </div>
   )
 }
 
-function ListRow({ p, selected, onToggle, onTagClick }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void }) {
+function ListRow({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void; mod?: ModActions }) {
   const tags = p.tags.split(",").filter(Boolean).slice(0, 4)
   return (
     <div className={"list-row" + (selected ? " selected" : "")}>
@@ -261,12 +285,14 @@ function ListRow({ p, selected, onToggle, onTagClick }: { p: PatchSummary; selec
       <div className="list-actions">
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
         <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        {mod && <ModButtons mod={mod} ext />}
       </div>
     </div>
   )
 }
 
 function DiscoverPatches({ selection }: { selection: Selection }) {
+  const { user } = useAuth()
   const [items, setItems] = useState<PatchSummary[]>([])
   const [type, setType] = useState("")
   const [q, setQ] = useState("")
@@ -274,6 +300,10 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle("te-op1-patches-discover-view")
+  const [modArmed, setModArmed] = useState<number | null>(null)
+  const [modBusy, setModBusy] = useState<number | null>(null)
+  const modTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (modTimer.current) clearTimeout(modTimer.current) }, [])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const filtersRef = useRef({ type: "", q: "", tag: "" })
   filtersRef.current = { type, q, tag }
@@ -321,6 +351,45 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
     setQ("")
     setTag("")
   }
+
+  // Admin moderation on community items: make private (one tap, reversible by
+  // the owner) or delete (second-tap confirm, same convention as MyPatches).
+  async function modPrivate(p: PatchSummary) {
+    setModBusy(p.id)
+    try {
+      await apiSend(`/api/patches/${p.id}`, "PATCH", { is_public: false })
+      setItems((i) => i.filter((x) => x.id !== p.id))
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setModBusy(null)
+    }
+  }
+
+  async function modDelete(p: PatchSummary) {
+    if (modArmed !== p.id) {
+      if (modTimer.current) clearTimeout(modTimer.current)
+      setModArmed(p.id)
+      modTimer.current = setTimeout(() => setModArmed(null), 2500)
+      return
+    }
+    if (modTimer.current) clearTimeout(modTimer.current)
+    setModArmed(null)
+    setModBusy(p.id)
+    try {
+      await apiSend(`/api/patches/${p.id}`, "DELETE")
+      setItems((i) => i.filter((x) => x.id !== p.id))
+    } catch (e) {
+      setErr((e as Error).message)
+    } finally {
+      setModBusy(null)
+    }
+  }
+
+  const modFor = (p: PatchSummary): ModActions | undefined =>
+    user?.isAdmin
+      ? { armedDel: modArmed === p.id, busy: modBusy === p.id, onPrivate: () => modPrivate(p), onDelete: () => modDelete(p) }
+      : undefined
 
   const hasFilters = type !== "" || q !== "" || tag !== ""
 
@@ -370,13 +439,13 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
           {view === "grid" ? (
             <div className="grid">
               {items.map((p) => (
-                <GridCard key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} />
+                <GridCard key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} mod={modFor(p)} />
               ))}
             </div>
           ) : (
             <div className="list">
               {items.map((p) => (
-                <ListRow key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} />
+                <ListRow key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} mod={modFor(p)} />
               ))}
             </div>
           )}

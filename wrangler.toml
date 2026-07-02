@@ -14,3 +14,5 @@ database_id = "1958b1c5-ce17-4191-8ba9-4553a57f2cbd"
 # SITE_URL is the production origin; local dev overrides it via .dev.vars.
 [vars]
 SITE_URL = "https://te-op1.pages.dev"
+# Comma-separated emails granted the admin role (see functions/_shared/admin.ts).
+ADMIN_EMAILS = "jstnfst@gmail.com"

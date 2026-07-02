@@ -2,6 +2,7 @@ import type { Env } from "../../_shared/env"
 import { getSessionUser, json } from "../../_shared/session"
 import { validatePreset } from "../../_shared/validate"
 import { deriveTags } from "../../_shared/tags"
+import { isAdmin } from "../../_shared/admin"
 
 interface PatchRow {
   id: number
@@ -37,7 +38,8 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   if (!row) return json({ error: "Not found." }, { status: 404 })
   const user = await getSessionUser(request, env)
   if (!row.is_public) {
-    if (!user || user.uid !== row.user_id) return json({ error: "Not found." }, { status: 404 })
+    // Owner, or admin (so a patch just taken private stays inspectable).
+    if (!user || (user.uid !== row.user_id && !isAdmin(env, user))) return json({ error: "Not found." }, { status: 404 })
   }
   const is_owner = !!(user && user.uid === row.user_id)
   return json({
@@ -47,13 +49,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   })
 }
 
-// PATCH /api/patches/:id - owner: rename, toggle public, or replace JSON.
+// PATCH /api/patches/:id - owner (or admin, for moderation): rename, toggle
+// public, or replace JSON.
 export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })
   const id = parseInt(String(params.id), 10)
   const row = await load(env, id)
-  if (!row || row.user_id !== user.uid) return json({ error: "Not found." }, { status: 404 })
+  if (!row || (row.user_id !== user.uid && !isAdmin(env, user))) return json({ error: "Not found." }, { status: 404 })
 
   let body: Record<string, unknown>
   try { body = (await request.json()) as Record<string, unknown> } catch { return json({ error: "Bad body." }, { status: 400 }) }
@@ -80,12 +83,14 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request 
   return json({ ok: true })
 }
 
-// DELETE /api/patches/:id - owner only.
+// DELETE /api/patches/:id - owner, or admin (moderation takedown).
 export const onRequestDelete: PagesFunction<Env> = async ({ params, env, request }) => {
   const user = await getSessionUser(request, env)
   if (!user) return json({ error: "Sign in." }, { status: 401 })
   const id = parseInt(String(params.id), 10)
-  const res = await env.DB.prepare("DELETE FROM patches WHERE id = ?1 AND user_id = ?2").bind(id, user.uid).run()
+  const res = isAdmin(env, user)
+    ? await env.DB.prepare("DELETE FROM patches WHERE id = ?1").bind(id).run()
+    : await env.DB.prepare("DELETE FROM patches WHERE id = ?1 AND user_id = ?2").bind(id, user.uid).run()
   if (!res.meta.changes) return json({ error: "Not found." }, { status: 404 })
   return json({ ok: true })
 }

@@ -39,11 +39,17 @@
   var ISSUES = [
     { label: "ISSUES", href: "/issues", section: "issues" }
   ];
+  // Moderation console - admins only (user.isAdmin from /api/auth/me; the
+  // /api/admin endpoints re-check the role server-side).
+  var MOD = [
+    { label: "MOD", href: "/mod", section: "mod" }
+  ];
 
   var SUBTITLE = {
     home: "preset library", layout: "knob layout", mappings: "value mappings",
     patch: "patch editor", patches: "patch library", upload: "upload patches",
-    packs: "packs", login: "account", issues: "changelog & issues", issuesReport: "report an issue"
+    packs: "packs", login: "account", issues: "changelog & issues", issuesReport: "report an issue",
+    mod: "moderation"
   };
 
   function sectionFromPath(path) {
@@ -59,6 +65,7 @@
     if (path.indexOf("/packs") === 0) return "packs";
     if (path.indexOf("/issues/report") === 0) return "issuesReport";
     if (path.indexOf("/issues") === 0) return "issues";
+    if (path.indexOf("/mod") === 0) return "mod";
     if (path.indexOf("/login") === 0) return "login";
     return "home";
   }
@@ -102,6 +109,7 @@
           REFERENCE.map(function (i) { return navBtn(i, section); }).join("") +
           '<span data-nav-library></span>' +
           '<span data-nav-issues></span>' +
+          '<span data-nav-mod></span>' +
         "</nav>" +
       "</header>"
     );
@@ -134,6 +142,16 @@
       : "";
   }
 
+  // Fill the Mod slot: admins only, after the Issues group.
+  function fillMod(user, section) {
+    var slot = document.querySelector("[data-nav-mod]");
+    if (!slot) return;
+    var sep = '<span class="nav-sep" aria-hidden="true">&middot;</span>';
+    slot.innerHTML = (user && user.isAdmin)
+      ? sep + MOD.map(function (i) { return navBtn(i, section); }).join("")
+      : "";
+  }
+
   function applyAuth(user) {
     var section = currentSection();
     var el = document.querySelector("[data-auth]");
@@ -146,6 +164,7 @@
     }
     fillLibrary(user, section);
     fillIssues(user, section);
+    fillMod(user, section);
   }
 
   function loadAuth() {

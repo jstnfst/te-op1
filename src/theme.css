@@ -121,6 +121,22 @@ a.list-row { text-decoration: none; color: inherit; }
   .list-act-ext { display: none; }
 }
 
+/* moderation console */
+.mod-section { margin-top: 36px; }
+.mod-section h2 { margin-bottom: 4px; }
+.mod-count { font-size: 12px; margin-bottom: 8px; }
+.mod-avatar { width: 20px; height: 20px; border-radius: 2px; flex-shrink: 0; object-fit: cover; }
+.mod-avatar-empty { display: inline-flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700; color: var(--muted); background: none; border: 1px solid var(--border); }
+.mod-name { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mod-name .chip { flex-shrink: 0; }
+.mod-meta { flex-shrink: 0; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.chip.banned { background: rgba(248,113,113,.14); color: var(--danger); }
+.chip.mod-role { background: rgba(255,72,0,.18); color: var(--orange); }
+a.list-name { color: var(--text); text-decoration: none; }
+a.list-name:hover { color: var(--orange); }
+@media (max-width: 760px) { .mod-meta { display: none; } }
+
 /* issues: changelog */
 .changelog { display: flex; flex-direction: column; gap: 4px; }
 .release { padding: 14px 0; border-bottom: 1px solid var(--border); }

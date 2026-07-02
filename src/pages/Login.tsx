@@ -25,7 +25,11 @@ export default function Login() {
         Sign in to browse the community library, upload presets, and manage your own. The format
         reference &mdash; knob layout, value mappings, and the patch viewer &mdash; stays open to everyone.
       </p>
-      {params.get("error") && <p className="error">Login failed. Please try again.</p>}
+      {params.get("error") === "suspended" ? (
+        <p className="error">This account has been suspended.</p>
+      ) : params.get("error") ? (
+        <p className="error">Login failed. Please try again.</p>
+      ) : null}
       <div className="provider-list">
         {PROVIDERS.map(([id, label]) => (
           <div key={id}>

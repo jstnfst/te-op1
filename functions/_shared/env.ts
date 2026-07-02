@@ -2,6 +2,8 @@ export interface Env {
   DB: D1Database
   SITE_URL: string
   JWT_SECRET: string
+  /** Comma-separated emails granted the admin role. */
+  ADMIN_EMAILS?: string
   GOOGLE_CLIENT_ID: string
   GOOGLE_CLIENT_SECRET: string
   MICROSOFT_CLIENT_ID: string

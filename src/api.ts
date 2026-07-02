@@ -6,6 +6,8 @@ export interface User {
   avatar: string | null
   /** True once a github access token is on file (provider === "github" only). */
   githubIssuesReady?: boolean
+  /** UI hint only - every admin endpoint re-derives the role server-side. */
+  isAdmin?: boolean
 }
 
 export interface PatchSummary {
