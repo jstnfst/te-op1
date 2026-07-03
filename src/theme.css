@@ -68,7 +68,8 @@ details.adv a { color: var(--orange); text-decoration: none; font-weight: 700; }
 .card-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
 .card input[type=checkbox] { accent-color: var(--orange); cursor: pointer; }
 .selbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 50;
-  display: flex; align-items: center; gap: 12px; padding: 10px 16px; font-size: 12px; color: var(--text);
+  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px;
+  max-width: calc(100vw - 20px); padding: 10px 16px; font-size: 12px; color: var(--text);
   background: var(--header-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.55); }
 .selbar-pack { position: relative; }
 .selbar-menu { position: absolute; bottom: calc(100% + 8px); left: 0; min-width: 190px; max-height: 280px; overflow: auto;
@@ -119,6 +120,17 @@ a.list-row { text-decoration: none; color: inherit; }
   .list-tags { display: none; }
   .list-dl { display: none; }
   .list-act-ext { display: none; }
+
+  /* Compact action-panel tier: buttons drop a size so a card's actions fit
+     one row instead of wrapping into a stack of chunky rows. */
+  .btn { padding: 7px 9px; font-size: 10px; letter-spacing: .04em; gap: 5px; }
+  .btn.like { padding: 6px 8px; }
+  .row { gap: 6px; }
+  .card-actions { margin-top: 10px; }
+  .card { padding: 14px 14px 12px; }
+  .grid { gap: 10px; }
+  .collapsible { margin: 28px 0 10px; }
+  .selbar { gap: 8px; padding: 8px 10px; bottom: 12px; }
 }
 
 /* like button (patches + packs) */
