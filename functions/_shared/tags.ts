@@ -21,9 +21,10 @@ const LFO_MOTION: Record<string, string> = {
   random: "random", velocity: "dynamic", midi: "midi",
 }
 
+// The engine type is deliberately NOT tagged: cards/rows already show it as
+// the engine chip, and browse filters on the type column directly.
 export function deriveTags(p: Presetish): string[] {
   const tags = new Set<string>()
-  if (p.type) tags.add(p.type)
 
   const a = p.adsr
   if (Array.isArray(a) && a.length >= 4) {

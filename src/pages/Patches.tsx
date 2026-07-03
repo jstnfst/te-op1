@@ -147,7 +147,9 @@ function MyPatches({ selection }: { selection: Selection }) {
                       <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} aria-label={`Select ${p.name}`} />
                     </label>
                     <span className="chip">{p.type}</span>
-                    <span>{p.is_public ? "public" : "private"}</span>
+                    <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>
+                      {p.is_public ? "public" : "private"}
+                    </span>
                   </div>
                   <div className="card-title">{p.name}</div>
                   {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
@@ -182,7 +184,9 @@ function MyPatches({ selection }: { selection: Selection }) {
                     <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} aria-label={`Select ${p.name}`} />
                   </label>
                   <span className="chip list-type">{p.type}</span>
-                  <span className="list-author">{p.is_public ? "public" : "private"}</span>
+                  <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>
+                    {p.is_public ? "public" : "private"}
+                  </span>
                   <span className="list-name">{p.name}</span>
                   {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
                     <div className="list-tags">

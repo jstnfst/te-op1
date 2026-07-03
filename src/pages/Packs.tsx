@@ -58,7 +58,9 @@ function PackGrid({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
       {packs.map((p) => (
         <Link className="card" key={p.id} to={`/packs/${p.id}`}>
           <div className="card-eyebrow">
-            <span className="chip">{p.is_public ? "public" : "private"}</span>
+            <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>
+              {p.is_public ? "public" : "private"}
+            </span>
             <span>{p.item_count ?? 0} patches</span>
             {showAuthor && p.author ? <span>by {p.author}</span> : null}
           </div>
@@ -77,7 +79,9 @@ function PackList({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
     <div className="list">
       {packs.map((p) => (
         <Link className="list-row" key={p.id} to={`/packs/${p.id}`}>
-          <span className="chip list-type">{p.is_public ? "public" : "private"}</span>
+          <span className={"chip list-type " + (p.is_public ? "vis-public" : "vis-private")}>
+            {p.is_public ? "public" : "private"}
+          </span>
           <span className="list-name">{p.name}</span>
           {showAuthor && p.author ? <span className="list-author">by {p.author}</span> : (
             <span className="list-author">{p.item_count ?? 0} patches</span>

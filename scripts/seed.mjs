@@ -19,7 +19,6 @@ const LFO_MOT = { tremolo: "tremolo", element: "gravity", value: "modulated", ra
 
 function deriveTags(p) {
   const t = new Set()
-  if (p.type) t.add(p.type)
   const a = p.adsr
   if (Array.isArray(a) && a.length >= 4) {
     const [at, , su, re] = a
