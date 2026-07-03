@@ -219,26 +219,18 @@ function MyPatches({ selection }: { selection: Selection }) {
 
 // ---------- Discover patches ----------
 
-/** Admin-only moderation handles on community items (hidden for everyone else). */
+/** Admin-only moderation handle on community items (hidden for everyone
+ * else). Reversible-only inline: hard deletes live in the /mod console. */
 interface ModActions {
-  armedDel: boolean
   busy: boolean
   onPrivate: () => void
-  onDelete: () => void
 }
 
-function ModButtons({ mod, ext }: { mod: ModActions; ext?: boolean }) {
-  // In list view only Delete hides on mobile (list-act-ext): the reversible
-  // takedown stays reachable everywhere.
+function ModButtons({ mod }: { mod: ModActions }) {
   return (
-    <>
-      <button className="btn" onClick={mod.onPrivate} disabled={mod.busy}>
-        {mod.busy ? "Working…" : "Make private"}
-      </button>
-      <button className={"btn" + (ext ? " list-act-ext" : "") + (mod.armedDel ? " danger" : "")} onClick={mod.onDelete} disabled={mod.busy}>
-        {mod.armedDel ? "Confirm?" : "Delete"}
-      </button>
-    </>
+    <button className="btn" onClick={mod.onPrivate} disabled={mod.busy}>
+      {mod.busy ? "Working…" : "Make private"}
+    </button>
   )
 }
 
@@ -288,7 +280,7 @@ function ListRow({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; 
         <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
         <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
         <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
-        {mod && <ModButtons mod={mod} ext />}
+        {mod && <ModButtons mod={mod} />}
       </div>
     </div>
   )
@@ -304,10 +296,7 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle("te-op1-patches-discover-view")
-  const [modArmed, setModArmed] = useState<number | null>(null)
   const [modBusy, setModBusy] = useState<number | null>(null)
-  const modTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  useEffect(() => () => { if (modTimer.current) clearTimeout(modTimer.current) }, [])
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const filtersRef = useRef({ type: "", q: "", tag: "", sort: "" })
   filtersRef.current = { type, q, tag, sort }
@@ -357,8 +346,8 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
     setTag("")
   }
 
-  // Admin moderation on community items: make private (one tap, reversible by
-  // the owner) or delete (second-tap confirm, same convention as MyPatches).
+  // Admin moderation on community items: make private only (one tap,
+  // reversible by the owner). Hard deletes live in the /mod console.
   async function modPrivate(p: PatchSummary) {
     setModBusy(p.id)
     try {
@@ -371,30 +360,8 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
     }
   }
 
-  async function modDelete(p: PatchSummary) {
-    if (modArmed !== p.id) {
-      if (modTimer.current) clearTimeout(modTimer.current)
-      setModArmed(p.id)
-      modTimer.current = setTimeout(() => setModArmed(null), 2500)
-      return
-    }
-    if (modTimer.current) clearTimeout(modTimer.current)
-    setModArmed(null)
-    setModBusy(p.id)
-    try {
-      await apiSend(`/api/patches/${p.id}`, "DELETE")
-      setItems((i) => i.filter((x) => x.id !== p.id))
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setModBusy(null)
-    }
-  }
-
   const modFor = (p: PatchSummary): ModActions | undefined =>
-    user?.isAdmin
-      ? { armedDel: modArmed === p.id, busy: modBusy === p.id, onPrivate: () => modPrivate(p), onDelete: () => modDelete(p) }
-      : undefined
+    user?.isAdmin ? { busy: modBusy === p.id, onPrivate: () => modPrivate(p) } : undefined
 
   const hasFilters = type !== "" || q !== "" || tag !== ""
 

@@ -104,9 +104,10 @@ export default function Pack() {
     }
   }
 
-  // Owner curates; admin can moderate any pack, but only reversibly here -
-  // Make private stays inline, Delete pack is owner-only (admins delete from /mod).
-  const canModerate = pack.is_owner || !!user?.isAdmin
+  // Owner curates; admin moderation here is reversible-only and one-way:
+  // an admin can take a public pack private, never publish someone's private
+  // pack or delete it (deletes live in /mod).
+  const canToggleVisibility = pack.is_owner || (!!user?.isAdmin && !!pack.is_public)
   const shareUrl = `${location.origin}/packs/${pack.id}`
   return (
     <>
@@ -116,7 +117,7 @@ export default function Pack() {
       <div className="row pack-actions">
         <a className="btn primary" href={`/api/packs/${pack.id}/download`}>Download .zip</a>
         {user && <LikeButton type="pack" id={pack.id} likeCount={pack.like_count} likedByMe={pack.liked_by_me} />}
-        {canModerate && (
+        {canToggleVisibility && (
           <button
             className={"btn" + (pendingPublic ? " primary" : "")}
             onClick={togglePublic}
