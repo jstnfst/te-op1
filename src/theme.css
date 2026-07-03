@@ -126,6 +126,13 @@ a.list-row { text-decoration: none; color: inherit; }
   .list-dl { display: none; }
   .list-act-ext { display: none; }
 
+  /* Compact chips: tighter tracking/padding, no reserved engine-chip column,
+     and no public/private chips at all - visibility state is a desktop
+     detail; on a phone the space goes to the name and actions. */
+  .chip { padding: 2px 4px 1px; letter-spacing: .06em; }
+  .list-type { width: auto; }
+  .chip.vis-public, .chip.vis-private { display: none; }
+
   /* Compact action-panel tier: buttons drop a size so a card's actions fit
      one row instead of wrapping into a stack of chunky rows. */
   .btn { padding: 7px 9px; font-size: 10px; letter-spacing: .04em; gap: 5px; }
