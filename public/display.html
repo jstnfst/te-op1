@@ -68,6 +68,10 @@
     .mini-bar { flex: 1; max-width: 80px; height: 3px; background: var(--border); border-radius: 2px; position: relative; }
     .mini-bar-fill { height: 100%; border-radius: 2px; }
 
+    /* fixed (firmware constant) chip - dim, deliberately not one of the
+       eight mapping colors: it marks the absence of a mapping. */
+    .scale-chip.chip-fixed { background: rgba(74,78,87,.25); color: var(--muted); }
+
     @media (max-width: 640px) {
       .param-table .info-cell { display: none; }
     }
@@ -125,6 +129,7 @@
     tempo:     { label: 'tempo dial',    desc: 'Non-linear BPM/tempo dial; no simple formula',   color: '#EC4899' },
     inverse:   { label: 'ms inverse',    desc: 'Lower raw = more time; delay range in ms',       color: '#14B8A6' },
     decimal:   { label: 'decimal',       desc: 'Continuous decimal scale between two bounds',    color: '#06B6D4' },
+    fixed:     { label: 'fixed',         desc: 'Firmware-managed constant; not knob-editable',   color: '#4A4E57' },
   };
 
   // ── PARAMETER DATA ──────────────────────────────────────
@@ -156,8 +161,8 @@
     ['dbox.dyna_env', 3, 'SMOOTH',  'percent',  [[0,'min'],[32767,'max']], ''],
 
     ['synth.digital', 0, 'WAVE SHAPER',    'percent',  [[0,'min'],[32767,'max']], ''],
-    ['synth.digital', 1, 'OCTAVE',         'discrete', [[2048, 0],[19712, 4],[26624, 6]], '0–6'],
-    ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-32768,'min'],[-10369, 33]], 'bipolar'],
+    ['synth.digital', 1, 'OCTAVE',         'discrete', [[2048, 0],[19712, 4],[26624, 6]], '0–6; range 2048–26624'],
+    ['synth.digital', 2, 'DETUNE+RINGMOD', 'centered', [[-32768,'min'],[-10369, 33]], 'bipolar; range −32768 to +32767'],
     ['synth.digital', 3, 'DIGITALNESS',    'percent',  [[0,'min'],[32767,'max']], ''],
 
     ['synth.dimension', 0, 'WAVEFORM',           'percent', [[0,'min'],[32767,'max']], ''],
@@ -186,8 +191,9 @@
 
     ['synth.fm', 0, 'FM AMOUNT', 'discrete', [[31743, 95]],           '0–99'],
     ['synth.fm', 1, 'FREQUENCY', 'discrete', [[17352, 52]],           '0–99'],
-    ['synth.fm', 2, 'TOPOLOGY',  'selector', [[1024,'min'],[13312, 6],[17408,'max']], '9 options'],
+    ['synth.fm', 2, 'TOPOLOGY',  'selector', [[1024,'min'],[13312, 6],[17408,'max']], '9 options; range 1024–17408'],
     ['synth.fm', 3, 'DETUNE',    'discrete', [[0, 0]],                '0–99'],
+    ['synth.fm', '4–7', '—',     'fixed',    [], 'firmware-managed constants: 15000 / 0 / 100 / 1500'],
 
     ['synth.phase', 0, 'PHASE SHIFT',       'percent', [[0, 0],[32767,'max']], ''],
     ['synth.phase', 1, 'DISTORTION AMOUNT', 'percent', [[14310, 44],[29491, 90]], 'max 29491'],
@@ -203,13 +209,13 @@
     ['synth.sampler', 1, 'LOOP IN',   'percent',  [[0,'min'],[9821,30],[32767,'max']], ''],
     ['synth.sampler', 2, 'LOOP OUT',  'percent',  [[0,'min'],[18033,55],[32767,'max']], ''],
     ['synth.sampler', 3, 'END',       'percent',  [[0,'min'],[31301,96],[32767,'max']], ''],
-    ['synth.sampler', 4, 'DIRECTION', 'selector', [[8192, 'min'],[12000, 'forward']], 'forward/reverse; min 8192'],
+    ['synth.sampler', 4, 'DIRECTION', 'selector', [[12000, 'forward'],[24576, 'reverse']], 'forward/reverse; range 8192–24576'],
     ['synth.sampler', 5, 'FINE TUNE', 'percent',  [[0,'min'],[30195,92],[32767,'max']], ''],
     ['synth.sampler', 6, 'LOOP FADE', 'percent',  [[0,'min'],[9103,28],[32767,'max']], ''],
     ['synth.sampler', 7, 'GAIN',      'percent',  [[0,'min'],[8192,25],[32767,'max']], ''],
 
     ['synth.string', 0, 'TENSION',      'percent', [[64,'min'],[3392, 10],[8256,'max']], 'range 64–8256'],
-    ['synth.string', 1, 'DECAY',        'percent', [[24064, 'max']], 'silence below 512'],
+    ['synth.string', 1, 'DECAY',        'percent', [[512,'min'],[24064, 'max']], 'range 512–24064; silence below 512'],
     ['synth.string', 2, 'DETUNE',       'percent', [[16384, 50]], ''],
     ['synth.string', 3, 'IMPULSE TYPE', 'percent', [[8256,0],[16448,100]], 'range 8256–16448'],
 
@@ -237,6 +243,7 @@
     ['fx.grid', 1, 'Y SIZE',     'discrete', [[6032, 30]], '0–99'],
     ['fx.grid', 2, 'Z FEEDBACK', 'discrete', [[23248, 72]], '0–99'],
     ['fx.grid', 3, 'MIX',        'percent',  [[0,'min'],[32767,'max']], ''],
+    ['fx.grid', '4–7', '—',      'fixed',    [], 'firmware-managed constant: always 8000'],
 
     ['fx.mother', 0, 'DISTANCE', 'percent', [[19041, 58]], ''],
     ['fx.mother', 1, 'GATE',     'percent', [[0, 0]], ''],
@@ -252,16 +259,19 @@
     ['fx.phone', 1, 'GSM',      'percent', [[3072,'min'],[6712,26],[10352,51],[17408,'max']], 'range 3072–17408'],
     ['fx.phone', 2, 'BAUD',     'percent', [[1536,'min'],[5466,26],[9426,52],[16896,'max']], 'range 1536–16896'],
     ['fx.phone', 3, 'TELEMATIC','percent', [[0,0],[8441,26],[16876,52],[32767,'max']], ''],
+    ['fx.phone', '4–7', '—',    'fixed',   [], 'firmware-managed constant: always 8000'],
 
     ['fx.punch', 0, 'FREQUENCY', 'percent',  [[1344,'min'],[12480,'max']], 'range 1344–12480'],
     ['fx.punch', 1, 'PUNCH',     'percent',  [[24512, 74]], ''],
     ['fx.punch', 2, 'ROUNDS',    'discrete', [[3744, 3],[11904,11]], '1–24'],
     ['fx.punch', 3, 'POWER',     'percent',  [[29159,88],[31783,96]], ''],
+    ['fx.punch', '4–7', '—',     'fixed',    [], 'firmware-managed constant: always 8000'],
 
     ['fx.spring', 0, 'TONE',    'percent', [[16448, 50]], ''],
     ['fx.spring', 1, 'TURNS',   'percent', [[14544, 44]], ''],
     ['fx.spring', 2, 'DAMPING', 'percent', [[4096, 12]], ''],
     ['fx.spring', 3, 'MIX',     'percent', [[32767, 100]], ''],
+    ['fx.spring', '4–7', '—',   'fixed',   [], 'firmware-managed constant: always 8000'],
 
     ['fx.terminal', 0, 'FREQUENCY', 'hz',      [[0,'100 Hz'],[32767,'20000 Hz']], '100 Hz–20 kHz'],
     ['fx.terminal', 1, 'BITS',      'decimal', [[0, 2],[32767, 16]], '2.0–16.0 bits'],
@@ -269,22 +279,22 @@
     ['fx.terminal', 3, 'MIX',       'percent', [[14322, 50],[32767, 100]], ''],
 
     ['lfo.element', 0, 'SOURCE',      'selector', [[1024,'gravity'],[2144,'microphone'],[4160,'envelope'],[7168,'sum']], 'gravity/microphone/envelope/sum'],
-    ['lfo.element', 1, 'AMOUNT',      'centered', [[-13743,-41],[6245,19],[8265,25],[32767,100]], '−100 to +100'],
-    ['lfo.element', 2, 'DESTINATION', 'selector', [[1024,'synth'],[7168,'mix']], 'synth/envelope/fx/mix'],
+    ['lfo.element', 1, 'AMOUNT',      'centered', [[-32767,-100],[-13743,-41],[6245,19],[8265,25],[32767,100]], '−100 to +100'],
+    ['lfo.element', 2, 'DESTINATION', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'mix']], 'synth/envelope/fx/mix'],
     ['lfo.element', 3, 'PARAMETER',   'selector', [[1024,'min'],[15360,'max']], '4-param: 1024/4864/8704/15360; 8-param: 1024/2944/…/15360; dbox: 1024/2464/4384/6304/8224/10624/12544/14464'],
 
-    ['lfo.midi', 0, 'PARAMETER 1',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], '1–4 target knob'],
-    ['lfo.midi', 1, 'PARAMETER 2',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], ''],
-    ['lfo.midi', 2, 'PARAMETER 3',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], ''],
-    ['lfo.midi', 3, 'PARAMETER 4',   'selector', [[1024,1],[4384,2],[8224,3],[15360,4]], ''],
-    ['lfo.midi', 4, 'DESTINATION 1', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], 'synth/envelope/fx/sound output'],
-    ['lfo.midi', 5, 'DESTINATION 2', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], ''],
-    ['lfo.midi', 6, 'DESTINATION 3', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], ''],
-    ['lfo.midi', 7, 'DESTINATION 4', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'sound output']], ''],
+    ['lfo.midi', 0, 'PARAMETER 1',   'selector', [[1024,1],[5824,2],[10144,3],[15360,4]], '1–4 target knob; midi uses different selector raws than the other LFOs'],
+    ['lfo.midi', 1, 'PARAMETER 2',   'selector', [[1024,1],[5824,2],[10144,3],[15360,4]], ''],
+    ['lfo.midi', 2, 'PARAMETER 3',   'selector', [[1024,1],[5824,2],[10144,3],[15360,4]], ''],
+    ['lfo.midi', 3, 'PARAMETER 4',   'selector', [[1024,1],[5824,2],[10144,3],[15360,4]], ''],
+    ['lfo.midi', 4, 'DESTINATION 1', 'selector', [[1024,'synth'],[2144,'envelope'],[4384,'fx'],[7168,'sound output']], 'synth/envelope/fx/sound output'],
+    ['lfo.midi', 5, 'DESTINATION 2', 'selector', [[1024,'synth'],[2144,'envelope'],[4384,'fx'],[7168,'sound output']], ''],
+    ['lfo.midi', 6, 'DESTINATION 3', 'selector', [[1024,'synth'],[2144,'envelope'],[4384,'fx'],[7168,'sound output']], ''],
+    ['lfo.midi', 7, 'DESTINATION 4', 'selector', [[1024,'synth'],[2144,'envelope'],[4384,'fx'],[7168,'sound output']], ''],
 
     ['lfo.random', 0, 'SPEED',       'tempo',    [[4952, 6]], ''],
     ['lfo.random', 1, 'AMOUNT',      'discrete', [[7167, 21]], '0–99'],
-    ['lfo.random', 2, 'DESTINATION', 'selector', [[1024,'synth'],[7168,'mix']], 'synth/envelope/fx/mix'],
+    ['lfo.random', 2, 'DESTINATION', 'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'mix']], 'synth/envelope/fx/mix; observed 4952 → fx'],
     ['lfo.random', 3, 'ENVELOPE',    'percent',  [[28925, 88]], ''],
     ['lfo.random', 4, 'PARAMETER',   'selector', [[0,'freq']], 'context-dep on DESTINATION'],
 
@@ -302,7 +312,7 @@
 
     ['lfo.velocity', 0, 'AMP',           'percent',  [[16381, 50]], ''],
     ['lfo.velocity', 1, 'VOLUME AMOUNT', 'centered', [[16694,'~51%']], '−100 to +100'],
-    ['lfo.velocity', 2, 'DESTINATION',   'selector', [[1024,'synth'],[7168,'mix']], 'synth/envelope/fx/mix'],
+    ['lfo.velocity', 2, 'DESTINATION',   'selector', [[1024,'synth'],[2144,'envelope'],[4160,'fx'],[7168,'mix']], 'synth/envelope/fx/mix; same encoding as lfo.element'],
     ['lfo.velocity', 3, 'PARAMETER',     'selector', [[15360,'telematic']], 'context-dep; "telematic" when dest=fx/phone'],
 
     ['adsr', 0, 'ATTACK',     'percent',  [[64,'min'],[16320,'max']], 'range 64–16320'],
@@ -315,9 +325,18 @@
     ['adsr', 7, 'VOLUME',     'discrete', [[3276,10],[32767,100]], '1–100; raw = floor(N × 32767/100)'],
   ];
 
+  // ── SCALE TYPES, SORTED BY INSTANCE COUNT ───────────────
+  // Legend, distribution, and the scale filter buttons all list the types
+  // most-common-first, so the ordering itself is information.
+  const counts = {};
+  DATA.forEach(([,,, type]) => { counts[type] = (counts[type] || 0) + 1; });
+  const total = DATA.length;
+  const SCALES_BY_COUNT = Object.entries(SCALE_META)
+    .sort((a, b) => (counts[b[0]] || 0) - (counts[a[0]] || 0));
+
   // ── RENDER: LEGEND ──────────────────────────────────────
   const legendEl = document.getElementById('legend');
-  Object.entries(SCALE_META).forEach(([type, meta]) => {
+  SCALES_BY_COUNT.forEach(([type, meta]) => {
     legendEl.innerHTML += `<div class="legend-item">
       <div class="legend-dot" style="background:${meta.color}"></div>
       <span><strong>${meta.label}</strong> - ${meta.desc}</span>
@@ -325,12 +344,9 @@
   });
 
   // ── RENDER: DISTRIBUTION ────────────────────────────────
-  const counts = {};
-  DATA.forEach(([,,, type]) => { counts[type] = (counts[type] || 0) + 1; });
-  const total = DATA.length;
   const barEl = document.getElementById('dist-bar');
   const labelsEl = document.getElementById('dist-labels');
-  Object.entries(SCALE_META).forEach(([type, meta]) => {
+  SCALES_BY_COUNT.forEach(([type, meta]) => {
     const n = counts[type] || 0;
     if (!n) return;
     const pct = (n / total * 100).toFixed(1);
@@ -390,7 +406,7 @@
     { key: 'fx', label: 'FX' },
     { key: 'lfo', label: 'LFO' },
     { key: 'adsr', label: 'ADSR' },
-    ...Object.entries(SCALE_META).map(([k, m]) => ({ key: k, label: m.label.toUpperCase() }))
+    ...SCALES_BY_COUNT.map(([k, m]) => ({ key: k, label: m.label.toUpperCase() }))
   ];
   filterOptions.forEach(opt => {
     const btn = document.createElement('button');
