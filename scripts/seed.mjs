@@ -31,7 +31,17 @@ function deriveTags(p) {
     if (at > 6000 && su > 24000) t.add("pad")
     if (at < 1500 && su < 2000) t.add("stab")
   }
-  if (p.fx_active && p.fx_type) { t.add(p.fx_type); if (FX_CHAR[p.fx_type]) t.add(FX_CHAR[p.fx_type]) }
+  if (p.fx_active && p.fx_type) {
+    if (FX_CHAR[p.fx_type]) t.add(FX_CHAR[p.fx_type])
+    const k = p.fx_params
+    if (Array.isArray(k) && k.length >= 4) {
+      if (["spring", "mother", "grid", "delay", "terminal"].includes(p.fx_type) && k[3] > 21845) t.add("wet")
+      if (p.fx_type === "delay" && k[2] > 10922) t.add("dub")
+      if (p.fx_type === "grid" && k[2] > 21845) t.add("dub")
+      if (p.fx_type === "terminal" && k[1] < 10922) t.add("bitcrushed")
+      if (p.fx_type === "nitro" && k[2] > 13762) t.add("gritty")
+    }
+  }
   if (p.lfo_active && p.lfo_type) { if (LFO_MOT[p.lfo_type]) t.add(LFO_MOT[p.lfo_type]); t.add("animated") }
   const o = p.octave || 0
   if (o < 0) t.add("bass")

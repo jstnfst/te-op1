@@ -6,6 +6,7 @@ interface Presetish {
   adsr?: number[]
   fx_active?: boolean
   fx_type?: string
+  fx_params?: number[]
   lfo_active?: boolean
   lfo_type?: string
   octave?: number
@@ -39,10 +40,24 @@ export function deriveTags(p: Presetish): string[] {
     if (attack < 1500 && sustain < 2000) tags.add("stab")
   }
 
+  // The fx engine name is deliberately NOT tagged - the character term above
+  // says what it sounds like, and the knobs refine it (thresholds are thirds
+  // of each knob's documented range; see display-notes.md / public/display.html).
   if (p.fx_active && p.fx_type) {
-    tags.add(p.fx_type)
     const c = FX_CHARACTER[p.fx_type]
     if (c) tags.add(c)
+    const k = p.fx_params
+    if (Array.isArray(k) && k.length >= 4) {
+      // mix/level-style knob at index 3 (0-32767) cranked -> the effect dominates
+      if (["spring", "mother", "grid", "delay", "terminal"].includes(p.fx_type) && k[3] > 21845) tags.add("wet")
+      // heavy feedback -> regenerating echoes
+      if (p.fx_type === "delay" && k[2] > 10922) tags.add("dub") // FEEDBACK 0-16384
+      if (p.fx_type === "grid" && k[2] > 21845) tags.add("dub") // Z FEEDBACK 0-32767
+      // terminal BITS maps 0-32767 to 2.0-16.0 bits; bottom third is properly crushed
+      if (p.fx_type === "terminal" && k[1] < 10922) tags.add("bitcrushed")
+      // nitro FEEDBACK 0-20643 cranked -> self-oscillating grit
+      if (p.fx_type === "nitro" && k[2] > 13762) tags.add("gritty")
+    }
   }
   if (p.lfo_active && p.lfo_type) {
     const m = LFO_MOTION[p.lfo_type]
