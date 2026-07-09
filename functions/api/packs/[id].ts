@@ -10,6 +10,7 @@ interface PackRow {
   created_at: string
   author: string | null
   like_count?: number
+  download_count?: number
 }
 
 function loadPack(env: Env, id: number) {
@@ -57,7 +58,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   return json({
     id: pack.id, name: pack.name, is_public: pack.is_public, author: pack.author,
     created_at: pack.created_at, is_owner: isOwner, items: rows.results,
-    like_count: pack.like_count ?? 0, liked_by_me: !!packLiked,
+    like_count: pack.like_count ?? 0, download_count: pack.download_count ?? 0, liked_by_me: !!packLiked,
   })
 }
 

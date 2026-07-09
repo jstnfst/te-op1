@@ -25,7 +25,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
       .all(),
     env.DB
       .prepare(
-        `SELECT k.id, k.name, k.is_public, k.created_at, k.like_count, 1 AS liked_by_me,
+        `SELECT k.id, k.name, k.is_public, k.created_at, k.like_count, k.download_count, 1 AS liked_by_me,
                 u.display_name AS author,
                 (SELECT COUNT(*) FROM pack_items pi WHERE pi.pack_id = k.id) AS item_count
          FROM likes l

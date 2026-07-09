@@ -70,3 +70,23 @@ export function LikeButton({
     </button>
   )
 }
+
+/** Read-only download tally, shown alongside LikeButton on patch/pack cards. */
+export function DownloadCount({ n }: { n?: number }) {
+  const count = n ?? 0
+  return (
+    <span className="dl-count" title={`${count} download${count === 1 ? "" : "s"}`}>
+      <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+        <path
+          d="M8 1.5v8m0 0L4.8 6.3M8 9.5l3.2-3.2M2.5 12.5v1a1 1 0 0 0 1 1h9a1 1 0 0 0 1-1v-1"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+      {count}
+    </span>
+  )
+}

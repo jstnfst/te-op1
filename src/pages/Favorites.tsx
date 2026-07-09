@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { apiGet, type Pack, type PatchSummary } from "../api"
-import { LikeButton } from "../like"
+import { LikeButton, DownloadCount } from "../like"
 
 /** Liked patches and packs, newest like first. Unliking removes the row live. */
 export default function Favorites() {
@@ -57,6 +57,7 @@ export default function Favorites() {
                     <div className="row card-actions">
                       <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
                       <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+                      <DownloadCount n={p.download_count} />
                       <LikeButton
                         type="patch"
                         id={p.id}
@@ -86,6 +87,7 @@ export default function Favorites() {
                     </div>
                     <div className="card-title">{k.name}</div>
                     <div className="row card-actions">
+                      <DownloadCount n={k.download_count} />
                       <LikeButton
                         type="pack"
                         id={k.id}

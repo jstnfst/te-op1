@@ -155,6 +155,10 @@ a.list-row { text-decoration: none; color: inherit; }
   .btn.like.active svg { animation: none; }
 }
 
+/* download count (patches + packs), read-only, sits next to the like button */
+.dl-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.dl-count svg { flex-shrink: 0; }
+
 /* browse sort control shares the filter-row input look */
 select.sort-select { flex-shrink: 0; }
 

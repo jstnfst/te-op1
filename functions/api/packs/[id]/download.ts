@@ -31,6 +31,9 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   if (!rows.results.length) return new Response("This pack has no downloadable patches.", { status: 404 })
 
   const zip = await buildZip(rows.results.map((p) => ({ name: slug(p.name) + ".aif", bytes: buildAif(p.json) })))
+  // best-effort download counter (mirrors patches' own counter)
+  await env.DB.prepare("UPDATE packs SET download_count = download_count + 1 WHERE id = ?1").bind(id).run()
+
   return new Response(zip, {
     headers: {
       "Content-Type": "application/zip",

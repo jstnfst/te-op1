@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
-import { LikeButton } from "../like"
+import { LikeButton, DownloadCount } from "../like"
 
 interface PackDetail {
   id: number
@@ -13,6 +13,7 @@ interface PackDetail {
   is_owner: boolean
   items: PatchSummary[]
   like_count?: number
+  download_count?: number
   liked_by_me?: boolean
 }
 
@@ -116,6 +117,7 @@ export default function Pack() {
       {err && <p className="error">{err}</p>}
       <div className="row pack-actions">
         <a className="btn primary" href={`/api/packs/${pack.id}/download`}>Download .zip</a>
+        <DownloadCount n={pack.download_count} />
         {user && <LikeButton type="pack" id={pack.id} likeCount={pack.like_count} likedByMe={pack.liked_by_me} />}
         {canToggleVisibility && (
           <button
@@ -161,6 +163,7 @@ export default function Pack() {
               <div className="row card-actions">
                 <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
                 <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+                <DownloadCount n={p.download_count} />
                 {user && <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />}
                 {pack.is_owner && (
                   <button

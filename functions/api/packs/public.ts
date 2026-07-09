@@ -21,7 +21,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const order = sort === "likes" ? "p.like_count DESC, p.created_at DESC" : "p.created_at DESC"
   const offset = (page - 1) * PER_PAGE
   const sql =
-    `SELECT p.id, p.name, p.is_public, p.created_at, p.like_count, u.display_name AS author,
+    `SELECT p.id, p.name, p.is_public, p.created_at, p.like_count, p.download_count, u.display_name AS author,
             (SELECT COUNT(*) FROM pack_items pi WHERE pi.pack_id = p.id) AS item_count,
             (l.user_id IS NOT NULL) AS liked_by_me
      FROM packs p

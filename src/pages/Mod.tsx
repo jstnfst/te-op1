@@ -33,6 +33,7 @@ interface ModPack {
   user_id: number
   author: string | null
   item_count: number
+  download_count: number
 }
 
 interface Overview {
@@ -222,7 +223,7 @@ export default function Mod() {
                       <div className="list-row" key={k.id}>
                         <Link className="list-name" to={`/packs/${k.id}`}>{k.name}</Link>
                         <span className="list-author">{k.author ? `by ${k.author}` : "no owner"}</span>
-                        <span className="mod-meta">{k.item_count} {k.item_count === 1 ? "item" : "items"} · {day(k.created_at)}</span>
+                        <span className="mod-meta">{k.item_count} {k.item_count === 1 ? "item" : "items"} · {k.download_count} dl · {day(k.created_at)}</span>
                         <div className="list-actions">
                           <button
                             className="btn"

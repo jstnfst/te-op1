@@ -3,7 +3,7 @@ import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type Pack } from "../api"
 import { Collapsible } from "../collapsible"
-import { LikeButton } from "../like"
+import { LikeButton, DownloadCount } from "../like"
 
 const VIEW_KEY = "te-op1-packs-view"
 const DISCOVER_VIEW_KEY = "te-op1-packs-discover-view"
@@ -66,6 +66,7 @@ function PackGrid({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
           </div>
           <div className="card-title">{p.name}</div>
           <div className="row card-actions">
+            <DownloadCount n={p.download_count} />
             <LikeButton type="pack" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
           </div>
         </Link>
@@ -87,6 +88,7 @@ function PackList({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
             <span className="list-author">{p.item_count ?? 0} patches</span>
           )}
           <div className="list-actions">
+            <DownloadCount n={p.download_count} />
             <LikeButton type="pack" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
           </div>
         </Link>

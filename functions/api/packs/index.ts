@@ -7,7 +7,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   if (!user) return json({ error: "Sign in." }, { status: 401 })
   const rows = await env.DB
     .prepare(
-      `SELECT p.id, p.name, p.is_public, p.created_at, p.like_count,
+      `SELECT p.id, p.name, p.is_public, p.created_at, p.like_count, p.download_count,
               (SELECT COUNT(*) FROM pack_items pi WHERE pi.pack_id = p.id) AS item_count,
               (l.user_id IS NOT NULL) AS liked_by_me
        FROM packs p

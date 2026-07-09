@@ -52,6 +52,7 @@ export interface Pack {
   item_count?: number
   author?: string | null
   like_count?: number
+  download_count?: number
   liked_by_me?: number | boolean
 }
 
