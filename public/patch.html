@@ -95,6 +95,10 @@
     .picker { display: inline-flex; align-items: center; gap: 6px; }
     .picker[hidden] { display: none; }
     .picker-label { font-size: 9px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+    .picker-login[hidden] { display: none; }
+    .picker-login { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
+    .picker-login:hover { color: var(--text); border-bottom-color: var(--text); }
+    #packSel, #userSel { max-width: 220px; }
     .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #131418; }
     .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px rgba(255,72,0,.25); }
     .code-layer {
@@ -149,9 +153,12 @@
     .pgroup-head select { font-family: inherit; font-size: 10px; font-weight: 700; color: var(--text);
       background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 3px 6px; cursor: pointer; }
     .toggle { font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
-      display: inline-flex; align-items: center; gap: 6px; color: var(--muted); cursor: pointer; user-select: none; }
+      display: inline-flex; align-items: center; gap: 6px; color: var(--text); cursor: pointer; user-select: none; }
     .toggle input { accent-color: var(--orange); cursor: pointer; }
-    .pgroup.off { opacity: .45; }
+    /* An inactive FX/LFO dims only its knobs, and drains them to monochrome so no
+       orange reads as live. The head (title, engine select, ACTIVE toggle, paste)
+       stays at full strength: those controls still work. */
+    .pgroup.off .knob-grid { opacity: .45; filter: grayscale(1); }
 
     /* ── KNOBS (tight grid, packed from the left; reflows fluidly by width) ── */
     .knob-grid { display: grid; grid-template-columns: repeat(auto-fill, 72px); justify-content: start; gap: 16px 10px; margin-top: 8px; }
@@ -224,6 +231,11 @@
     .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
     .paste-btn:hover { background: rgba(59,158,234,.24); }
     .has-clipboard .paste-btn { display: inline-flex; align-items: center; }
+    /* octave paste (patch header, outside #viz): like the scope's, it keeps its
+       space when hidden so the engine row never shifts */
+    .ph-engine-row .paste-btn { display: inline-flex; align-items: center; visibility: hidden; pointer-events: none; }
+    .patch-head.has-clipboard .ph-engine-row .paste-btn { visibility: visible; pointer-events: auto; }
+    .tb-paste-all:disabled { opacity: .38; cursor: default; }
     /* scope-head paste-btn stays in flow at all times so it doesn't change the row height */
     .scope-head .paste-btn { display: inline-flex; align-items: center; visibility: hidden; pointer-events: none; }
     .has-clipboard .scope-head .paste-btn { visibility: visible; pointer-events: auto; }
@@ -290,9 +302,21 @@
 <main>
   <section class="intro">
     <h1>Patch editor</h1>
-    <p>Load a preset and explore it live. Pick a <b>sample</b>, drag in an <code>.aif</code> or
+    <p id="introLab">Load a preset and explore it live. Pick a <b>sample</b>, drag in an <code>.aif</code> or
       <code>.json</code>, or edit the raw JSON &mdash; the controls and the data stay in sync, both ways.</p>
+    <p id="introLib" hidden>Open a patch from one of your <b>packs</b>, or from all your patches, and edit it with the
+      controls or the raw JSON. Update a patch you own, or save a copy; with a pack picked, the copy goes into that pack.</p>
+    <p id="introAnon" hidden>Start from a <b>sample</b>, or drag in an <code>.aif</code> or <code>.json</code>, shape it with
+      the controls, and download the <code>.aif</code>. Log in to open your own patches and packs and save your edits.</p>
   </section>
+  <script>
+    // Library vs Lab intro, decided before first paint (same rule as LIBRARY_MODE
+    // below and the site header); the signed-out variant swaps in once auth answers
+    if (location.pathname.indexOf('/library/editor') === 0 || /[?&](id|pack)=/.test(location.search)) {
+      document.getElementById('introLab').hidden = true;
+      document.getElementById('introLib').hidden = false;
+    }
+  </script>
   <div class="workspace">
     <!-- LEFT: JSON EDITOR -->
     <section class="panel" id="editorPanel" aria-label="Preset editor">
@@ -309,17 +333,24 @@
                 <option value="0">0</option><option value="1">+1</option>
                 <option value="2">+2</option><option value="3">+3</option><option value="4">+4</option>
               </select>
+              <button type="button" class="paste-btn" data-paste="octave" title="Paste the copied patch's octave">Paste</button>
             </div>
             <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
           </div>
         </div>
         <div class="ph-actions">
-          <label class="picker"><span class="picker-label">Samples</span>
+          <!-- Lab (inspector): sample presets. Library (?id= / ?pack=): your packs
+               and the patches in them. See "Pickers" in the script. -->
+          <label class="picker" id="samplePicker"><span class="picker-label">Samples</span>
             <select id="sampleSel" aria-label="Load a sample preset"></select>
           </label>
-          <label class="picker" id="userPicker" hidden><span class="picker-label">User</span>
-            <select id="userSel" aria-label="Load one of your patches"></select>
+          <label class="picker" id="packPicker" hidden><span class="picker-label">Pack</span>
+            <select id="packSel" aria-label="Choose one of your packs to edit, or all your patches"></select>
           </label>
+          <label class="picker" id="userPicker" hidden><span class="picker-label">Patch</span>
+            <select id="userSel" aria-label="Choose a patch to open"></select>
+          </label>
+          <a class="picker-login" id="libLogin" hidden href="/login">Log in to open your packs</a>
           <input type="file" id="fileInput" accept=".aif,.json,application/json" hidden>
         </div>
       </header>
@@ -1075,6 +1106,7 @@ function render() {
   const tbHtml = `<div class="patch-toolbar">
     <button type="button" class="btn tb-open">Open .aif</button>
     <button type="button" class="btn tb-copy">Copy</button>
+    <button type="button" class="btn tb-paste-all" ${canPasteAll() ? '' : 'disabled'} title="Paste every section of the copied patch (keeps this patch's name)">Paste all</button>
     <button type="button" class="btn tb-undo" id="undoBtn" disabled>Undo</button>
     <button type="button" class="btn tb-redo" id="redoBtn" disabled>Redo</button>
     <button type="button" class="btn tb-update owner-only">Update</button>
@@ -1427,6 +1459,10 @@ function updatePasteVisibility() {
   const isDbox = !!clip && !isPad && !!clip.preset && clip.preset.type === 'dbox';
   const isDsynth = !!clip && !isPad && !!clip.preset && clip.preset.type === 'dsynth';
   v.classList.toggle('has-clipboard', active && !isPad);
+  const head = document.querySelector('.patch-head');
+  if (head) head.classList.toggle('has-clipboard', active && !isPad);
+  const pasteAllBtn = v.querySelector('.tb-paste-all');
+  if (pasteAllBtn) pasteAllBtn.disabled = !(active && !isPad);
   v.classList.toggle('has-dbox-clip', isDbox);
   v.classList.toggle('has-dsynth-clip', isDsynth);
   v.classList.toggle('has-pad-clip', isPad);
@@ -1454,6 +1490,22 @@ document.getElementById('clipPanel').addEventListener('click', function (e) {
 });
 
 /* ── Section paste ── */
+/** A whole-patch clip is on the clipboard and focused (pad clips only fill a pad). */
+function canPasteAll() {
+  const clip = activeClip();
+  return !!(clip && clip.kind !== 'pad' && clip.preset);
+}
+/** Paste every section of the copied patch in one undoable step. The name
+ *  stays: you're pasting the sound into this patch, not renaming it. */
+function pasteAll() {
+  if (!canPasteAll()) return;
+  pushUndo();
+  const name = state.name;
+  state = normalize(clone(activeClip().preset));
+  state.name = name;
+  syncEditor(); render();
+  setToolbarStatus('Pasted all sections of ' + (activeClip().name || 'the copied patch') + '.', true);
+}
 function pasteSection(key) {
   const clip = activeClip(); if (!clip) return;
   if (key === 'pad') {
@@ -1491,6 +1543,8 @@ function pasteSection(key) {
     if (src.lfo_type != null) state.lfo_type = src.lfo_type;
     if (src.lfo_params) state.lfo_params = src.lfo_params.slice();
     if (src.lfo_active != null) state.lfo_active = src.lfo_active;
+  } else if (key === 'octave') {
+    if (src.octave != null) state.octave = src.octave;
   } else if (key === 'dyna') {
     if (src.type !== 'dbox') return;
     if (src.dyna_env) {
@@ -1532,85 +1586,155 @@ function doSaveNew() {
     body: json
   }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d, status: r.status }; }); })
     .then(function (res) {
-      if (res.ok) setToolbarStatus('Saved as patch #' + res.d.id + ' ✓', true);
+      if (res.ok && typeof LIBRARY_MODE !== 'undefined' && LIBRARY_MODE) {
+        // Library: switch to the new patch (so UPDATE targets it) and, with a
+        // pack picked, put it in that pack.
+        var newId = res.d.id;
+        var addToPack = packSel && packSel.value
+          ? fetch('/api/packs/' + packSel.value + '/items', {
+              method: 'POST', credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ patch_id: newId })
+            }).then(function (r) { return r.ok; })
+          : Promise.resolve(null);
+        addToPack.then(function (added) {
+          var packName = packSel.value ? packSel.options[packSel.selectedIndex].textContent.replace(/ \(\d+\)$/, '') : '';
+          setToolbarStatus('Saved as patch #' + newId + (added ? ' and added to ' + packName : added === false ? ' (could not add to the pack)' : '') + ' ✓', added !== false);
+          return loadCommunityPatch(newId);
+        }).then(function () { syncLibraryUrl(); loadPatchList(false); });
+      }
+      else if (res.ok) setToolbarStatus('Saved as patch #' + res.d.id + ' ✓', true);
       else if (res.status === 401) setToolbarStatus('Sign in to save new.', false);
       else setToolbarStatus(res.d.error || 'Save failed.', false);
     }).catch(function () { setToolbarStatus('Network error.', false); });
 }
 
-/* ── Sample picker ───────────────────────────────────────── */
 const sampleSel = document.getElementById('sampleSel');
 const userSel = document.getElementById('userSel');
-Object.keys(SAMPLES).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; sampleSel.appendChild(o); });
-sampleSel.addEventListener('change', () => {
-  if (!sampleSel.value) return;
-  loadPreset(SAMPLES[sampleSel.value]);
-  clearCommunityPatch();
-  if (userSel) userSel.selectedIndex = -1;
-});
+/* ── Pickers ─────────────────────────────────────────────────
+   Two contexts share this page (the site header makes the same call):
+   - Lab inspector (no ?id / ?pack): the SAMPLES presets, to explore the format.
+   - Library (/library/editor, ?id= or ?pack=): PACK + PATCH. Pick one of your
+     packs (or "All my patches"), then a patch from it. Opened bare, it opens
+     your first patch; with none yet, or signed out, it falls back to SAMPLES
+     as a starting point. The URL keeps ?pack=&id= in step, so
+     a reload or a shared link reopens the same thing. With a pack picked,
+     SAVE NEW also adds the new patch to that pack - that's how a pack is
+     edited here: rework a patch (even someone else's) and keep it in the pack. */
+const LIBRARY_MODE = location.pathname.indexOf('/library/editor') === 0 || /[?&](id|pack)=/.test(location.search);
+const packSel = document.getElementById('packSel');
+var _packItems = [];   // what the Patch picker currently lists
 
-/* ── User picker: the signed-in user's own patches, grouped by pack ── */
 function clearCommunityPatch() {
   document.getElementById('patchTagsSection').hidden = true;
   _communityPatchId = null;
   const vizEl = document.getElementById('viz');
   vizEl.classList.remove('has-community-patch', 'is-owner');
 }
-function populateUserPatches(items, packs) {
-  if (!userSel) return;
-  const byId = {};
-  items.forEach(p => { byId[p.id] = p; });
-  const grouped = {};      // patch ids that live in at least one pack
+/** Mirror the open pack/patch into the URL without adding history entries. */
+function syncLibraryUrl() {
+  const u = new URL(location.href);
+  u.pathname = '/library/editor';   // canonical editor URL, even if opened as /patch.html?id=
+  if (packSel.value) u.searchParams.set('pack', packSel.value); else u.searchParams.delete('pack');
+  if (_communityPatchId != null) u.searchParams.set('id', String(_communityPatchId)); else u.searchParams.delete('id');
+  history.replaceState(history.state, '', u.pathname + u.search + u.hash);
+}
+function fillPatchPicker(items) {
+  _packItems = items;
   userSel.innerHTML = '';
-  (packs || []).forEach(pack => {
-    const inPack = (pack.patch_ids || []).filter(id => byId[id]);
-    if (!inPack.length) return;
-    const og = document.createElement('optgroup');
-    og.label = pack.name;
-    inPack.forEach(id => {
-      grouped[id] = true;
-      const o = document.createElement('option');
-      o.value = String(id); o.textContent = byId[id].name || ('patch #' + id);
-      og.appendChild(o);
-    });
-    userSel.appendChild(og);
-  });
-  // Patches not in any pack are listed loose, after the pack groups.
-  items.filter(p => !grouped[p.id]).forEach(p => {
+  const ph = document.createElement('option');
+  ph.value = ''; ph.disabled = true;
+  ph.textContent = items.length ? 'Choose a patch…' : (packSel.value ? 'This pack is empty' : 'No patches yet');
+  userSel.appendChild(ph);
+  items.forEach(p => {
     const o = document.createElement('option');
-    o.value = String(p.id); o.textContent = p.name || ('patch #' + p.id);
+    o.value = String(p.id);
+    // others' public patches can sit in your pack: name whose they are
+    o.textContent = (p.name || ('patch #' + p.id)) + (p.is_mine === 0 && p.author ? ' (by ' + p.author + ')' : '');
     userSel.appendChild(o);
   });
-  // Reflect a patch already open (e.g. loaded via ?id=); otherwise show no selection.
-  userSel.value = _communityPatchId != null ? String(_communityPatchId) : '';
-  if (userSel.value === '') userSel.selectedIndex = -1;
-  document.getElementById('userPicker').hidden = userSel.options.length === 0;
+  userSel.value = _communityPatchId != null && items.some(p => String(p.id) === String(_communityPatchId)) ? String(_communityPatchId) : '';
+  document.getElementById('userPicker').hidden = false;
 }
-function loadUserPicker() {
-  fetch('/api/me/patches', { credentials: 'same-origin' })
-    .then(r => (r.ok ? r.json() : null))
-    .then(d => { if (d) populateUserPatches(d.items || [], d.packs || []); })
-    .catch(() => {});
-}
-if (userSel) {
-  userSel.addEventListener('change', () => {
-    if (!userSel.value) return;
-    loadCommunityPatch(userSel.value);
-    sampleSel.selectedIndex = -1;
-  });
-  // Only reveal (and fill) the USER picker when a session exists.
-  fetch('/api/auth/me', { credentials: 'same-origin' })
-    .then(r => (r.ok ? r.json() : { user: null }))
+/** Load the Patch picker for the chosen pack ('' = all my patches). */
+function loadPatchList(openFirst) {
+  const url = packSel.value
+    ? '/api/packs/' + encodeURIComponent(packSel.value) + '/items?list=1'
+    : '/api/me/patches';
+  return fetch(url, { credentials: 'same-origin' })
+    .then(r => (r.ok ? r.json() : { items: [] }))
     .then(d => {
-      if (d && d.user) {
-        document.getElementById('viz').classList.add('is-logged-in');
-        loadUserPicker();
-      }
+      const items = (d.items || []).map(p => ({ id: p.id, name: p.name, author: p.author, is_mine: p.is_mine == null ? 1 : Number(p.is_mine) }));
+      fillPatchPicker(items);
+      // nothing of yours to open: offer the samples as a place to start
+      document.getElementById('samplePicker').hidden = !!items.length || _communityPatchId != null;
+      if (openFirst && items.length && _communityPatchId == null) loadCommunityPatch(items[0].id).then(syncLibraryUrl);
+    })
+    .catch(() => fillPatchPicker([]));
+}
+function initLibraryPickers(user) {
+  if (!user) {
+    // signed out: edit a sample (or a public ?id= patch) and download it
+    document.getElementById('introLib').hidden = true;
+    document.getElementById('introAnon').hidden = false;
+    const a = document.getElementById('libLogin');
+    a.textContent = 'Log in to open your patches';
+    a.href = '/login?next=' + encodeURIComponent(location.pathname + location.search);
+    a.hidden = false;
+    return;
+  }
+  document.getElementById('samplePicker').hidden = true;
+  const wantPack = new URLSearchParams(location.search).get('pack') || '';
+  fetch('/api/packs', { credentials: 'same-origin' })
+    .then(r => (r.ok ? r.json() : { items: [] }))
+    .then(d => {
+      packSel.innerHTML = '';
+      const all = document.createElement('option');
+      all.value = ''; all.textContent = 'All my patches';
+      packSel.appendChild(all);
+      (d.items || []).forEach(k => {
+        const o = document.createElement('option');
+        o.value = String(k.id); o.textContent = k.name + ' (' + (k.item_count || 0) + ')';
+        packSel.appendChild(o);
+      });
+      // ?pack= only counts if it's one of yours (it's an editing context)
+      packSel.value = (d.items || []).some(k => String(k.id) === wantPack) ? wantPack : '';
+      document.getElementById('packPicker').hidden = false;
+      loadPatchList(true);
     })
     .catch(() => {});
 }
 
+// SAMPLES (Lab inspector)
+Object.keys(SAMPLES).forEach(k => { const o = document.createElement('option'); o.value = k; o.textContent = k; sampleSel.appendChild(o); });
+sampleSel.addEventListener('change', () => {
+  if (!sampleSel.value) return;
+  loadPreset(SAMPLES[sampleSel.value]);
+  clearCommunityPatch();
+  if (LIBRARY_MODE) { if (userSel) userSel.value = ''; syncLibraryUrl(); }
+});
+
+// PACK + PATCH (Library)
+packSel.addEventListener('change', () => { syncLibraryUrl(); loadPatchList(false); });
+userSel.addEventListener('change', () => {
+  if (!userSel.value) return;
+  loadCommunityPatch(userSel.value).then(syncLibraryUrl);
+});
+
+fetch('/api/auth/me', { credentials: 'same-origin' })
+  .then(r => (r.ok ? r.json() : { user: null }))
+  .then(d => {
+    const user = d && d.user;
+    if (user) document.getElementById('viz').classList.add('is-logged-in');
+    if (LIBRARY_MODE) initLibraryPickers(user);
+  })
+  .catch(() => { if (LIBRARY_MODE) initLibraryPickers(null); });
+
 /* ── Identity controls ───────────────────────────────────── */
+document.querySelector('.patch-head').addEventListener('click', e => {
+  const b = e.target.closest('.paste-btn[data-paste="octave"]');
+  if (b) pasteSection('octave');
+});
 document.getElementById('nameInput').addEventListener('input', e => { state.name = e.target.value; syncEditor(); });
 document.getElementById('octSel').addEventListener('change', e => { pushUndo(); state.octave = parseInt(e.target.value, 10); syncEditor(); });
 
@@ -1742,6 +1866,7 @@ viz.addEventListener('click', e => {
     return;
   }
   if (e.target.closest('.paste-btn')) { pasteSection(e.target.closest('.paste-btn').dataset.paste); return; }
+  if (e.target.closest('.tb-paste-all')) { pasteAll(); return; }
   if (e.target.closest('.tb-copy')) { clipPush(state.name || 'untitled', state); setToolbarStatus('Copied to clipboard.', true); return; }
   if (e.target.closest('.tb-undo')) { undo(); return; }
   if (e.target.closest('.tb-redo')) { redo(); return; }

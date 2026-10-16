@@ -15,14 +15,16 @@ main.landing { max-width: none; padding: 0; }
   background: linear-gradient(to bottom, transparent 30%, var(--bg) 92%); }
 .hero > * { position: relative; z-index: 1; }
 
-.hero-top { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+/* minmax(0, …): column widths come from the grid, never from content, so the
+   scope's live readouts can't widen (and so resize) anything while dialing */
+.hero-top { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; }
 .hero .eyebrow { margin-bottom: 22px; }
 .land-title { font-size: clamp(44px, 6.4vw, 88px); font-weight: 800; line-height: .98; letter-spacing: -.035em; color: var(--text); }
 .land-title-sub { font-size: .62em; font-weight: 300; color: var(--muted); letter-spacing: -.04em; }
 
 /* ── SCOPE ── a self-contained instrument screen (same language as the patch
    page's ADSR scope: white ink on black, one orange trace). */
-.scope { background: var(--header-bg); border: 1px solid #000; border-radius: 8px; padding: 12px 14px 12px;
+.scope { min-width: 0; background: var(--header-bg); border: 1px solid #000; border-radius: 8px; padding: 12px 14px 12px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
 .scope-bar { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; }
 /* one LED per path, lit while that fork panel is under the pointer (data-side
@@ -41,12 +43,36 @@ main.landing { max-width: none; padding: 0; }
 .scope-grid line { stroke: rgba(255,255,255,.07); stroke-width: 1; vector-effect: non-scaling-stroke; }
 .scope-axis { stroke: rgba(255,255,255,.14); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 .scope-trace { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.scope-cursor line { stroke: rgba(255,255,255,.35); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
-.scope-cursor circle { fill: #fff; stroke: var(--orange); stroke-width: 2; vector-effect: non-scaling-stroke; }
+/* faint field behind the lit trace: every engine's wave (Library view) or
+   every layout entry's parameter array (Lab view), set in Scope.tsx */
+.scope-ghost { fill: none; stroke: rgba(255,255,255,.075); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.scope-ghost.lab { stroke: rgba(255,255,255,.14); }
+/* Lab view read-head: the array slot being read */
+.scope-head { fill: rgba(255,72,0,.09); }
+.scope-screen-wrap { position: relative; }
+/* Lab view slot strip, laid over the bottom of the screen, one cell per array
+   index (Scope.tsx fades it in with the morph and fills the text) */
+.scope-slots { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr));
+  pointer-events: none; }
+.scope-slots .slot { min-width: 0; padding: 0 5px 5px; display: flex; flex-direction: column; gap: 1px;
+  font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.45); transition: color .15s; }
+.scope-slots .slot i { font-style: normal; font-weight: 700; color: rgba(255,255,255,.28); }
+.scope-slots .slot span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scope-slots .slot b { font-size: 10px; font-weight: 700; letter-spacing: 0; color: rgba(255,255,255,.8); font-variant-numeric: tabular-nums;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scope-slots .slot.off { color: rgba(255,255,255,.2); }
+.scope-slots .slot.off b { color: rgba(255,255,255,.2); }
+.scope-slots .slot.on, .scope-slots .slot.on b { color: #fff; }
+.scope-slots .slot.on i { color: var(--orange); }
 .scope-glow { fill: none; stroke: var(--orange); stroke-width: 7; opacity: .16; filter: blur(3px); vector-effect: non-scaling-stroke; }
-.scope-readout { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 10px; }
-.scope-readout .ro { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.5); min-width: 86px; }
+/* one line, always: long values (the Lab dial's knob names) truncate with an
+   ellipsis instead of wrapping, so the scope never changes height mid-hover */
+.scope-readout { display: flex; gap: 22px; flex-wrap: nowrap; margin-top: 10px; min-width: 0; }
+.scope-readout .ro { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.5);
+  min-width: 86px; flex: 0 1 auto; overflow: hidden; white-space: nowrap; }
+.scope-readout .ro:first-child { flex-shrink: 0; }
 .scope-readout .ro[hidden] { display: none; }
+.scope-readout .ro b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .scope-readout .ro b { display: block; font-size: 11px; color: #fff; font-weight: 700; letter-spacing: .02em; margin-top: 2px;
   text-transform: none; font-variant-numeric: tabular-nums; }
 
@@ -86,7 +112,9 @@ main.landing { max-width: none; padding: 0; }
 .knob-ticks line.on { stroke: var(--text); }
 .fork-panel:hover .knob-ticks line.on { stroke: var(--orange); }
 .knob-label { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
-  font-variant-numeric: tabular-nums; min-width: 9ch; text-align: center; transition: color .15s; }
+  font-variant-numeric: tabular-nums; min-width: 9ch; text-align: center; transition: color .15s;
+  /* engine keys like SYNTH.DIMENSION: one line, truncated, never resizing the panel */
+  max-width: 132px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fork-panel:hover .knob-label { color: var(--text); }
 .knob-body { fill: var(--bg); stroke: var(--border); stroke-width: 1.5; }
 /* rotation is set inline per detent (Home.tsx KnobGlyph); this is the snap */
@@ -146,6 +174,9 @@ main.landing { max-width: none; padding: 0; }
 .preset-ro div:first-child { grid-column: 1 / -1; }
 
 @media (max-width: 900px) {
+  /* the scope is pointer-driven eye candy; on small (usually touch) screens it
+     only pushes the two paths below the fold */
+  .scope { display: none; }
   .hero-top { grid-template-columns: 1fr; gap: 32px; }
   .fork { grid-template-columns: 1fr; }
   .lab-tiles { grid-template-columns: 1fr; grid-template-rows: none; row-gap: 12px; }

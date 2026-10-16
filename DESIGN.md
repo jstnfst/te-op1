@@ -302,7 +302,11 @@ as physical parts, not decorated rectangles.
   neither path and shows no sub-nav row.
   - LIBRARY: BROWSE · PACKS · FAVES · MINE · UPLOAD (FAVES and MINE signed-in only)
   - LAB: LAYOUT · MAPPINGS · INSPECTOR · ISSUES (GitHub sessions only)
-  - The patch viewer opened with `?id=` belongs to LIBRARY; opened bare it is the LAB inspector.
+  - The patch viewer opened with `?id=` or `?pack=` belongs to LIBRARY; opened bare it is the LAB inspector.
+    The editor follows the same split: LAB shows the **Samples** picker; LIBRARY replaces it with
+    **Pack** (All my patches, or one of your packs) and **Patch** (that pack's patches, others'
+    marked "by …"), mirrored in the URL as `?pack=&id=`. With a pack picked, Save new also adds
+    the copy to that pack. A pack's page links its owner in via **Edit in patch editor**.
   - MOD (admins) sits in the auth area, not in either path.
 - **Mobile:** Tabs wrap (`flex-wrap`); the `//` separator and fw tag hide under 640px.
 
@@ -313,18 +317,54 @@ hover/focus the border brightens, the key lights Signal Orange, a soft light
 follows the pointer. The Library panel's knob is a real control: pointer X
 across the panel turns it through 16 detents (all + each engine). The dialed
 engine sets the panel's link (`/library?type=…`), its CTA (with the public patch
-count from `/api/patches/counts`), and the scope above. The Lab panel's ADSR
-envelope draws in once, then pointer X scrubs a read-head along it. Over Lab the
-scope morphs into the same envelope drawn as stepped raw 16-bit values, with the
-read-head mirrored there and its stage, raw value, and percent display (raw /
-32767) in the readouts. Otherwise the scope (same language as the patch page's
+count from `/api/patches/counts`), and the scope above. The Lab panel is the same kind of
+control: pointer X dials through the knob-layout reference (overview, then every
+synth, FX, and LFO engine and the ADSR, from `public/layout-params.js`, the table the
+Layout page renders). The scope's readouts show the dialed engine's real knob names,
+and the panel's link opens that engine's card on the Layout page
+(`/lab/layout#fx.spring`, scrolled to and framed in orange); the overview position
+opens `/lab`. As the visual, the ADSR glyph draws in once and a read-head follows the
+pointer, and the scope morphs into the same envelope drawn as stepped raw values.
+Below 900px the scope is hidden: it is pointer-driven, and on small (usually touch)
+screens it would only push the two paths below the fold. Otherwise the scope (same language as the patch page's
 ADSR scope) shows a stylized per-engine waveform that crossfades as the knob turns.
 
-### Selection Bar (signature)
-A fixed, centered floating bar (`.selbar`) that rises from the bottom when patches
-are multi-selected - Header Black fill, panel radius (8px), "Floating bar" shadow,
-with an upward popover menu for pack assignment. The instrument's transient
-command surface.
+### Selection Toolbar (signature)
+The first line of a long list's sticky bar (`SelectionToolbar` in `src/packs.tsx`,
+inside `.listbar`) on every selectable patch list: Browse, Mine, Favorites, and a
+pack page. It is shown before anything is picked, so the affordance is explicit: a
+muted hint says what selecting is for, and the actions (**Download N as .zip**,
+**Add to pack ▾** with one find-or-create field that searches your packs
+server-side, plus page extras such as a pack owner's **Remove from pack**) stay
+disabled until something is selected. **Select all** exists only on a pack's page,
+where "all" is small and bounded (a pack holds at most 200, the selection cap); the
+big lists select by press, drag, and shift-click instead. A disabled primary goes
+neutral: orange marks only a live action. With a selection the bar gains an
+orange-tinted border and the "Floating bar" shadow. Cards and list rows
+select on a press in their empty space (their own links and buttons keep working).
+Pressing and dragging paints: every card from the pressed one to the one under the
+pointer takes the pressed card's new state, dragging back restores the ones left
+behind, and the page auto-scrolls at the edges. Shift-click selects a range from
+the last card clicked. Touch keeps tap-to-toggle; the 16px checkbox is visual for
+pointers and stays focusable for keyboard (Space). The pack menu drops down from
+the toolbar.
+
+### Long Lists
+Every list that can grow large (Browse, Community packs, Your packs, Mine,
+Favorites, a pack's patches) is a `LongList` (`src/LongList.tsx` +
+`src/useLongList.ts`): the page scrolls as if all N items were present, but only the
+rows near the viewport (plus 3 overscan rows each side) are in the DOM and they are
+recycled as you scroll. Pages of 24 load on demand as their rows approach; until
+then a row shows **static** placeholders (muted blocks, no shimmer, per the
+Pointer-Gated Motion Rule). The list's sticky bar (`.listbar`, under the site header
+via `--site-header-h`) has two lines: the selection line (when selectable), then a
+right-aligned line with the count and a pager, `⏮ ‹ Page [ n] of N › ⏭`. The page
+number tracks the scroll position and is mirrored to the URL (`?page=`, or
+`?ppage=` / `?ypage=` for a page's second list); jumps are instant, never smooth.
+Leaving a list (e.g. opening a patch) and coming back returns to the same item.
+Offsets are frozen per listing (`asof`), so items published mid-scroll don't shift
+pages; a muted "N new · Refresh" line offers them. The list ends with "That's all N
+…".
 
 ## 6. Motion
 

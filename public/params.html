@@ -31,6 +31,8 @@
     /* ── GRID + CARD ── */
     .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 10px; }
     .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px 14px; transition: box-shadow .18s, transform .18s; }
+    /* deep-linked card (#engine.key): a static orange frame marks where you landed */
+    .card.targeted { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange) inset; }
     .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.5); transform: translateY(-2px); }
     .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
     .g-badge { font-size: 8px; font-weight: 700; letter-spacing: .18em; padding: 2px 6px 1px; border-radius: 2px; }
@@ -85,43 +87,12 @@
 
 <div data-site-footer></div>
 
+<script src="/layout-params.js"></script>
 <script>
   
 
-  const PARAMS = {
-    "synth.amp":       ["VOLUME","COMPRESSOR","TONE","DRIVE"],
-    "synth.cluster":   ["WAVE NUMBER","WAVE ENV","SPREAD","UNITOR"],
-    "synth.dbox":      ["ENVELOPE CROSSFADER","WAVEFORM 1","ENVELOPE 1","CROSS MODULATION","FREQUENCY","WAVEFORM 2","ENVELOPE 2","CUTOFF"],
-    "dbox.dyna_env":   ["ATTACK","GAIN","RELEASE","SMOOTH"],
-    "synth.digital":   ["WAVE SHAPER","OCTAVE","DETUNE+RINGMOD","DIGITALNESS"],
-    "synth.dimension": ["WAVEFORM","STEREO","FILTER CUTOFF FREQ","RESONANCE"],
-    "synth.dna":       ["FILTER","WAVE NUMBER","WAVE MODIFIER","NOISE"],
-    "synth.drwave":    ["WAVE TYPE AND LENGTH","FILTER","PHASE","CHORUS"],
-    "synth.dsynth":    ["ENVELOPE CROSSFADER","WAVEFORM 1","ENVELOPE 1","CROSS MODULATION","FREQUENCY","WAVEFORM 2","ENVELOPE 2","CUTOFF"],
-    "synth.fm":        ["FM AMOUNT","FREQUENCY","TOPOLOGY","DETUNE"],
-    "synth.phase":     ["PHASE SHIFT","DISTORTION AMOUNT","PHASE FILTER","PHASE TILT"],
-    "synth.pulse":     ["FILTER","AMPLITUDE","PULSE TWO","MODULATION"],
-    "synth.sampler":   ["START","LOOP IN","LOOP OUT","END","DIRECTION","FINE TUNE","LOOP FADE","GAIN"],
-    "synth.string":    ["TENSION","DECAY","DETUNE","IMPULSE TYPE"],
-    "synth.vocoder":   ["WAVEFORM","FORMANT","BANDS","MIX"],
-    "synth.voltage":   ["AMPERE MODULATION","GROUND NOISE","PHASE FILTER","VOLTAGE DETUNE"],
-    "fx.cwo":          ["FREQUENCY","DELAY","FEEDBACK","SIDEBAND"],
-    "fx.delay":        ["RANGE","SPEED","FEEDBACK","LEVEL"],
-    "fx.grid":         ["X SIZE","Y SIZE","Z FEEDBACK","MIX"],
-    "fx.mother":       ["DISTANCE","GATE","COLOR","MIX"],
-    "fx.nitro":        ["FREQUENCY LOWS","FILTER FOLLOW","FEEDBACK","FREQUENCY HIGHS"],
-    "fx.phone":        ["TONE","GSM","BAUD","TELEMATIC"],
-    "fx.punch":        ["FREQUENCY","PUNCH","ROUNDS","POWER"],
-    "fx.spring":       ["TONE","TURNS","DAMPING","MIX"],
-    "fx.terminal":     ["FREQUENCY","BITS","MODEL","MIX"],
-    "lfo.element":     ["SOURCE","AMOUNT","DESTINATION","PARAMETER"],
-    "lfo.midi":        ["PARAMETER 1","PARAMETER 2","PARAMETER 3","PARAMETER 4","DESTINATION 1","DESTINATION 2","DESTINATION 3","DESTINATION 4"],
-    "lfo.random":      ["SPEED","AMOUNT","DESTINATION","ENVELOPE","PARAMETER"],
-    "lfo.tremolo":     ["SPEED","PITCH AMOUNT","VOLUME LEVEL","PITCH ENVELOPE",null,null,null,"LFO SHAPE"],
-    "lfo.value":       ["SPEED","AMOUNT","DESTINATION","PARAMETER","LFO SHAPE"],
-    "lfo.velocity":    ["AMP","VOLUME AMOUNT","DESTINATION","PARAMETER"],
-    "adsr":            ["ATTACK","DECAY","SUSTAIN","RELEASE","PLAY MODE","PORTAMENTO","BEND RANGE","VOLUME"]
-  };
+  // the table lives in /layout-params.js (shared with the landing page)
+  const PARAMS = window.OP1_LAYOUT;
 
 
   function knobSVG(slots) {
@@ -149,6 +120,7 @@
       const activeParams = slots.map((n, i) => n !== null ? {idx: i, name: n} : null).filter(Boolean);
       const card = document.createElement('article');
       card.className = 'card';
+      card.id = key;
       card.setAttribute('role', 'listitem');
       card.innerHTML =
         `<div class="card-head">
@@ -174,6 +146,28 @@
   });
 
   renderCards('all');
+
+  // Deep link: /lab/layout#fx.spring scrolls to that engine's card and marks
+  // it (static outline, no animation). Used by the landing page's Lab dial.
+  function showTarget() {
+    document.querySelectorAll('.card.targeted').forEach(c => c.classList.remove('targeted'));
+    const key = decodeURIComponent(location.hash.slice(1));
+    if (!key) return;
+    let card = document.getElementById(key);
+    if (!card && window.OP1_LAYOUT[key]) {
+      // a group filter is hiding it: go back to ALL first
+      document.querySelector('.f-btn[data-g="all"]').click();
+      card = document.getElementById(key);
+    }
+    if (!card) return;
+    card.classList.add('targeted');
+    card.scrollIntoView({ block: 'center' });
+  }
+  window.addEventListener('hashchange', showTarget);
+  // wait for the shared header (deferred site-header.js) to take its space,
+  // or the card would be centered before the layout shifts under it
+  if (document.readyState === 'complete') requestAnimationFrame(showTarget);
+  else window.addEventListener('load', () => requestAnimationFrame(showTarget), { once: true });
 </script>
 </body>
 </html>

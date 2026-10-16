@@ -10,5 +10,7 @@ declare global {
       /** Rebuild device-loadable .aif bytes from a preset JSON string. */
       jsonToAif(jsonStr: string): Uint8Array
     }
+    /** public/layout-params.js: engine key -> parameter name per array index (null = unused). */
+    OP1_LAYOUT?: Record<string, Array<string | null>>
   }
 }

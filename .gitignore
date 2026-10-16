@@ -29,3 +29,4 @@ dist/
 seed.generated.sql
 tsconfig.tsbuildinfo
 .impeccable/
+/shots/

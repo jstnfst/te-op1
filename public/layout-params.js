@@ -1,0 +1,40 @@
+/* ====================================================================
+   OP-1 Field - knob layout table (single source)
+   Engine key -> the named parameter at each array index (null = unused
+   slot). Read by the Layout page (params.html) and the landing page's Lab
+   dial (src/pages/Home.tsx), so both always show the same names.
+   ==================================================================== */
+window.OP1_LAYOUT = {
+    "synth.amp":       ["VOLUME","COMPRESSOR","TONE","DRIVE"],
+    "synth.cluster":   ["WAVE NUMBER","WAVE ENV","SPREAD","UNITOR"],
+    "synth.dbox":      ["ENVELOPE CROSSFADER","WAVEFORM 1","ENVELOPE 1","CROSS MODULATION","FREQUENCY","WAVEFORM 2","ENVELOPE 2","CUTOFF"],
+    "dbox.dyna_env":   ["ATTACK","GAIN","RELEASE","SMOOTH"],
+    "synth.digital":   ["WAVE SHAPER","OCTAVE","DETUNE+RINGMOD","DIGITALNESS"],
+    "synth.dimension": ["WAVEFORM","STEREO","FILTER CUTOFF FREQ","RESONANCE"],
+    "synth.dna":       ["FILTER","WAVE NUMBER","WAVE MODIFIER","NOISE"],
+    "synth.drwave":    ["WAVE TYPE AND LENGTH","FILTER","PHASE","CHORUS"],
+    "synth.dsynth":    ["ENVELOPE CROSSFADER","WAVEFORM 1","ENVELOPE 1","CROSS MODULATION","FREQUENCY","WAVEFORM 2","ENVELOPE 2","CUTOFF"],
+    "synth.fm":        ["FM AMOUNT","FREQUENCY","TOPOLOGY","DETUNE"],
+    "synth.phase":     ["PHASE SHIFT","DISTORTION AMOUNT","PHASE FILTER","PHASE TILT"],
+    "synth.pulse":     ["FILTER","AMPLITUDE","PULSE TWO","MODULATION"],
+    "synth.sampler":   ["START","LOOP IN","LOOP OUT","END","DIRECTION","FINE TUNE","LOOP FADE","GAIN"],
+    "synth.string":    ["TENSION","DECAY","DETUNE","IMPULSE TYPE"],
+    "synth.vocoder":   ["WAVEFORM","FORMANT","BANDS","MIX"],
+    "synth.voltage":   ["AMPERE MODULATION","GROUND NOISE","PHASE FILTER","VOLTAGE DETUNE"],
+    "fx.cwo":          ["FREQUENCY","DELAY","FEEDBACK","SIDEBAND"],
+    "fx.delay":        ["RANGE","SPEED","FEEDBACK","LEVEL"],
+    "fx.grid":         ["X SIZE","Y SIZE","Z FEEDBACK","MIX"],
+    "fx.mother":       ["DISTANCE","GATE","COLOR","MIX"],
+    "fx.nitro":        ["FREQUENCY LOWS","FILTER FOLLOW","FEEDBACK","FREQUENCY HIGHS"],
+    "fx.phone":        ["TONE","GSM","BAUD","TELEMATIC"],
+    "fx.punch":        ["FREQUENCY","PUNCH","ROUNDS","POWER"],
+    "fx.spring":       ["TONE","TURNS","DAMPING","MIX"],
+    "fx.terminal":     ["FREQUENCY","BITS","MODEL","MIX"],
+    "lfo.element":     ["SOURCE","AMOUNT","DESTINATION","PARAMETER"],
+    "lfo.midi":        ["PARAMETER 1","PARAMETER 2","PARAMETER 3","PARAMETER 4","DESTINATION 1","DESTINATION 2","DESTINATION 3","DESTINATION 4"],
+    "lfo.random":      ["SPEED","AMOUNT","DESTINATION","ENVELOPE","PARAMETER"],
+    "lfo.tremolo":     ["SPEED","PITCH AMOUNT","VOLUME LEVEL","PITCH ENVELOPE",null,null,null,"LFO SHAPE"],
+    "lfo.value":       ["SPEED","AMOUNT","DESTINATION","PARAMETER","LFO SHAPE"],
+    "lfo.velocity":    ["AMP","VOLUME AMOUNT","DESTINATION","PARAMETER"],
+    "adsr":            ["ATTACK","DECAY","SUSTAIN","RELEASE","PLAY MODE","PORTAMENTO","BEND RANGE","VOLUME"]
+};

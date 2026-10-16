@@ -1,105 +1,75 @@
-import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { apiGet, type Pack, type PatchSummary } from "../api"
-import { LikeButton, DownloadCount } from "../like"
+import type { Pack, PatchSummary } from "../api"
+import { useSelection, SelectionToolbar } from "../packs"
+import { PatchItem, ViewToggle, useViewToggle } from "../patchLists"
+import { PackItem } from "./Packs"
+import { useLongList } from "../useLongList"
+import { LongList } from "../LongList"
 
-/** Liked patches and packs, newest like first. Unliking removes the row live. */
+/** Liked patches and packs, newest like first. Unliking takes the item off the page. */
 export default function Favorites() {
-  const [patches, setPatches] = useState<PatchSummary[]>([])
-  const [packs, setPacks] = useState<Pack[]>([])
-  const [busy, setBusy] = useState(true)
-  const [err, setErr] = useState("")
+  const selection = useSelection()
+  const [patchView, setPatchView] = useViewToggle("te-op1-faves-patches-view")
+  const [packView, setPackView] = useViewToggle("te-op1-faves-packs-view")
+  const patches = useLongList<PatchSummary>({ key: "fav-patches", url: (page) => `/api/favorites?kind=patch&page=${page}` })
+  const packs = useLongList<Pack>({ key: "fav-packs", url: (page) => `/api/favorites?kind=pack&page=${page}` })
 
-  useEffect(() => {
-    apiGet<{ patches: PatchSummary[]; packs: Pack[] }>("/api/favorites")
-      .then((d) => { setPatches(d.patches); setPacks(d.packs) })
-      .catch((e) => setErr((e as Error).message))
-      .finally(() => setBusy(false))
-  }, [])
-
-  if (busy) return <p className="muted">Loading…</p>
-
-  const empty = patches.length === 0 && packs.length === 0
+  const order = patches.loadedIds()
+  const none = patches.total === 0 && packs.total === 0
 
   return (
     <>
+      <p className="eyebrow">Library</p>
       <h1 className="hero-title">Favorites</h1>
-      <p className="lead">Everything you've liked, newest first.</p>
-      {err && <p className="error">{err}</p>}
+      <p className="lead">Everything you've liked, newest first. Unlike something and it leaves this page.</p>
 
-      {empty ? (
+      {none ? (
         <p className="muted">
-          Nothing saved yet - tap the heart on any <Link to="/library">patch</Link> or{" "}
+          Nothing saved yet. Tap the heart on any <Link to="/library">patch</Link> or{" "}
           <Link to="/library/packs">pack</Link> and it lands here.
         </p>
       ) : (
         <>
           <section>
-            <h2>Patches</h2>
-            {patches.length === 0 ? (
-              <p className="muted">No liked patches yet.</p>
-            ) : (
-              <div className="grid">
-                {patches.map((p) => (
-                  <div className="card" key={p.id}>
-                    <div className="card-eyebrow">
-                      <span className="chip">{p.type}</span>
-                      {p.author ? <span>by {p.author}</span> : null}
-                    </div>
-                    <div className="card-title">{p.name}</div>
-                    {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
-                      <div className="card-tags">
-                        {p.tags.split(",").filter(Boolean).slice(0, 6).map((t) => (
-                          <span key={t} className="chip tag">{t}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="row card-actions">
-                      <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-                      <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
-                      <DownloadCount n={p.download_count} />
-                      <LikeButton
-                        type="patch"
-                        id={p.id}
-                        likeCount={p.like_count}
-                        likedByMe={p.liked_by_me}
-                        onToggled={(liked) => { if (!liked) setPatches((i) => i.filter((x) => x.id !== p.id)) }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="browse-head">
+              <h2 style={{ margin: 0 }}>Patches</h2>
+              <ViewToggle view={patchView} setView={setPatchView} />
+            </div>
+            <LongList
+              list={patches}
+              view={patchView}
+              noun={["liked patch", "liked patches"]}
+              toolbar={<SelectionToolbar selection={selection} />}
+              empty={<p className="muted">No liked patches yet</p>}
+              renderItem={(p) => (
+                <PatchItem
+                  view={patchView}
+                  p={p}
+                  selected={selection.has(p.id)}
+                  sel={selection.bind(p.id, order)}
+                  onLiked={(liked) => {
+                    if (liked) return
+                    if (selection.has(p.id)) selection.pick(p.id)
+                    patches.reload()
+                  }}
+                />
+              )}
+            />
           </section>
 
           <section style={{ marginTop: 36 }}>
-            <h2>Packs</h2>
-            {packs.length === 0 ? (
-              <p className="muted">No liked packs yet.</p>
-            ) : (
-              <div className="grid">
-                {packs.map((k) => (
-                  <Link className="card" key={k.id} to={`/library/packs/${k.id}`}>
-                    <div className="card-eyebrow">
-                      <span className="chip">pack</span>
-                      <span>{k.item_count ?? 0} patches</span>
-                      {k.author ? <span>by {k.author}</span> : null}
-                    </div>
-                    <div className="card-title">{k.name}</div>
-                    <div className="row card-actions">
-                      <DownloadCount n={k.download_count} />
-                      <LikeButton
-                        type="pack"
-                        id={k.id}
-                        likeCount={k.like_count}
-                        likedByMe={k.liked_by_me}
-                        onToggled={(liked) => { if (!liked) setPacks((i) => i.filter((x) => x.id !== k.id)) }}
-                      />
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
+            <div className="browse-head">
+              <h2 style={{ margin: 0 }}>Packs</h2>
+              <ViewToggle view={packView} setView={setPackView} />
+            </div>
+            <LongList
+              list={packs}
+              view={packView}
+              noun={["liked pack", "liked packs"]}
+              pageParam="ppage"
+              empty={<p className="muted">No liked packs yet</p>}
+              renderItem={(k) => <PackItem p={k} view={packView} showAuthor onLiked={(liked) => { if (!liked) packs.reload() }} />}
+            />
           </section>
         </>
       )}

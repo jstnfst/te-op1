@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom"
-import { useSelection, SelectionBar } from "../packs"
+import { useSelection } from "../packs"
 import { MyPatches } from "../patchLists"
 import { MyPacks } from "./Packs"
 
@@ -18,7 +18,6 @@ export default function Mine() {
       <MyPatches selection={selection} />
       <MyPacks />
 
-      <SelectionBar ids={selection.ids} onClear={selection.clear} />
     </>
   )
 }

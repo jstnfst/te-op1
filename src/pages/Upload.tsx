@@ -123,7 +123,7 @@ export default function Upload() {
       {msg.ok && (
         <p className="ok" style={{ marginTop: 12 }}>
           {msg.ok}{" "}
-          {publishedId && <a href={`/patch.html?id=${publishedId}`} style={{ color: "inherit", fontWeight: 700 }}>View patch →</a>}
+          {publishedId && <a href={`/library/editor?id=${publishedId}`} style={{ color: "inherit", fontWeight: 700 }}>View patch →</a>}
         </p>
       )}
       {msg.err && <p className="error" style={{ marginTop: 12 }}>{msg.err}</p>}

@@ -54,6 +54,8 @@ export interface Pack {
   like_count?: number
   download_count?: number
   liked_by_me?: number | boolean
+  /** Community listing only: SQLite boolean, the viewer made this pack. */
+  is_mine?: number | boolean
 }
 
 /** POST a JSON body and save the binary response (e.g. a .zip) as a download. */

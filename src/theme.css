@@ -7,15 +7,38 @@ h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-h
 /* section eyebrow above a page title: which path (Library / Lab) you're on */
 .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
 
+/* library browse hero: the lead on the left, Find / Pick / Take on the right */
+.lib-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 28px 48px; align-items: start; }
+.nowrap { white-space: nowrap; }
+.coarse-only { display: none; }
+@media (pointer: coarse) { .fine-only { display: none; } .coarse-only { display: inline; } }
+.how-steps { list-style: none; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); }
+.how-steps li { display: flex; gap: 12px; align-items: baseline; padding: 11px 14px; font-size: 12px; font-weight: 300; line-height: 1.55; color: var(--muted); }
+.how-steps li + li { border-top: 1px solid var(--border); }
+.how-steps b { display: block; font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text); margin-bottom: 2px; }
+.how-n { flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px;
+  font-size: 10px; font-weight: 800; color: var(--muted); border: 1px solid var(--border); border-radius: 4px; background: var(--bg); }
+kbd { font-family: inherit; font-size: 10px; padding: 0 4px; border: 1px solid var(--border); border-radius: 2px; color: var(--text); }
+@media (max-width: 900px) { .lib-hero { grid-template-columns: 1fr; } }
+
 /* library browser: search first, engine chips second */
-input[type=search].search-big { display: block; width: 100%; max-width: 720px; margin: 32px 0 12px;
-  font-size: 13px; padding: 13px 16px; }
+.filter-row { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; margin: 32px 0 12px; }
+input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; padding: 12px 16px; }
+.filter-row .filter-tag { flex: 0 1 200px; min-width: 140px; }
+.filter-row .view-toggle { align-self: center; margin-left: 4px; }
+@media (max-width: 640px) {
+  input[type=search].search-big { flex-basis: 100%; }
+  .filter-row .filter-tag { flex: 1 1 140px; }
+}
 .engine-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
 .engine-chip { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
   background: none; border: 1px solid var(--border); border-radius: 2px; padding: 5px 9px 4px;
   transition: color .15s, border-color .15s, background .15s; }
 .engine-chip:hover { color: var(--text); border-color: #474b54; }
 .engine-chip.active { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
+/* live patch count per engine (/api/patches/counts); engines with none dim */
+.engine-n { margin-left: 6px; font-weight: 400; letter-spacing: 0; opacity: .7; font-variant-numeric: tabular-nums; }
+.engine-chip.empty:not(.active) { opacity: .45; }
 
 /* lab overview */
 .lab-stats { display: flex; flex-wrap: wrap; gap: 10px 32px; margin-top: 28px; font-size: 11px; color: var(--muted);
@@ -32,6 +55,32 @@ input[type=search].search-big { display: block; width: 100%; max-width: 720px; m
 .collapsible > summary:hover { color: var(--text); }
 .collapsible > summary:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .collapsible-body { margin-top: 14px; }
+
+/* "shelf": the viewer's own collection on the Packs page. Same titled-section
+   treatment as "Community packs" below it (title, count, hairline), so both
+   lists share a left edge and differ by heading, not by a frame. */
+.collapsible.shelf { margin: 32px 0 0; }
+.collapsible.shelf > summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-size: 16px; font-weight: 700;
+  letter-spacing: normal; text-transform: none; color: var(--text); padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+/* flex hides the native marker, so draw the fold arrow */
+.collapsible.shelf > summary { list-style: none; cursor: pointer; }
+.collapsible.shelf > summary::-webkit-details-marker { display: none; }
+/* arrow at the row's right end, so "Your packs" starts on the same edge as "Community packs" */
+.collapsible.shelf > summary::after { content: "▾"; margin-left: auto; align-self: center; font-size: 16px; line-height: 1;
+  color: var(--muted); transition: transform .15s, color .15s; }
+.collapsible.shelf:not([open]) > summary::after { transform: rotate(90deg); }
+.collapsible.shelf > summary:hover::after { color: var(--text); }
+.shelf-count { font-size: 11px; font-weight: 700; color: var(--muted); border: 1px solid var(--border); border-radius: 2px; padding: 1px 6px 0; }
+.shelf-sub { font-size: 11px; font-weight: 300; color: var(--muted); }
+.shelf .collapsible-body { margin-top: 16px; }
+
+/* titled page section (Packs: "Community packs"), same heading scale as the shelf */
+.community { margin-top: 48px; }
+.section-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.section-title { font-size: 16px; font-weight: 700; letter-spacing: normal; text-transform: none; color: var(--text); margin: 0; }
+.section-sub { font-size: 11px; font-weight: 300; color: var(--muted); }
+/* the viewer's own pack inside the community list */
+.chip.yours { background: none; color: var(--text); border: 1px solid #474b54; padding: 1px 5px 0; }
 
 /* cards */
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
@@ -68,6 +117,8 @@ input[type=search].search-big { display: block; width: 100%; max-width: 720px; m
 .btn.danger { background: rgba(248,113,113,.12); color: var(--danger); border-color: var(--danger); }
 .btn.danger:hover { background: rgba(248,113,113,.22); }
 .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+/* a disabled primary goes neutral: orange marks the live action, not an unavailable one */
+.btn.primary:disabled { background: var(--surface); color: var(--muted); border-color: var(--border); filter: none; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 input[type=text], input[type=search], select, textarea {
   font-family: inherit; font-size: 12px; color: var(--text); background: var(--surface);
@@ -77,6 +128,11 @@ textarea { width: 100%; min-height: 220px; white-space: pre; }
 /* login */
 .provider-list { display: flex; flex-direction: column; gap: 10px; max-width: 320px; margin-top: 18px; }
 .provider-list a { justify-content: center; padding: 12px; }
+
+/* dev-only mock login (Login.tsx; never rendered in production) */
+.dev-login { margin-top: 32px; max-width: 520px; padding: 14px 16px 12px; border: 1px dashed var(--border); border-radius: 6px; }
+.dev-login-head { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.dev-login-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
 
 /* upload */
 .dropzone { display: flex; align-items: center; gap: 14px; margin-top: 18px; padding: 28px 22px;
@@ -91,18 +147,75 @@ details.adv a { color: var(--orange); text-decoration: none; font-weight: 700; }
 /* selection + packs */
 .card.selected { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange) inset; }
 .card-check { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
-.card input[type=checkbox] { accent-color: var(--orange); cursor: pointer; }
-.selbar { position: fixed; left: 50%; transform: translateX(-50%); bottom: 22px; z-index: 50;
-  display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 12px;
-  max-width: calc(100vw - 20px); padding: 10px 16px; font-size: 12px; color: var(--text);
-  background: var(--header-bg); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 30px rgba(0,0,0,.55); }
+.card input[type=checkbox], .list-row input[type=checkbox], .seltool input[type=checkbox] {
+  accent-color: var(--orange); cursor: pointer; width: 16px; height: 16px; margin: 0; }
+/* press a card to select it, drag across cards to paint a range (packs.tsx
+   useSelection). The checkbox is visual for pointers - the card takes the
+   press - and stays focusable for keyboard toggling. */
+.sel-box { pointer-events: none; }
+.drag-selecting, .drag-selecting * { user-select: none !important; cursor: default; }
+.drag-selecting .card.selectable, .drag-selecting .list-row.selectable { cursor: pointer; }
+.card.selectable, .list-row.selectable { cursor: pointer; }
+.card.selectable:hover .card-check input:not(:checked), .list-row.selectable:hover .card-check input:not(:checked) { outline: 1px solid var(--muted); outline-offset: 1px; }
+.list-row.selectable { user-select: none; }
+
+/* a long list's sticky bar (LongList.tsx): optional selection line, then a
+   right-aligned count + pager line. Sticks under the site header
+   (--site-header-h from site-header.js). */
+.listbar { position: sticky; top: var(--site-header-h, 88px); z-index: 5; margin: 4px 0 14px; padding: 9px 12px;
+  display: flex; flex-direction: column; gap: 8px;
+  background: var(--header-bg); border: 1px solid var(--border); border-radius: 6px;
+  transition: border-color .15s, box-shadow .15s; }
+.listbar:has(.seltool.has-sel) { border-color: rgba(255,72,0,.55); box-shadow: 0 8px 30px rgba(0,0,0,.55); }
+.seltool { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; font-size: 12px; color: var(--text); }
+.seltool:has(+ .listbar-pager) { padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.listbar-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 6px 14px; }
+.listbar-count { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.listbar-newer { font-size: 11px; color: var(--text); background: none; border: none; text-decoration: underline; text-underline-offset: 2px; }
+.pager { display: inline-flex; align-items: center; gap: 4px; }
+.pager-btn { min-width: 28px; height: 28px; font-size: 12px; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: 4px; transition: border-color .15s; }
+.pager-btn:hover { border-color: var(--text); }
+.pager-btn:disabled { opacity: .35; cursor: default; border-color: var(--border); }
+.pager-field { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px; font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.pager-field input { width: auto; min-width: 3ch; padding: 4px 6px; text-align: center; font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums; letter-spacing: 0; }
+
+/* virtualized rows: absolutely placed by translateY; grid rows set their own
+   column template and gap inline (LongList.tsx) */
+.vgrid { width: 100%; }
+.vcell { min-width: 0; }
+.vcell > .card { height: 100%; }
+.vlist { width: 100%; }
+.list-end { margin: 18px 0 0; text-align: center; font-size: 11px; color: var(--muted); }
+/* placeholders while a page loads: static blocks, no shimmer (motion rule) */
+.skeleton { pointer-events: none; }
+.sk { display: block; background: var(--border); border-radius: 2px; opacity: .55; }
+.sk-eyebrow { width: 40%; height: 9px; margin-bottom: 10px; }
+.sk-title { width: 65%; height: 16px; margin-bottom: 10px; }
+.sk-tags { width: 30%; height: 12px; margin-bottom: 16px; }
+.sk-actions { width: 80%; height: 30px; }
+.list-row.skeleton .sk-chip { width: 52px; height: 12px; }
+.list-row.skeleton .sk-name { width: 30%; height: 14px; }
+.seltool-all { display: inline-flex; align-items: center; gap: 9px; cursor: pointer; white-space: nowrap; }
+.seltool-all span { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.seltool-all b { color: var(--orange); }
+.seltool-clear { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  background: none; border: none; padding: 4px 2px; }
+.seltool-clear:hover { color: var(--text); }
+.seltool-hint { flex: 1; min-width: 160px; font-size: 11px; font-weight: 300; color: var(--muted); }
+.seltool-hint a { color: var(--text); }
+.seltool-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
 .selbar-pack { position: relative; }
-.selbar-menu { position: absolute; bottom: calc(100% + 8px); left: 0; min-width: 190px; max-height: 280px; overflow: auto;
+.selbar-menu { position: absolute; top: calc(100% + 6px); right: 0; z-index: 20; min-width: 210px; max-height: 280px; overflow: auto;
   display: flex; flex-direction: column; gap: 2px; padding: 4px;
   background: var(--surface); border: 1px solid var(--border); border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,.55); }
 .menu-item { text-align: left; background: none; border: none; color: var(--text); font-size: 12px;
   padding: 8px 10px; border-radius: 4px; cursor: pointer; }
 .menu-item:hover { background: var(--bg); }
+.menu-item:disabled { opacity: .5; }
+.menu-create b { color: var(--orange); font-weight: 700; }
 .menu-new-pack { display: flex; gap: 6px; padding: 6px 4px 8px; border-bottom: 1px solid var(--border); margin-bottom: 2px; }
 .menu-new-pack input { font-size: 11px; padding: 5px 8px; flex: 1; min-width: 0; }
 .menu-new-pack .btn { padding: 5px 10px; flex-shrink: 0; font-size: 10px; }
@@ -141,6 +254,17 @@ a.list-row { text-decoration: none; color: inherit; }
 /* pack detail */
 .pack-author { font-size: 12px; font-weight: 300; color: var(--muted); margin-bottom: 4px; }
 .pack-actions { margin: 12px 0; }
+/* the compact like button takes the full row height beside full-size buttons */
+.pack-actions .btn.like { align-self: stretch; }
+
+/* share link + copy (Pack.tsx CopyLink) */
+.share-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 12px; }
+.share-link { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.share-url { font-size: 11px; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  padding: 6px 9px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; user-select: all; }
+.btn.copy-btn { padding: 6px 10px; min-width: 96px; justify-content: center; transition: color .15s, border-color .15s, background .15s; }
+.btn.copy-btn.copied { color: var(--green); border-color: var(--green); background: rgba(34,197,94,.1); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .pack-grid { margin-top: 16px; }
 .pack-empty { margin-top: 16px; }
 .pack-login { margin-top: 16px; }
@@ -167,7 +291,11 @@ a.list-row { text-decoration: none; color: inherit; }
   .card { padding: 14px 14px 12px; }
   .grid { gap: 10px; }
   .collapsible { margin: 28px 0 10px; }
-  .selbar { gap: 8px; padding: 8px 10px; bottom: 12px; }
+  .listbar { padding: 8px 10px; }
+  .seltool { gap: 8px 10px; }
+  .listbar-pager { justify-content: space-between; }
+  .seltool-hint { order: 3; flex-basis: 100%; }
+  .seltool-actions { margin-left: 0; }
 }
 
 /* like button (patches + packs) */

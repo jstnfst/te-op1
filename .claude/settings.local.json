@@ -11,7 +11,17 @@
       "Bash(C:/Users/jstnf/hack/te-op1/op1dump.exe *)",
       "Bash(git commit -q -m ' *)",
       "Bash(npx tsc *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(npm run *)",
+      "Bash(node forge-session.mjs)",
+      "Bash(node -e \"const s=require\\('./sessions.json'\\); console.log\\(Object.keys\\(s\\), s.admin.split\\('.'\\).length\\)\")",
+      "Bash(npx wrangler *)",
+      "Read(//c/Users/jstnf/AppData/Local/Temp/claude/C--Users-jstnf-hack-te-op1/b70215ed-2692-419a-aff9-2422a76121b7/scratchpad/**)",
+      "Bash(node verify-mod.mjs)",
+      "Bash(curl -s http://127.0.0.1:8788/src/theme.css)",
+      "Bash(curl -s \"http://127.0.0.1:8788/src/pages/Mod.tsx\")",
+      "Bash(curl -s https://te-op1.pages.dev/patch.html -o /tmp/live-patch.html -w \"code=%{http_code} bytes=%{size_download} url=%{url_effective}\\\\n\")",
+      "Read(//tmp/**)"
     ]
   }
 }

@@ -2,11 +2,12 @@ import type { Env } from "../../_shared/env"
 import { getSessionUser, json } from "../../_shared/session"
 import { validatePreset, MAX_UPLOAD_BYTES } from "../../_shared/validate"
 import { deriveTags } from "../../_shared/tags"
+import { pageParams, pageBody, PER_PAGE } from "../../_shared/util"
 
-const PER_PAGE = 24
-
-// GET /api/patches - public, filterable list. ?sort=likes orders by
-// popularity (ties break newest-first); default is newest-first.
+// GET /api/patches - public, filterable, paged list. ?sort=likes orders by
+// popularity (ties break newest-first); default is newest-first. Returns
+// { items, total, page, hasMore, asof } - pass asof back on later pages so
+// patches published mid-scroll don't shift the offsets.
 export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)
   const url = new URL(request.url)
@@ -14,16 +15,17 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
   const tag = url.searchParams.get("tag")
   const q = url.searchParams.get("q")
   const sort = url.searchParams.get("sort")
-  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1)
+  const { page, offset, asof: asofIn } = pageParams(url)
+  const asof = asofIn ?? (await env.DB.prepare("SELECT COALESCE(MAX(id), 0) AS m FROM patches").first<{ m: number }>())?.m ?? 0
 
   const where = ["p.is_public = 1"]
   const binds: unknown[] = [user?.uid ?? 0]
   if (type) { binds.push(type); where.push(`p.type = ?${binds.length}`) }
   if (tag) { binds.push(`%${tag}%`); where.push(`p.tags LIKE ?${binds.length}`) }
   if (q) { binds.push(`%${q}%`); where.push(`p.name LIKE ?${binds.length}`) }
+  binds.push(asof); where.push(`p.id <= ?${binds.length}`)
 
   const order = sort === "likes" ? "p.like_count DESC, p.created_at DESC" : "p.created_at DESC"
-  const offset = (page - 1) * PER_PAGE
   const sql =
     `SELECT p.id, p.name, p.type, p.fx_type, p.lfo_type, p.octave, p.tags,
             p.download_count, p.created_at, p.like_count, u.display_name AS author,
@@ -34,9 +36,14 @@ export const onRequestGet: PagesFunction<Env> = async ({ request, env }) => {
      WHERE ${where.join(" AND ")}
      ORDER BY ${order}
      LIMIT ${PER_PAGE + 1} OFFSET ${offset}`
-  const rows = await env.DB.prepare(sql).bind(...binds).all()
-  const all = rows.results as Record<string, unknown>[]
-  return json({ items: all.slice(0, PER_PAGE), page, hasMore: all.length > PER_PAGE })
+  // ?1 (viewer uid) is only used by the likes join; the count selects it too so
+  // both statements take the same numbered binds.
+  const countSql = `SELECT COUNT(*) AS n, ?1 AS _viewer FROM patches p WHERE ${where.join(" AND ")}`
+  const [rows, count] = await Promise.all([
+    env.DB.prepare(sql).bind(...binds).all(),
+    env.DB.prepare(countSql).bind(...binds).first<{ n: number }>(),
+  ])
+  return json(pageBody(rows.results as Record<string, unknown>[], count?.n ?? 0, page, asof))
 }
 
 // POST /api/patches - create a patch (auth required).

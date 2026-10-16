@@ -19,6 +19,30 @@ The C toolchain (`mondo dump`, `mondo build`, …) is unchanged; the web validat
 
 ## Local development
 
+`./master-control.sh` runs everything below (bash: Git Bash on Windows, or
+macOS/Linux). `./master-control.sh help` lists every command.
+
+```bash
+./master-control.sh setup          # npm ci, .dev.vars, local DB schema, Playwright browser
+./master-control.sh doctor         # check Node 22+, deps, .dev.vars, compiler, ports, gh
+./master-control.sh db seed        # (optional) import samples.js into the local library
+./master-control.sh dev up         # build, then run the dev server in the background
+./master-control.sh dev login      # sign in as a mock persona (musician, github, admin, banned)
+./master-control.sh test website   # smoke-test every page on desktop + phone widths
+./master-control.sh dev down       # stop it and free ports 8788 / 5173
+```
+
+| Group | Commands |
+|---|---|
+| `dev` | `up`, `down`, `status`, `restart`, `logs`, `login [persona]` |
+| `build` | `c` (mondo: cl, else clang, else gcc), `web`, `all`; also `webapp typecheck`, `webapp build` |
+| `c` | `dump <file\|dir>`, `samples` |
+| `db` | `migrate [--remote]`, `seed [--remote]`, `volume [--clean]`, `reset`, `sql "<sql>"` |
+| test | `test website` (= `smoke`), `shot <path> [--mobile] [--as persona] [--base url]` into `shots/` |
+| ship | `deploy` (push master, follow the CI run, check prod), `deploy status`, `prod check` |
+
+The same steps by hand:
+
 ```bash
 npm install
 cp .dev.vars.example .dev.vars        # fill in OAuth client IDs/secrets + JWT_SECRET
@@ -36,6 +60,49 @@ npm run dev    # Vite on :5173, wrangler Pages on http://localhost:8788
 Open **http://localhost:8788** (the wrangler origin - that's where `/api/*` and
 cookies work). For local OAuth, register `http://localhost:8788/api/auth/<provider>/callback`
 as a redirect URI in each provider console.
+
+Port 8788 serves the built `dist/` (wrangler's proxy doesn't reach Vite here),
+so run `npm run build` after frontend changes. `functions/` reloads on its own;
+`.dev.vars` changes need a restart of `npm run dev`.
+
+### Volume data (dev only)
+
+`node scripts/seed-volume.mjs` fills the **local** D1 with enough rows to exercise
+the long lists: 600 patches for the dev Musician persona (half public), 300 public
+patches by other local users, 80 packs (one holding 200), and ~300 likes. Every row
+is named `vol …`; `node scripts/seed-volume.mjs --clean` removes them. Sign in once
+as Musician (Dev login) first so the user exists. It refuses `--remote`.
+
+### Paged list APIs
+
+List endpoints answer `{ items, total, page, hasMore, asof }` with `?page=N` (24
+per page). Pass the first response's `asof` back on later pages to freeze offsets.
+`/api/patches` and `/api/packs/public` always page; `/api/me/patches`, `/api/packs`
+(also `?q=`), and `/api/favorites?kind=patch|pack` page only when `?page=` is sent,
+so existing unpaged callers (e.g. `patch.html`'s picker on `/api/me/patches`) are
+unchanged. `/api/packs/:id/items?page=N` pages a pack's patches; `?ids=1` returns
+just their ids (pack Select all).
+
+### Mock login (dev only)
+
+With `DEV_LOGIN=1` in `.dev.vars`, the login page shows a **Dev login** panel
+with mock personas, so signed-in flows can be tested without real OAuth:
+
+| Persona | What it tests |
+|---|---|
+| Musician | a regular signed-in user (FAVES, MINE, upload, likes, packs) |
+| GitHub user | `provider = github`, so the ISSUES tab shows (no real GitHub token) |
+| Admin | signs in with the first `ADMIN_EMAILS` address, so MOD and `/mod` work |
+| Banned user | login is refused with the suspended-account message |
+
+Personas are real rows in the **local** D1 (`provider_user_id = 'dev:<id>'`) and
+get normal session cookies, so every downstream check runs unchanged. Log out
+with the header's log out link. Direct URL: `/api/auth/dev?as=musician&next=/library/mine`.
+
+It can't run in production. `functions/_shared/devLogin.ts` requires all three
+of `DEV_LOGIN=1`, a plain-http localhost `SITE_URL`, and a request to a
+loopback host; otherwise `/api/auth/dev` is a 404 and the panel never renders.
+Never set `DEV_LOGIN` in `wrangler.toml` `[vars]` or as a Pages secret.
 
 ## One-time Cloudflare setup
 

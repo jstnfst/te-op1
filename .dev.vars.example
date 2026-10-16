@@ -4,6 +4,11 @@
 SITE_URL=http://localhost:8788
 JWT_SECRET=dev-only-change-me
 
+# Mock login personas at /api/auth/dev and on /login. Local only: it also
+# requires a localhost SITE_URL and a localhost request, and must never be set
+# in production (wrangler.toml [vars] or Pages secrets).
+DEV_LOGIN=1
+
 GOOGLE_CLIENT_ID=
 GOOGLE_CLIENT_SECRET=
 MICROSOFT_CLIENT_ID=

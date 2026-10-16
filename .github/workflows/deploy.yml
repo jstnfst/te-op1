@@ -36,6 +36,20 @@ jobs:
       - name: Build
         run: npm run build
 
+      # The mock login (functions/_shared/devLogin.ts) is local-only. It also
+      # refuses non-localhost SITE_URLs and requests, but never let its flag
+      # reach production config in the first place.
+      - name: Guard against the dev-only mock login
+        run: |
+          if grep -n "DEV_LOGIN" wrangler.toml; then
+            echo "::error file=wrangler.toml::DEV_LOGIN must never be set for production"
+            exit 1
+          fi
+          if npx wrangler pages secret list --project-name te-op1 2>/dev/null | grep -q "DEV_LOGIN"; then
+            echo "::error::DEV_LOGIN is set as a Pages secret; remove it with: wrangler pages secret delete DEV_LOGIN --project-name te-op1"
+            exit 1
+          fi
+
       - name: Apply D1 migrations (remote)
         run: npx wrangler d1 migrations apply te-op1-db --remote
 

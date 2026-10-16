@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type PointerEvent } from "react"
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { apiGet, type PatchSummary } from "../api"
 import { DownloadCount } from "../like"
 import { TYPES } from "../patchLists"
-import { Scope, envLevel, envStage, ENV_STAGES, type ScopeHandle, type Side } from "../landing/Scope"
+import { Scope, envLevel, ENV_STAGES, type ScopeHandle, type Side } from "../landing/Scope"
 import "../landing/landing.css"
 
 // Real samples of what each Lab tool holds, previewed in the "Inside the lab" tiles.
@@ -50,8 +50,8 @@ const gy = (lvl: number) => 70 - lvl * 58
 const ENV_KNEES = [0, ...ENV_STAGES.map(([, end]) => end)]
 
 /** ADSR glyph for the Lab panel: draws in once on hover/focus (CSS), then a
- * read-head follows the pointer, mirrored on the scope with its raw value. */
-function EnvGlyph({ pos }: { pos: number }) {
+ * read-head follows the pointer. The label names the reference entry dialed. */
+function EnvGlyph({ pos, label }: { pos: number; label: string }) {
   return (
     <div className="fork-glyph env-wrap">
       <svg className="env" viewBox="0 0 120 80" aria-hidden="true">
@@ -65,7 +65,7 @@ function EnvGlyph({ pos }: { pos: number }) {
           <circle cx={gx(pos)} cy={gy(envLevel(pos))} r="3.5" />
         </g>
       </svg>
-      <span className="knob-label">{envStage(pos)}</span>
+      <span className="knob-label">{label}</span>
     </div>
   )
 }
@@ -100,7 +100,7 @@ function Trending() {
       ) : (
         <div className="grid">
           {items.map((p) => (
-            <a className="card" key={p.id} href={`/patch.html?id=${p.id}`}>
+            <a className="card" key={p.id} href={`/library/editor?id=${p.id}`}>
               <div className="card-eyebrow">
                 <span className="chip">{p.type}</span>
                 {p.author ? <span>by {p.author}</span> : null}
@@ -144,6 +144,15 @@ export default function Home() {
   const counts = useCounts()
   const [dial, setDial] = useState(0)
   const [envPos, setEnvPos] = useState(0.5)
+  const navigate = useNavigate()
+  // The Lab dial: the overview, then every entry of the knob layout reference
+  // (public/layout-params.js, the same table the Layout page renders).
+  const [labDial] = useState<Array<string | null>>(() => [null, ...Object.keys(window.OP1_LAYOUT ?? {})])
+  const [labIdx, setLabIdx] = useState(0)
+  const labKey = labDial[labIdx] ?? null
+  useEffect(() => {
+    scope.current?.setLabInfo(labKey, labKey ? window.OP1_LAYOUT?.[labKey] ?? [] : [])
+  }, [labKey])
   const engine = DIAL[dial]
   const count = counts ? (engine === "all" ? counts.total : counts.byType[engine] ?? 0) : null
 
@@ -159,15 +168,20 @@ export default function Home() {
     const x = Math.max(0, Math.min(0.999, (e.clientX - r.left) / r.width))
     setDial(Math.floor(x * DIAL.length))
   }
-  // Pointer X across the Lab panel scrubs the envelope read-head (glyph + scope).
+  // Pointer X across the Lab panel dials through the knob-layout reference
+  // (overview first, then each entry): the scope draws that entry's parameter
+  // array from a real preset, and the link opens its card on the Layout page.
+  // The glyph's envelope read-head follows the pointer.
   function scrubEnv(e: PointerEvent<HTMLElement>) {
     trackSpot(e)
     if (e.pointerType === "touch") return
     const r = e.currentTarget.getBoundingClientRect()
     const u = Math.max(0, Math.min(0.999, (e.clientX - r.left) / r.width))
     setEnvPos(u)
-    scope.current?.setCursor(u)
+    setLabIdx(Math.floor(u * labDial.length))
   }
+  const labHref = labKey ? `/lab/layout#${labKey}` : "/lab"
+  const labCta = labKey ? `Open ${labKey} in the knob layout` : "Open the lab"
   const libraryHref = engine === "all" ? "/library" : `/library?type=${encodeURIComponent(engine)}`
   const libraryCta = engine === "all"
     ? (count === null ? "Browse patches" : `Browse all ${count} patches`)
@@ -226,9 +240,11 @@ export default function Home() {
             <span className="fork-cta">{libraryCta} <span aria-hidden="true">→</span></span>
           </Link>
 
-          <Link
+          {/* a plain link: the Layout page is static; /lab stays in the SPA */}
+          <a
             className="fork-panel"
-            to="/lab"
+            href={labHref}
+            onClick={(e) => { if (labHref === "/lab") { e.preventDefault(); navigate("/lab") } }}
             onPointerEnter={lean("lab")}
             onPointerLeave={lean(null)}
             onPointerMove={scrubEnv}
@@ -244,10 +260,10 @@ export default function Home() {
                 <div className="fork-title">See how it thinks</div>
                 <p className="fork-desc">Knob layouts for every engine, raw-to-display value mappings, and an inspector for the preset format</p>
               </div>
-              <EnvGlyph pos={envPos} />
+              <EnvGlyph pos={envPos} label={labKey ?? "overview"} />
             </div>
-            <span className="fork-cta">Open the lab <span aria-hidden="true">→</span></span>
-          </Link>
+            <span className="fork-cta">{labCta} <span aria-hidden="true">→</span></span>
+          </a>
         </div>
       </section>
 

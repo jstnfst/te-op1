@@ -179,7 +179,7 @@ export default function Mod() {
                     return (
                       <div className="list-row" key={p.id}>
                         <span className="chip list-type">{p.type}</span>
-                        <a className="list-name" href={`/patch.html?id=${p.id}`}>{p.name}</a>
+                        <a className="list-name" href={`/library/editor?id=${p.id}`}>{p.name}</a>
                         <span className="list-author">{p.author ? `by ${p.author}` : "no owner"}</span>
                         <span className="mod-meta">{p.download_count} dl · {day(p.created_at)}</span>
                         <div className="list-actions">

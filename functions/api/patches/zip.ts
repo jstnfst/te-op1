@@ -7,11 +7,10 @@ import { slug } from "../../_shared/util"
 const MAX_IDS = 200
 
 // POST /api/patches/zip { ids: number[] } - bundle the selected patches' .aif
-// files into a .zip. Gated by functions/api/patches/_middleware.ts (session
-// required); a patch is included only if it's public or owned by the requester.
+// files into a .zip. Public like single downloads: anyone gets the public
+// patches they asked for; a signed-in owner also gets their own private ones.
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   const user = await getSessionUser(request, env)
-  if (!user) return json({ error: "Sign in to download patches." }, { status: 401 })
 
   let body: { ids?: unknown }
   try { body = (await request.json()) as { ids?: unknown } } catch { return json({ error: "Expected a JSON body." }, { status: 400 }) }
@@ -27,7 +26,7 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       `SELECT id, name, json FROM patches
        WHERE id IN (${placeholders}) AND (is_public = 1 OR user_id = ?${ids.length + 1})`,
     )
-    .bind(...ids, user.uid)
+    .bind(...ids, user?.uid ?? 0)
     .all<{ id: number; name: string; json: string }>()
   const patches = rows.results
   if (!patches.length) return json({ error: "Nothing to download." }, { status: 404 })

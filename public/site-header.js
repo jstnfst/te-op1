@@ -38,6 +38,7 @@
       { label: "PACKS",   href: "/library/packs",  section: "packs" },
       { label: "FAVES",   href: "/library/faves",  section: "faves", auth: true },
       { label: "MINE",    href: "/library/mine",   section: "mine",  auth: true },
+      { label: "EDITOR",  href: "/library/editor", section: "editor" },
       { label: "UPLOAD",  href: "/library/upload", section: "upload" }
     ],
     lab: [
@@ -49,20 +50,26 @@
   };
 
   // Static pages declare body[data-section]; map those onto the groups.
-  // The patch viewer serves both paths: opened on a library patch (?id=)
-  // it belongs to LIBRARY, opened bare it is the LAB inspector.
+  // The patch page serves both paths: at /library/editor, or opened on a
+  // library patch or pack (?id= / ?pack=), it is the LIBRARY editor; opened
+  // bare anywhere else it is the LAB inspector. Same rule as patch.html's
+  // LIBRARY_MODE.
+  function isEditor() {
+    return location.pathname.indexOf("/library/editor") === 0 || /[?&](id|pack)=/.test(location.search);
+  }
   function fromStatic(section) {
     if (section === "layout") return { group: "lab", section: "layout" };
     if (section === "mappings") return { group: "lab", section: "mappings" };
     if (section === "patch") {
-      return /[?&]id=/.test(location.search)
-        ? { group: "library", section: "patch" }
+      return isEditor()
+        ? { group: "library", section: "editor" }
         : { group: "lab", section: "inspector" };
     }
     return null;
   }
 
   function fromPath(path) {
+    if (path.indexOf("/library/editor") === 0) return { group: "library", section: "editor" };
     if (path.indexOf("/library/packs") === 0 || path.indexOf("/packs") === 0) return { group: "library", section: "packs" };
     if (path.indexOf("/library/faves") === 0 || path.indexOf("/favorites") === 0) return { group: "library", section: "faves" };
     if (path.indexOf("/library/mine") === 0 || path.indexOf("/me") === 0) return { group: "library", section: "mine" };
@@ -141,9 +148,35 @@
       ' &middot; <a href="' + REPO + '">github.com/jstnfst/te-op1</a></footer>';
   }
 
-  // undefined until /api/auth/me answers, so the first paint shows only the
+  // Every header link is a full page load, and /api/auth/me answers only after
+  // the first paint. To keep the nav from changing length on each click, the
+  // last known session (display fields only, no token) is remembered in this
+  // browser and used for the first paint, then replaced by the real answer.
+  // It is a layout hint, nothing more: every gated page and API re-checks the
+  // session server-side.
+  var HINT_KEY = "te-op1-auth-hint";
+  function readHint() {
+    try {
+      var h = JSON.parse(localStorage.getItem(HINT_KEY) || "null");
+      return h && typeof h === "object" ? h : undefined;
+    } catch (e) { return undefined; }
+  }
+  function writeHint(user) {
+    try {
+      if (user) {
+        localStorage.setItem(HINT_KEY, JSON.stringify({
+          name: user.name, email: user.email, avatar: user.avatar,
+          provider: user.provider, isAdmin: !!user.isAdmin
+        }));
+      } else {
+        localStorage.removeItem(HINT_KEY);
+      }
+    } catch (e) {}
+  }
+
+  // undefined = unknown (no hint yet): the first paint then shows only the
   // public sub-nav items and never flashes gated links.
-  var authUser;
+  var authUser = readHint();
 
   function render() {
     var loc = current();
@@ -160,7 +193,7 @@
         ? (authUser.isAdmin ? '<a href="/mod" class="mod-link' + (loc.section === "mod" ? " active" : "") + '">mod</a>' : "") +
           (authUser.avatar ? '<img src="' + esc(authUser.avatar) + '" alt="">' : "") +
           "<span>" + esc(authUser.name || authUser.email || "account") + "</span>" +
-          '<a href="/api/auth/logout">log out</a>'
+          '<a href="/api/auth/logout" data-logout>log out</a>'
         : '<a href="' + esc(loginHref()) + '">log in</a>';
     }
   }
@@ -168,13 +201,33 @@
   function loadAuth() {
     fetch("/api/auth/me", { credentials: "same-origin" })
       .then(function (r) { return r.ok ? r.json() : { user: null }; })
-      .then(function (d) { authUser = (d && d.user) || null; render(); })
-      .catch(function () { authUser = null; render(); });
+      .then(function (d) { authUser = (d && d.user) || null; writeHint(authUser); render(); })
+      // Network failure: keep whatever the hint said rather than guessing.
+      .catch(function () { if (authUser === undefined) authUser = null; render(); });
+  }
+
+  // Logging out drops the hint so the next page's first paint is signed out.
+  document.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest && e.target.closest("a[data-logout]");
+    if (a) writeHint(null);
+  });
+
+  // Expose the sticky header's height so page-level sticky bars (the
+  // selection toolbar) can sit just under it. Re-measured on resize, and
+  // whenever the header itself changes size (sub-nav wrapping, auth slot).
+  function trackHeaderHeight() {
+    var h = document.querySelector("header.site");
+    if (!h) return;
+    var set = function () { document.documentElement.style.setProperty("--site-header-h", h.offsetHeight + "px"); };
+    set();
+    if (window.ResizeObserver) new ResizeObserver(set).observe(h);
+    else window.addEventListener("resize", set);
   }
 
   function mount() {
     var head = document.querySelector("[data-site-header]");
     if (head) head.innerHTML = headerHTML(current());
+    trackHeaderHeight();
     var foot = document.querySelector("[data-site-footer]");
     if (foot) foot.innerHTML = footerHTML();
     render();

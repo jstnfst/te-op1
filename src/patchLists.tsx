@@ -1,13 +1,16 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useAuth } from "./auth"
 import { apiGet, apiSend, type PatchSummary } from "./api"
-import type { Selection } from "./packs"
+import { SelectionToolbar, type Selection, type SelBind } from "./packs"
 import { Collapsible } from "./collapsible"
 import { LikeButton, DownloadCount } from "./like"
+import { useLongList } from "./useLongList"
+import { LongList } from "./LongList"
 
 // Patch lists shared by the Library pages: the public browser (/library) and
-// the signed-in owner's list (/library/mine).
+// the signed-in owner's list (/library/mine). Both are long lists
+// (src/LongList.tsx): paged on demand, virtualized, with a pager.
 
 export const TYPES = [
   "amp", "cluster", "dbox", "digital", "dimension", "dna", "drwave",
@@ -16,7 +19,7 @@ export const TYPES = [
 
 type View = "grid" | "list"
 
-function useViewToggle(storageKey: string, initial: View = "grid") {
+export function useViewToggle(storageKey: string, initial: View = "grid") {
   const [view, setView] = useState<View>(() => {
     try { return (localStorage.getItem(storageKey) as View) || initial } catch { return initial }
   })
@@ -27,7 +30,7 @@ function useViewToggle(storageKey: string, initial: View = "grid") {
   return [view, setViewPersisted] as const
 }
 
-function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void }) {
+export function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void }) {
   return (
     <div className="view-toggle" role="group" aria-label="Display view">
       <button
@@ -59,31 +62,113 @@ function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void 
   )
 }
 
+// ---------- shared patch card / row ----------
+
+/** Admin-only moderation handle on community items (hidden for everyone
+ * else). Reversible-only inline: hard deletes live in the /mod console. */
+interface ModActions {
+  busy: boolean
+  onPrivate: () => void
+}
+
+function ModButtons({ mod }: { mod: ModActions }) {
+  return (
+    <button className="btn" onClick={mod.onPrivate} disabled={mod.busy}>
+      {mod.busy ? "Working…" : "Make private"}
+    </button>
+  )
+}
+
+export interface RowProps {
+  p: PatchSummary
+  selected: boolean
+  /** From selection.bind(); omit to render without selection (no checkbox, no click/drag select). */
+  sel?: SelBind
+  onTagClick?: (t: string) => void
+  mod?: ModActions
+  /** Extra eyebrow chip, e.g. the owner's public/private state. */
+  chip?: ReactNode
+  /** Page-specific trailing actions, e.g. a pack owner's Remove. */
+  extra?: ReactNode
+  /** Called after this patch's like flips (e.g. Favorites drops it on unlike). */
+  onLiked?: (liked: boolean) => void
+}
+
+// For the mouse the box is visual (pointer-events: none) and the card takes the
+// press/drag; keyboard users tab to it and toggle with Space.
+const checkbox = (p: PatchSummary, sel: SelBind) => (
+  <input type="checkbox" className="sel-box" {...sel.box} aria-label={`Select ${p.name}`} />
+)
+
+const tagChips = (tags: string[], onTagClick?: (t: string) => void) => tags.map((t) => (
+  <span key={t} className={"chip tag" + (onTagClick ? " chip-filter" : "")} onClick={onTagClick && (() => onTagClick(t))} title={onTagClick ? `Filter by ${t}` : undefined}>{t}</span>
+))
+
+export function GridCard({ p, selected, sel, onTagClick, mod, chip, extra, onLiked }: RowProps) {
+  return (
+    <div className={"card" + (sel ? " selectable" : "") + (selected ? " selected" : "")} {...sel?.card}>
+      <div className="card-eyebrow">
+        {sel && <span className="card-check">{checkbox(p, sel)}</span>}
+        <span className="chip">{p.type}</span>
+        {chip}
+        {p.author ? <span>by {p.author}</span> : null}
+      </div>
+      <div className="card-title">{p.name}</div>
+      <div className="card-tags">{tagChips(p.tags.split(",").filter(Boolean).slice(0, 6), onTagClick)}</div>
+      <div className="row card-actions">
+        <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
+        <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        <DownloadCount n={p.download_count} />
+        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
+        {mod && <ModButtons mod={mod} />}
+        {extra}
+      </div>
+    </div>
+  )
+}
+
+export function ListRow({ p, selected, sel, onTagClick, mod, chip, extra, onLiked }: RowProps) {
+  return (
+    <div className={"list-row" + (sel ? " selectable" : "") + (selected ? " selected" : "")} {...sel?.card}>
+      {sel && <span className="card-check list-check">{checkbox(p, sel)}</span>}
+      <span className="chip list-type">{p.type}</span>
+      {chip}
+      <span className="list-title">
+        <span className="list-name">{p.name}</span>
+        {p.author ? <span className="list-byline">by {p.author}</span> : null}
+      </span>
+      <div className="list-tags">{tagChips(p.tags.split(",").filter(Boolean).slice(0, 4), onTagClick)}</div>
+      <div className="list-actions">
+        <DownloadCount n={p.download_count} />
+        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
+        <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
+        <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        {mod && <ModButtons mod={mod} />}
+        {extra}
+      </div>
+    </div>
+  )
+}
+
+/** Grid card or list row by view, for LongList's renderItem. */
+export const PatchItem = ({ view, ...props }: RowProps & { view: View }) =>
+  view === "grid" ? <GridCard {...props} /> : <ListRow {...props} />
+
 // ---------- My patches ----------
 
 export function MyPatches({ selection }: { selection: Selection }) {
-  const [items, setItems] = useState<PatchSummary[]>([])
   const [err, setErr] = useState("")
-  const [busy, setBusy] = useState(true)
   const [pendingDel, setPendingDel] = useState<number | null>(null)
   const [pendingPublic, setPendingPublic] = useState<number | null>(null)
   const [toggling, setToggling] = useState<number | null>(null)
   const delTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const publicTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [view, setView] = useViewToggle("te-op1-patches-mine-view")
+  const list = useLongList<PatchSummary>({
+    key: "mine",
+    url: (page, asof) => `/api/me/patches?page=${page}${asof ? `&asof=${asof}` : ""}`,
+  })
 
-  async function load() {
-    try {
-      const d = await apiGet<{ items: PatchSummary[] }>("/api/me/patches")
-      setItems(d.items)
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  useEffect(() => { load() }, [])
   useEffect(() => () => {
     if (delTimer.current) clearTimeout(delTimer.current)
     if (publicTimer.current) clearTimeout(publicTimer.current)
@@ -100,7 +185,8 @@ export function MyPatches({ selection }: { selection: Selection }) {
     setPendingDel(null)
     try {
       await apiSend(`/api/patches/${id}`, "DELETE")
-      setItems((i) => i.filter((p) => p.id !== id))
+      if (selection.has(id)) selection.pick(id)
+      list.reload()
     } catch (e) {
       setErr((e as Error).message)
     }
@@ -120,7 +206,7 @@ export function MyPatches({ selection }: { selection: Selection }) {
     setToggling(p.id)
     try {
       await apiSend(`/api/patches/${p.id}`, "PATCH", { is_public: np })
-      setItems((i) => i.map((x) => (x.id === p.id ? { ...x, is_public: np ? 1 : 0 } : x)))
+      list.patch(p.id, (x) => ({ ...x, is_public: np ? 1 : 0 }))
     } catch (e) {
       setErr((e as Error).message)
     } finally {
@@ -128,239 +214,85 @@ export function MyPatches({ selection }: { selection: Selection }) {
     }
   }
 
+  const order = list.loadedIds()
+  const ext = view === "list" ? " list-act-ext" : ""
+
   return (
-    <Collapsible storageKey="te-op1-patches-mine-open" summary={`My patches${busy ? "" : ` (${items.length})`}`}>
+    <Collapsible storageKey="te-op1-patches-mine-open" summary={`My patches${list.total === null ? "" : ` (${list.total})`}`}>
       {err && <p className="error">{err}</p>}
-      {busy ? (
-        <p className="muted">Loading…</p>
-      ) : items.length === 0 ? (
-        <p className="muted">You haven't uploaded anything yet. <Link to="/library/upload">Upload one</Link>.</p>
-      ) : (
-        <>
-          <div className="browse-head">
-            <span className="browse-count">{items.length} {items.length === 1 ? "patch" : "patches"}</span>
-            <ViewToggle view={view} setView={setView} />
-          </div>
-          {view === "grid" ? (
-            <div className="grid">
-              {items.map((p) => (
-                <div className={"card" + (selection.has(p.id) ? " selected" : "")} key={p.id}>
-                  <div className="card-eyebrow">
-                    <label className="card-check">
-                      <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} aria-label={`Select ${p.name}`} />
-                    </label>
-                    <span className="chip">{p.type}</span>
-                    <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>
-                      {p.is_public ? "public" : "private"}
-                    </span>
-                  </div>
-                  <div className="card-title">{p.name}</div>
-                  {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
-                    <div className="card-tags" style={{ marginTop: 6 }}>
-                      {p.tags.split(",").filter(Boolean).slice(0, 6).map((t) => (
-                        <span key={t} className="chip tag">{t}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="row" style={{ marginTop: 12 }}>
-                    <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-                    <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
-                    <DownloadCount n={p.download_count} />
-                    <button
-                      className={"btn" + (pendingPublic === p.id ? " primary" : "")}
-                      onClick={() => toggle(p)}
-                      disabled={toggling === p.id}
-                    >
-                      {pendingPublic === p.id ? "Make public?" : p.is_public ? "Make private" : "Make public"}
-                    </button>
-                    <button className={"btn" + (pendingDel === p.id ? " danger" : "")} onClick={() => del(p.id)}>
-                      {pendingDel === p.id ? "Confirm?" : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="list">
-              {items.map((p) => (
-                <div className={"list-row" + (selection.has(p.id) ? " selected" : "")} key={p.id}>
-                  <label className="card-check list-check">
-                    <input type="checkbox" checked={selection.has(p.id)} onChange={() => selection.toggle(p.id)} aria-label={`Select ${p.name}`} />
-                  </label>
-                  <span className="chip list-type">{p.type}</span>
-                  <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>
-                    {p.is_public ? "public" : "private"}
-                  </span>
-                  <span className="list-name">{p.name}</span>
-                  {p.tags && p.tags.split(",").filter(Boolean).length > 0 && (
-                    <div className="list-tags">
-                      {p.tags.split(",").filter(Boolean).slice(0, 3).map((t) => (
-                        <span key={t} className="chip tag">{t}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="list-actions">
-                    <DownloadCount n={p.download_count} />
-                    <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-                    <button
-                      className={"btn list-act-ext" + (pendingPublic === p.id ? " primary" : "")}
-                      onClick={() => toggle(p)}
-                      disabled={toggling === p.id}
-                    >
-                      {pendingPublic === p.id ? "Make public?" : p.is_public ? "Make private" : "Make public"}
-                    </button>
-                    <button
-                      className={"btn list-act-ext" + (pendingDel === p.id ? " danger" : "")}
-                      onClick={() => del(p.id)}
-                    >
-                      {pendingDel === p.id ? "Confirm?" : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      <div className="browse-head">
+        <span className="browse-count" />
+        <ViewToggle view={view} setView={setView} />
+      </div>
+      <LongList
+        list={list}
+        view={view}
+        noun={["patch", "patches"]}
+        toolbar={<SelectionToolbar selection={selection} />}
+        empty={<p className="muted">You haven't uploaded anything yet. <Link to="/library/upload">Upload one</Link>.</p>}
+        renderItem={(p) => (
+          <PatchItem
+            view={view}
+            p={{ ...p, author: null }}
+            selected={selection.has(p.id)}
+            sel={selection.bind(p.id, order)}
+            chip={<span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>{p.is_public ? "public" : "private"}</span>}
+            extra={<>
+              <button className={"btn" + ext + (pendingPublic === p.id ? " primary" : "")} onClick={() => toggle(p)} disabled={toggling === p.id}>
+                {pendingPublic === p.id ? "Make public?" : p.is_public ? "Make private" : "Make public"}
+              </button>
+              <button className={"btn" + ext + (pendingDel === p.id ? " danger" : "")} onClick={() => del(p.id)}>
+                {pendingDel === p.id ? "Confirm?" : "Delete"}
+              </button>
+            </>}
+          />
+        )}
+      />
     </Collapsible>
   )
 }
 
 // ---------- Discover patches ----------
 
-/** Admin-only moderation handle on community items (hidden for everyone
- * else). Reversible-only inline: hard deletes live in the /mod console. */
-interface ModActions {
-  busy: boolean
-  onPrivate: () => void
-}
-
-function ModButtons({ mod }: { mod: ModActions }) {
-  return (
-    <button className="btn" onClick={mod.onPrivate} disabled={mod.busy}>
-      {mod.busy ? "Working…" : "Make private"}
-    </button>
-  )
-}
-
-interface RowProps { p: PatchSummary; selected: boolean; onToggle?: () => void; onTagClick: (t: string) => void; mod?: ModActions }
-
-function GridCard({ p, selected, onToggle, onTagClick, mod }: RowProps) {
-  const tags = p.tags.split(",").filter(Boolean).slice(0, 6)
-  return (
-    <div className={"card" + (selected ? " selected" : "")}>
-      <div className="card-eyebrow">
-        {onToggle && (
-          <label className="card-check">
-            <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
-          </label>
-        )}
-        <span className="chip">{p.type}</span>
-        {p.author ? <span>by {p.author}</span> : null}
-      </div>
-      <div className="card-title">{p.name}</div>
-      <div className="card-tags">
-        {tags.map((t) => (
-          <span key={t} className="chip tag chip-filter" onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
-        ))}
-      </div>
-      <div className="row card-actions">
-        <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-        <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
-        <DownloadCount n={p.download_count} />
-        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
-        {mod && <ModButtons mod={mod} />}
-      </div>
-    </div>
-  )
-}
-
-function ListRow({ p, selected, onToggle, onTagClick, mod }: RowProps) {
-  const tags = p.tags.split(",").filter(Boolean).slice(0, 4)
-  return (
-    <div className={"list-row" + (selected ? " selected" : "")}>
-      {onToggle && (
-        <label className="card-check list-check">
-          <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
-        </label>
-      )}
-      <span className="chip list-type">{p.type}</span>
-      <span className="list-title">
-        <span className="list-name">{p.name}</span>
-        {p.author ? <span className="list-byline">by {p.author}</span> : null}
-      </span>
-      <div className="list-tags">
-        {tags.map((t) => (
-          <span key={t} className="chip tag chip-filter" onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
-        ))}
-      </div>
-      <div className="list-actions">
-        <DownloadCount n={p.download_count} />
-        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
-        <a className="btn" href={`/patch.html?id=${p.id}`}>Open</a>
-        <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
-        {mod && <ModButtons mod={mod} />}
-      </div>
-    </div>
-  )
-}
-
 /** The public library browser. Filters seed from the URL (?q=&type=&tag=&sort=)
  * so the landing page and engine links can deep-link into a search. */
 export function DiscoverPatches({ selection }: { selection: Selection }) {
   const { user } = useAuth()
   const [params] = useSearchParams()
-  const [items, setItems] = useState<PatchSummary[]>([])
   const [type, setType] = useState(() => params.get("type") || "")
   const [q, setQ] = useState(() => params.get("q") || "")
   const [tag, setTag] = useState(() => params.get("tag") || "")
   const [sort, setSort] = useState(() => params.get("sort") || "")
-  const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle("te-op1-patches-discover-view")
   const [modBusy, setModBusy] = useState<number | null>(null)
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const filtersRef = useRef({ type, q, tag, sort })
-  filtersRef.current = { type, q, tag, sort }
-  const isFirstQTagRender = useRef(true)
+  const [counts, setCounts] = useState<Record<string, number> | null>(null)
 
-  async function load(filters = filtersRef.current) {
-    setLoading(true)
-    setErr("")
-    try {
-      const params = new URLSearchParams()
-      if (filters.type) params.set("type", filters.type)
-      if (filters.q.trim()) params.set("q", filters.q.trim())
-      if (filters.tag.trim()) params.set("tag", filters.tag.trim())
-      if (filters.sort) params.set("sort", filters.sort)
-      const data = await apiGet<{ items: PatchSummary[] }>(`/api/patches?${params.toString()}`)
-      setItems(data.items)
-    } catch (e) {
-      setErr((e as Error).message)
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  // typing debounces into the list key; chips and sort apply at once
+  const [typed, setTyped] = useState({ q: q.trim(), tag: tag.trim() })
   useEffect(() => {
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [type, sort])
-
-  useEffect(() => {
-    if (isFirstQTagRender.current) { isFirstQTagRender.current = false; return }
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => load(), 300)
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const t = setTimeout(() => setTyped({ q: q.trim(), tag: tag.trim() }), 300)
+    return () => clearTimeout(t)
   }, [q, tag])
 
-  function handleTagClick(t: string) {
-    setTag(t)
-    if (debounceRef.current) clearTimeout(debounceRef.current)
-    load({ ...filtersRef.current, tag: t })
-  }
+  const filters = { type, q: typed.q, tag: typed.tag, sort }
+  const list = useLongList<PatchSummary>({
+    key: JSON.stringify(filters),
+    url: (page, asof) => {
+      const p = new URLSearchParams({ page: String(page) })
+      if (filters.type) p.set("type", filters.type)
+      if (filters.q) p.set("q", filters.q)
+      if (filters.tag) p.set("tag", filters.tag)
+      if (filters.sort) p.set("sort", filters.sort)
+      if (asof) p.set("asof", String(asof))
+      return `/api/patches?${p}`
+    },
+  })
+
+  useEffect(() => {
+    apiGet<{ byType: Record<string, number> }>("/api/patches/counts").then((d) => setCounts(d.byType)).catch(() => setCounts(null))
+  }, [])
+  const total = counts ? Object.values(counts).reduce((a, b) => a + b, 0) : null
 
   function clearFilters() {
     setType("")
@@ -374,7 +306,7 @@ export function DiscoverPatches({ selection }: { selection: Selection }) {
     setModBusy(p.id)
     try {
       await apiSend(`/api/patches/${p.id}`, "PATCH", { is_public: false })
-      setItems((i) => i.filter((x) => x.id !== p.id))
+      list.reload()
     } catch (e) {
       setErr((e as Error).message)
     } finally {
@@ -386,72 +318,74 @@ export function DiscoverPatches({ selection }: { selection: Selection }) {
     user?.isAdmin ? { busy: modBusy === p.id, onPrivate: () => modPrivate(p) } : undefined
 
   const hasFilters = type !== "" || q !== "" || tag !== ""
+  const order = list.loadedIds()
 
   return (
     <>
-      <input
-        className="search-big"
-        type="search"
-        placeholder="Search patches by name…"
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        aria-label="Search by name"
-        autoFocus={!!params.get("q")}
-      />
-      <div className="engine-chips" role="group" aria-label="Filter by engine">
-        <button className={"engine-chip" + (type === "" ? " active" : "")} onClick={() => setType("")} aria-pressed={type === ""}>all</button>
-        {TYPES.map((t) => (
-          <button key={t} className={"engine-chip" + (type === t ? " active" : "")} onClick={() => setType(type === t ? "" : t)} aria-pressed={type === t}>{t}</button>
-        ))}
-      </div>
-      <div className="browse-head">
-        <div className="row">
-          <input
-            type="search"
-            placeholder="Filter by tag…"
-            value={tag}
-            onChange={(e) => setTag(e.target.value)}
-            aria-label="Filter by tag"
-          />
-          <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort order">
-            <option value="">Newest</option>
-            <option value="likes">Most liked</option>
-          </select>
-          {hasFilters && (
-            <button className="btn" onClick={clearFilters}>Clear</button>
-          )}
-        </div>
+      {/* one filter row: name search, tag, sort, view; engine chips below */}
+      <div className="filter-row">
+        <input
+          className="search-big"
+          type="search"
+          placeholder="Search patches by name…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search by name"
+          autoFocus={!!params.get("q")}
+        />
+        <input
+          className="filter-tag"
+          type="search"
+          placeholder="Filter by tag…"
+          value={tag}
+          onChange={(e) => setTag(e.target.value)}
+          aria-label="Filter by tag"
+        />
+        <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort order">
+          <option value="">Newest</option>
+          <option value="likes">Most liked</option>
+        </select>
+        {hasFilters && <button className="btn" onClick={clearFilters}>Clear</button>}
         <ViewToggle view={view} setView={setView} />
       </div>
+      <div className="engine-chips" role="group" aria-label="Filter by engine">
+        <button className={"engine-chip" + (type === "" ? " active" : "")} onClick={() => setType("")} aria-pressed={type === ""}>
+          all{total !== null && <span className="engine-n">{total}</span>}
+        </button>
+        {TYPES.map((t) => {
+          const n = counts?.[t] ?? 0
+          return (
+            <button key={t} className={"engine-chip" + (type === t ? " active" : "") + (counts && !n ? " empty" : "")} onClick={() => setType(type === t ? "" : t)} aria-pressed={type === t}>
+              {t}{counts && <span className="engine-n">{n}</span>}
+            </button>
+          )
+        })}
+      </div>
       {err && <p className="error">{err}</p>}
-      {loading ? (
-        <p className="muted">Loading…</p>
-      ) : items.length === 0 ? (
-        <>
-          <p className="muted">No patches found.</p>
-          {hasFilters
-            ? <p style={{ marginTop: 8 }}><button className="btn" onClick={clearFilters}>Clear filters</button></p>
-            : <p className="muted" style={{ marginTop: 4 }}>No community patches yet - <Link to="/library/upload">upload the first one</Link>.</p>
-          }
-        </>
-      ) : (
-        <>
-          <p className="muted" style={{ marginBottom: 12 }}>{items.length} {items.length === 1 ? "patch" : "patches"}</p>
-          {view === "grid" ? (
-            <div className="grid">
-              {items.map((p) => (
-                <GridCard key={p.id} p={p} selected={selection.has(p.id)} onToggle={user ? () => selection.toggle(p.id) : undefined} onTagClick={handleTagClick} mod={modFor(p)} />
-              ))}
-            </div>
-          ) : (
-            <div className="list">
-              {items.map((p) => (
-                <ListRow key={p.id} p={p} selected={selection.has(p.id)} onToggle={user ? () => selection.toggle(p.id) : undefined} onTagClick={handleTagClick} mod={modFor(p)} />
-              ))}
-            </div>
-          )}
-        </>
-      )}
+      <LongList
+        list={list}
+        view={view}
+        noun={["patch", "patches"]}
+        toolbar={<SelectionToolbar selection={selection} />}
+        empty={hasFilters ? (
+          <>
+            <p className="muted">No patches found</p>
+            <p style={{ marginTop: 8 }}><button className="btn" onClick={clearFilters}>Clear filters</button></p>
+          </>
+        ) : (
+          <p className="muted">No community patches yet. <Link to="/library/upload">Upload the first one</Link>.</p>
+        )}
+        renderItem={(p) => (
+          <PatchItem
+            view={view}
+            p={p}
+            selected={selection.has(p.id)}
+            sel={selection.bind(p.id, order)}
+            onTagClick={(t) => setTag(t)}
+            mod={modFor(p)}
+          />
+        )}
+      />
     </>
   )
 }

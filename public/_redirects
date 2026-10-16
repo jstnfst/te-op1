@@ -3,6 +3,9 @@
 /lab/layout         /params      200
 /lab/mappings       /display     200
 /lab/inspector      /patch       200
+# The same page is the Library's patch editor (patch.html picks its mode
+# from the path).
+/library/editor     /patch       200
 # params.html links to its sibling relatively ("display.html"), which resolves
 # under /lab/ when served at /lab/layout.
 /lab/display.html   /lab/mappings  301
