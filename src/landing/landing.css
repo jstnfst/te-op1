@@ -1,0 +1,172 @@
+/* Landing page (/). The one expressive page on the site: an oversized title,
+   a live scope, and the Library / Lab fork. Motion here is pointer-gated:
+   nothing moves until a mouse is over the hero or a fork panel, and
+   prefers-reduced-motion freezes all of it. See DESIGN.md "Pointer-Gated Motion". */
+
+main.landing { max-width: none; padding: 0; }
+
+/* ── HERO ── */
+.hero { position: relative; padding: 64px 32px 40px; border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(rgba(255,255,255,.055) 1px, transparent 1.2px) 0 0 / 22px 22px,
+    var(--bg); }
+/* fade the dot field out toward the bottom so the fork panels sit on clean ground */
+.hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(to bottom, transparent 30%, var(--bg) 92%); }
+.hero > * { position: relative; z-index: 1; }
+
+.hero-top { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; }
+.hero .eyebrow { margin-bottom: 22px; }
+.land-title { font-size: clamp(44px, 6.4vw, 88px); font-weight: 800; line-height: .98; letter-spacing: -.035em; color: var(--text); }
+.land-title-sub { font-size: .62em; font-weight: 300; color: var(--muted); letter-spacing: -.04em; }
+
+/* ── SCOPE ── a self-contained instrument screen (same language as the patch
+   page's ADSR scope: white ink on black, one orange trace). */
+.scope { background: var(--header-bg); border: 1px solid #000; border-radius: 8px; padding: 12px 14px 12px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.scope-bar { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; }
+/* one LED per path, lit while that fork panel is under the pointer (data-side
+   set by Scope.tsx). Library = Signal Orange, Lab = Trace Blue - same pair as
+   the header's LIBRARY | LAB switch. */
+.scope-leds { display: inline-flex; gap: 12px; }
+.scope-led { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 700; letter-spacing: .2em;
+  text-transform: uppercase; color: rgba(255,255,255,.32); transition: color .2s; }
+.scope-led::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.16);
+  transition: background .2s, box-shadow .2s; }
+.scope[data-side="library"] .led-library { color: rgba(255,255,255,.75); }
+.scope[data-side="library"] .led-library::before { background: var(--orange); box-shadow: 0 0 8px rgba(255,72,0,.8); }
+.scope[data-side="lab"] .led-lab { color: rgba(255,255,255,.75); }
+.scope[data-side="lab"] .led-lab::before { background: var(--blue); box-shadow: 0 0 8px rgba(59,158,234,.85); }
+.scope-screen { display: block; width: 100%; aspect-ratio: 600 / 220; border-radius: 4px; background: #08090b; }
+.scope-grid line { stroke: rgba(255,255,255,.07); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.scope-axis { stroke: rgba(255,255,255,.14); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+.scope-trace { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.scope-cursor line { stroke: rgba(255,255,255,.35); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.scope-cursor circle { fill: #fff; stroke: var(--orange); stroke-width: 2; vector-effect: non-scaling-stroke; }
+.scope-glow { fill: none; stroke: var(--orange); stroke-width: 7; opacity: .16; filter: blur(3px); vector-effect: non-scaling-stroke; }
+.scope-readout { display: flex; gap: 22px; flex-wrap: wrap; margin-top: 10px; }
+.scope-readout .ro { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.5); min-width: 86px; }
+.scope-readout .ro[hidden] { display: none; }
+.scope-readout .ro b { display: block; font-size: 11px; color: #fff; font-weight: 700; letter-spacing: .02em; margin-top: 2px;
+  text-transform: none; font-variant-numeric: tabular-nums; }
+
+/* ── FORK ── the two paths */
+.fork { max-width: 1180px; margin: 48px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.fork-panel { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px;
+  padding: 22px 24px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); text-decoration: none;
+  transition: border-color .2s, transform .2s, box-shadow .2s; }
+/* soft light that follows the pointer (vars set in Home.tsx trackSpot) */
+.fork-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s;
+  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.07), transparent 65%); }
+.fork-panel > * { position: relative; }
+.fork-panel:hover, .fork-panel:focus-visible { border-color: #474b54; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.5); }
+.fork-panel:hover::before { opacity: 1; }
+
+.fork-head { display: flex; align-items: center; gap: 10px; }
+.fork-key { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
+  font-size: 10px; font-weight: 800; color: var(--muted); border: 1px solid var(--border); border-radius: 4px;
+  background: var(--bg); transition: background .2s, color .2s, border-color .2s; }
+.fork-panel:hover .fork-key, .fork-panel:focus-visible .fork-key { background: var(--orange); border-color: var(--orange); color: var(--orange-on); }
+.fork-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+
+.fork-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+.fork-title { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 10px; }
+.fork-desc { font-size: 13px; font-weight: 300; line-height: 1.7; color: var(--muted); max-width: 44ch; }
+.fork-cta { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
+.fork-cta span { display: inline-block; transition: transform .2s; }
+.fork-panel:hover .fork-cta, .fork-panel:focus-visible .fork-cta { color: var(--text); }
+.fork-panel:hover .fork-cta span, .fork-panel:focus-visible .fork-cta span { transform: translateX(4px); }
+
+/* glyphs: each plays once on hover/focus, then holds */
+.fork-glyph { flex-shrink: 0; width: 92px; height: auto; }
+.knob-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.knob { display: block; width: 100%; height: auto; }
+.knob-ticks line { stroke: var(--knob-null); stroke-width: 2; stroke-linecap: round; transition: stroke .12s; }
+.knob-ticks line.on { stroke: var(--text); }
+.fork-panel:hover .knob-ticks line.on { stroke: var(--orange); }
+.knob-label { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  font-variant-numeric: tabular-nums; min-width: 9ch; text-align: center; transition: color .15s; }
+.fork-panel:hover .knob-label { color: var(--text); }
+.knob-body { fill: var(--bg); stroke: var(--border); stroke-width: 1.5; }
+/* rotation is set inline per detent (Home.tsx KnobGlyph); this is the snap */
+.knob-pointer { stroke: var(--text); stroke-width: 3; stroke-linecap: round; transform-origin: 40px 40px; transform-box: view-box;
+  transition: transform .14s cubic-bezier(.25,1,.5,1), stroke .2s; }
+.fork-panel:hover .knob-pointer, .fork-panel:focus-visible .knob-pointer { stroke: var(--orange); }
+
+.env-wrap { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.env { display: block; width: 100%; height: auto; }
+.env-base { stroke: var(--border); stroke-width: 1; }
+.env-cursor { opacity: 0; transition: opacity .15s; }
+.env-cursor line { stroke: rgba(255,255,255,.3); stroke-width: 1; stroke-dasharray: 2 2; }
+.env-cursor circle { fill: var(--text); }
+.fork-panel:hover .env-cursor { opacity: 1; }
+.env-line { fill: none; stroke: var(--text); stroke-width: 2; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke .2s; }
+.env-nodes circle { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; transition: stroke .2s; }
+.fork-panel:hover .env-line, .fork-panel:focus-visible .env-line { stroke: var(--orange); animation: env-draw .9s cubic-bezier(.22,1,.36,1) both; }
+.fork-panel:hover .env-nodes circle, .fork-panel:focus-visible .env-nodes circle { stroke: var(--text); }
+@keyframes env-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+/* ── BELOW THE FOLD ── static */
+.land-body { max-width: 1244px; margin: 0 auto; padding: 8px 32px 80px; }
+.land-section { margin-top: 44px; }
+.land-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.land-section-head h2 { margin: 0 0 14px; }
+.land-more { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+.land-more:hover { color: var(--text); }
+
+/* Inside the lab: one tile per tool, each previewing a real sample of its data */
+/* subgrid: head, description, and preview rows line up across the three tiles */
+.lab-tiles { display: grid; grid-template-columns: repeat(3, 1fr); grid-template-rows: auto auto 1fr; column-gap: 12px; }
+.lab-tiles > .lab-tile { display: grid; grid-row: span 3; grid-template-rows: subgrid; row-gap: 8px; }
+.lab-tile { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 18px; text-decoration: none; color: var(--text);
+  background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+  transition: box-shadow .18s, transform .18s, border-color .18s; }
+.lab-tile:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474b54; }
+.lab-tile-head { display: flex; align-items: baseline; justify-content: space-between; }
+.lab-tile-name { font-size: 16px; font-weight: 700; }
+.lab-tile-go { font-size: 13px; color: var(--muted); transition: transform .18s, color .18s; }
+.lab-tile:hover .lab-tile-go { color: var(--text); transform: translateX(3px); }
+.lab-tile-desc { font-size: 12px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+.lab-tile-preview { margin-top: 6px; padding-top: 12px; align-self: start; border-top: 1px solid var(--border); }
+.lab-tile-caption { font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); grid-column: 1 / -1; }
+
+.knob-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px 6px; }
+.knob-cell { display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  font-size: 9px; font-weight: 700; letter-spacing: .1em; color: var(--text); line-height: 1.3; }
+.knob-dot { position: relative; display: block; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg); }
+.knob-dot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 2px; margin-top: -1px;
+  background: var(--text); transform-origin: 0 50%; }
+
+.scale-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.preset-ro { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px 10px; }
+.preset-ro dt { font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.preset-ro dd { font-size: 11px; font-weight: 700; color: var(--text); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preset-ro div:first-child { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+  .hero-top { grid-template-columns: 1fr; gap: 32px; }
+  .fork { grid-template-columns: 1fr; }
+  .lab-tiles { grid-template-columns: 1fr; grid-template-rows: none; row-gap: 12px; }
+  .lab-tiles > .lab-tile { display: flex; grid-row: auto; }
+}
+@media (max-width: 640px) {
+  .hero { padding: 36px 16px 28px; }
+  .land-body { padding: 0 16px 60px; }
+  .fork { margin-top: 32px; }
+  .fork-panel { padding: 18px 18px 16px; }
+  .fork-glyph { width: 64px; }
+  .scope-readout { gap: 14px; }
+}
+/* no hover on touch: no pointer light; panels still light up on tap/focus */
+@media (hover: none) {
+  .fork-panel::before { display: none; }
+  .fork-panel:hover { transform: none; box-shadow: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fork-panel, .fork-panel::before, .fork-cta span, .knob-pointer, .scope-led, .scope-led::before, .lab-tile, .lab-tile-go { transition: none; }
+  .lab-tile:hover { transform: none; }
+  .fork-panel:hover, .fork-panel:focus-visible { transform: none; }
+  .fork-panel:hover .env-line, .fork-panel:focus-visible .env-line { animation: none; }
+}

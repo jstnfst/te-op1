@@ -6,14 +6,19 @@ product
 
 ## Users
 
-OP-1 Field owners and the people reverse-engineering its preset format: synth
-hobbyists, sound designers, and developers. They arrive with a specific job in
-mind - look up what a knob actually does on a given engine, see how a raw value
-maps to the displayed one, inspect a `.aif` patch live, or browse and publish
-presets to a shared community library. They are technical, impatient with fluff,
-and trust the site only as far as the data is correct. Most sessions are
-reference-lookup or browse-and-download; uploading requires sign-in (Google,
-Microsoft, Yahoo, GitHub), everything else is public.
+Two audiences, served by two paths that split at the landing page:
+
+- **Musicians (LIBRARY).** OP-1 Field owners who want sounds. They browse,
+  search by engine and tag, open a patch to see how it's built, and download the
+  `.aif` to copy onto the device. Browsing and downloading are public; signing in
+  (Google, Microsoft, Yahoo, GitHub) is only for uploading, liking, favorites, and
+  building packs.
+- **Engineers (LAB).** The people reverse-engineering the preset format: sound
+  designers and developers who look up what a knob does on a given engine, how a
+  raw value maps to the displayed one, or what is inside a given `.aif`.
+
+Both are impatient with fluff and trust the site only as far as the data is
+correct.
 
 ## Product Purpose
 
@@ -30,9 +35,17 @@ their device, without ever doubting that the numbers are right.
 Technical and precise. An engineer's reference, not a marketing page. Voice is
 terse, accurate, and unembellished; the design earns trust by being correct and
 fast, not by being persuasive. Three words: **precise, instrument-grade,
-unembellished.** The dark monospace surface and single TE-orange accent are the
+unembellished.** Titles, hero lines, card descriptions, CTAs, and other
+single-sentence UI text carry no trailing period; only multi-sentence paragraphs
+end in periods. The dark monospace surface and single TE-orange accent are the
 whole personality - restraint is the point. No hype, no celebration animations,
 no convincing the user of anything the data doesn't already prove.
+
+**Landing exception.** The landing page (`/`) is the one place the site is
+allowed to catch the eye: an oversized title, a live scope, and the Library / Lab
+fork. Its motion is pointer-gated (it runs only while the mouse is over the hero
+or a fork panel) and freezes under reduced motion. Every page past the fork,
+and the patch editor in particular, stays precise and unembellished.
 
 ## Anti-references
 
@@ -48,6 +61,8 @@ no convincing the user of anything the data doesn't already prove.
 - **The data is the product.** Correctness and legibility of parameter values,
   mappings, and patch contents outrank every decorative concern. Never let styling
   obscure or imply precision the numbers don't have.
+- **One click to the right path.** The landing page asks one question: Library or
+  Lab. After that, each path shows only its own information and its own sub-nav.
 - **Reference speed over persuasion.** Optimize for the lookup: fast scanning,
   dense-but-readable tables, predictable navigation. Don't make users hunt or wait.
 - **Restraint as identity.** One accent (TE-orange), one type family (mono), a

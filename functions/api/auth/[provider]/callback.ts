@@ -4,6 +4,7 @@ import { verifyJwt } from "../../../_shared/jwt"
 import { parseCookies, serializeCookie, OAUTH_TX_COOKIE, isHttps } from "../../../_shared/cookies"
 import { upsertUser, setGithubToken, getBannedAt } from "../../../_shared/db"
 import { sessionCookie } from "../../../_shared/session"
+import { safeNext } from "../../../_shared/util"
 
 function redirect(location: string, extraCookies: string[] = []): Response {
   const headers = new Headers({ Location: location })
@@ -20,7 +21,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
   const code = url.searchParams.get("code")
   const state = url.searchParams.get("state")
 
-  const tx = await verifyJwt<{ state: string; provider: string; codeVerifier: string }>(
+  const tx = await verifyJwt<{ state: string; provider: string; codeVerifier: string; next?: string }>(
     parseCookies(request)[OAUTH_TX_COOKIE],
     env.JWT_SECRET,
   )
@@ -45,7 +46,7 @@ export const onRequestGet: PagesFunction<Env> = async ({ params, env, request })
     // themselves later - the other providers' tokens aren't used for anything
     // past login, so only GitHub's is worth persisting.
     if (provider === "github") await setGithubToken(env, user.uid, accessToken)
-    return redirect(`${env.SITE_URL}/`, [await sessionCookie(env, user), clearTx])
+    return redirect(`${env.SITE_URL}${safeNext(tx.next)}`, [await sessionCookie(env, user), clearTx])
   } catch (err) {
     console.error("oauth callback error", err)
     return redirect(loginError)

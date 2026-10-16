@@ -34,7 +34,23 @@ header.site { background: var(--header-bg); position: sticky; top: 0; z-index: 1
 .site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
 .site-title:hover { color: rgba(255,255,255,.8); }
 .site-sep { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.2); }
-.site-sub { font-size: 12px; font-weight: 300; color: rgba(255,255,255,.42); letter-spacing: .03em; }
+/* LIBRARY | LAB path switch: the primary nav. A hardware selector - the
+   active side is a lit key (surface fill, white text, LED); orange stays
+   reserved for the active sub-nav tab below it. */
+.group-switch { display: inline-flex; border: 1px solid rgba(255,255,255,.1); border-radius: 4px; padding: 2px; gap: 2px; }
+.group-btn { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; letter-spacing: .18em;
+  color: rgba(255,255,255,.42); text-decoration: none; padding: 6px 11px 5px; border-radius: 2px;
+  transition: color .15s, background .15s; }
+.group-btn::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.18);
+  transition: background .15s, box-shadow .15s; }
+.group-btn:hover { color: rgba(255,255,255,.8); }
+.group-btn.active { color: #fff; background: var(--surface); }
+/* each path has its own LED color, matching the landing scope:
+   LIBRARY = Signal Orange, LAB = Trace Blue. Hover tints the LED dimly. */
+.group-library:hover::before { background: rgba(255,72,0,.45); }
+.group-lab:hover::before { background: rgba(59,158,234,.5); }
+.group-library.active::before { background: var(--orange); box-shadow: 0 0 6px rgba(255,72,0,.7); }
+.group-lab.active::before { background: var(--blue); box-shadow: 0 0 6px rgba(59,158,234,.75); }
 .header-spacer { margin-left: auto; }
 .fw-tag { font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28);
   border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; white-space: nowrap; }
@@ -42,18 +58,16 @@ header.site { background: var(--header-bg); position: sticky; top: 0; z-index: 1
 .auth-mini img { width: 22px; height: 22px; border-radius: 50%; }
 .auth-mini a, .auth-mini button { color: rgba(255,255,255,.6); font-size: 11px; background: none; border: none; text-decoration: none; }
 .auth-mini a:hover, .auth-mini button:hover { color: #fff; }
+.auth-mini .mod-link { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+.auth-mini .mod-link.active { color: var(--orange); }
 
+.page-nav[hidden] { display: none; }
 .page-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.06); gap: 2px; flex-wrap: wrap; }
 .nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32);
   background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px;
   text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
 .nav-btn:hover { color: rgba(255,255,255,.72); }
 .nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
-/* divider between the Reference group and the Library group */
-.nav-sep { align-self: center; color: rgba(255,255,255,.16); font-size: 12px; padding: 0 8px 2px; user-select: none; }
-/* logged-out call-to-action that takes the place of the Library group */
-.nav-btn.cta { color: var(--orange); }
-.nav-btn.cta:hover { color: #ff6a33; }
 
 /* ── MAIN (default centered column; patch/layout override locally) ── */
 main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 80px; }
@@ -80,7 +94,9 @@ footer.site a:hover { color: var(--text); border-bottom-color: var(--text); }
 
 @media (max-width: 640px) {
   .header-row { padding: 12px 16px 8px; }
-  .site-sub { display: none; }
+  .site-sep, .fw-tag { display: none; }
+  .header-row { gap: 8px; flex-wrap: wrap; }
+  .group-btn { padding: 6px 8px 5px; letter-spacing: .12em; }
   main { padding: 20px 16px 60px; }
 }
 

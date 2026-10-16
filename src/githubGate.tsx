@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 import { Link } from "react-router-dom"
 import { useAuth } from "./auth"
+import { loginPath } from "./paths"
 
 // Issues are filed on GitHub as the viewer's own account, so this tab needs a
 // GitHub-provider session with a stored access token. Shared by Issues.tsx and
@@ -18,7 +19,7 @@ export default function RequireGithubIssues({ title, children }: { title: string
         <p className="lead">
           Filing an issue posts it to GitHub under your own account, so this tab needs a GitHub sign-in.
         </p>
-        <p className="muted"><Link to="/login">Log in with GitHub</Link> to continue.</p>
+        <p className="muted"><Link to={loginPath(location.pathname + location.search)}>Log in with GitHub</Link> to continue.</p>
       </>
     )
   }

@@ -29,8 +29,8 @@ export default function Favorites() {
 
       {empty ? (
         <p className="muted">
-          Nothing saved yet - tap the heart on any <Link to="/patches">patch</Link> or{" "}
-          <Link to="/packs">pack</Link> and it lands here.
+          Nothing saved yet - tap the heart on any <Link to="/library">patch</Link> or{" "}
+          <Link to="/library/packs">pack</Link> and it lands here.
         </p>
       ) : (
         <>
@@ -79,7 +79,7 @@ export default function Favorites() {
             ) : (
               <div className="grid">
                 {packs.map((k) => (
-                  <Link className="card" key={k.id} to={`/packs/${k.id}`}>
+                  <Link className="card" key={k.id} to={`/library/packs/${k.id}`}>
                     <div className="card-eyebrow">
                       <span className="chip">pack</span>
                       <span>{k.item_count ?? 0} patches</span>

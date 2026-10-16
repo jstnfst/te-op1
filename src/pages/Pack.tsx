@@ -3,6 +3,7 @@ import { Link, useParams } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
 import { LikeButton, DownloadCount } from "../like"
+import { loginPath } from "../paths"
 
 interface PackDetail {
   id: number
@@ -48,7 +49,7 @@ export default function Pack() {
       <>
         <h1 className="hero-title">Pack</h1>
         <p className="muted">{err || "Not found."}</p>
-        <p className="muted"><Link to="/patches">Browse patches</Link></p>
+        <p className="muted"><Link to="/library">Browse patches</Link></p>
       </>
     )
   }
@@ -99,7 +100,7 @@ export default function Pack() {
     setPendingDel(false)
     try {
       await apiSend(`/api/packs/${pack!.id}`, "DELETE")
-      window.location.href = "/packs"
+      window.location.href = "/library/packs"
     } catch (e) {
       setErr((e as Error).message)
     }
@@ -109,7 +110,7 @@ export default function Pack() {
   // an admin can take a public pack private, never publish someone's private
   // pack or delete it (deletes live in /mod).
   const canToggleVisibility = pack.is_owner || (!!user?.isAdmin && !!pack.is_public)
-  const shareUrl = `${location.origin}/packs/${pack.id}`
+  const shareUrl = `${location.origin}/library/packs/${pack.id}`
   return (
     <>
       {pack.author && <p className="pack-author">by {pack.author}</p>}
@@ -179,7 +180,7 @@ export default function Pack() {
         </div>
       )}
 
-      {!user && <p className="muted pack-login">Want to make your own packs? <Link to="/login">Log in</Link>.</p>}
+      {!user && <p className="muted pack-login">Want to make your own packs? <Link to={loginPath(location.pathname)}>Log in</Link>.</p>}
     </>
   )
 }

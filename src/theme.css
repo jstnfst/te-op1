@@ -4,6 +4,25 @@
 /* hero / typography */
 h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-height: 1.15; margin-bottom: 16px; }
 .lead { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.85; max-width: 620px; }
+/* section eyebrow above a page title: which path (Library / Lab) you're on */
+.eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+
+/* library browser: search first, engine chips second */
+input[type=search].search-big { display: block; width: 100%; max-width: 720px; margin: 32px 0 12px;
+  font-size: 13px; padding: 13px 16px; }
+.engine-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.engine-chip { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+  background: none; border: 1px solid var(--border); border-radius: 2px; padding: 5px 9px 4px;
+  transition: color .15s, border-color .15s, background .15s; }
+.engine-chip:hover { color: var(--text); border-color: #474b54; }
+.engine-chip.active { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
+
+/* lab overview */
+.lab-stats { display: flex; flex-wrap: wrap; gap: 10px 32px; margin-top: 28px; font-size: 11px; color: var(--muted);
+  letter-spacing: .14em; text-transform: uppercase; }
+.lab-stats b { display: block; font-size: 30px; font-weight: 800; color: var(--text); letter-spacing: -.02em; text-transform: none; }
+.lab-tools .card-eyebrow { color: var(--muted); }
+.lab-issues a { color: var(--text); }
 
 /* collapsible "your own stuff" sections (My packs / My patches) */
 .collapsible { margin: 36px 0 14px; }
@@ -24,7 +43,8 @@ h1.hero-title { font-size: 30px; font-weight: 800; letter-spacing: .02em; line-h
 .card-eyebrow > span { white-space: nowrap; }
 .card-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 6px; word-break: break-word; }
 .card-desc { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
-.card-tags { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 4px; margin-top: 6px; }
+/* min-height = one chip row, so cards with no tags keep their action row level with the rest */
+.card-tags { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 4px; margin-top: 6px; min-height: var(--chip-row, 14px); }
 .card-tags > .chip { flex-shrink: 0; }
 .card-actions { margin-top: 12px; }
 .chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px;
@@ -108,6 +128,11 @@ a.list-row { text-decoration: none; color: inherit; }
 .list-check { flex-shrink: 0; display: flex; align-items: center; }
 .list-type { flex-shrink: 0; width: 68px; }
 .list-name { flex: 1; font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+/* name + "by author" travel together, so the byline sits right after the name
+   whatever the tags column does */
+.list-title { flex: 1; min-width: 0; display: flex; align-items: baseline; gap: 10px; }
+.list-title .list-name { flex: 0 1 auto; }
+.list-byline { flex-shrink: 0; font-size: 11px; color: var(--muted); white-space: nowrap; }
 .list-author { flex-shrink: 0; width: 100px; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .list-tags { display: flex; flex-wrap: nowrap; gap: 4px; overflow: hidden; max-width: 180px; flex-shrink: 0; }
 .list-tags > .chip { flex-shrink: 0; }
@@ -121,7 +146,7 @@ a.list-row { text-decoration: none; color: inherit; }
 .pack-login { margin-top: 16px; }
 
 @media (max-width: 640px) {
-  .list-author { display: none; }
+  .list-author, .list-byline { display: none; }
   .list-tags { display: none; }
   .list-dl { display: none; }
   .list-act-ext { display: none; }
@@ -136,7 +161,7 @@ a.list-row { text-decoration: none; color: inherit; }
   /* Compact action-panel tier: buttons drop a size so a card's actions fit
      one row instead of wrapping into a stack of chunky rows. */
   .btn { padding: 7px 9px; font-size: 10px; letter-spacing: .04em; gap: 5px; }
-  .btn.like { padding: 6px 8px; }
+  .btn.like { padding: 6px 8px; min-width: 48px; }
   .row { gap: 6px; }
   .card-actions { margin-top: 10px; }
   .card { padding: 14px 14px 12px; }
@@ -146,7 +171,9 @@ a.list-row { text-decoration: none; color: inherit; }
 }
 
 /* like button (patches + packs) */
-.btn.like { padding: 6px 10px; gap: 5px; flex-shrink: 0; }
+/* fixed minimum widths so a like/download count appearing or growing doesn't
+   shift the controls beside it (list rows right-align their actions) */
+.btn.like { padding: 6px 10px; gap: 5px; flex-shrink: 0; min-width: 56px; justify-content: center; font-variant-numeric: tabular-nums; }
 .btn.like svg { flex-shrink: 0; }
 .btn.like.active { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
 .btn.like.active svg { animation: like-pop .22s cubic-bezier(.22,1,.36,1); }
@@ -156,7 +183,8 @@ a.list-row { text-decoration: none; color: inherit; }
 }
 
 /* download count (patches + packs), read-only, sits next to the like button */
-.dl-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); flex-shrink: 0; }
+.dl-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); flex-shrink: 0;
+  min-width: 40px; font-variant-numeric: tabular-nums; }
 .dl-count svg { flex-shrink: 0; }
 
 /* browse sort control shares the filter-row input look */

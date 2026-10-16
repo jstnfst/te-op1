@@ -211,7 +211,10 @@ instrument's voice: every glyph on a grid, like a readout.
 
 ### Hierarchy
 - **Display** (800, 30px, line-height 1.15, +0.02em): Page hero titles only. The
-  ceiling - this system never shouts louder than 30px.
+  ceiling - this system never shouts louder than 30px, with one exemption below.
+- **Landing Display** (800, clamp(44px, 6.4vw, 88px), line-height .98, -0.035em):
+  the landing page title only (`.land-title`), with a 300-weight muted sub-line at
+  .62em. Tight negative tracking keeps mono legible at this size. Nowhere else.
 - **Title** (700, 16px, 1.3): Card titles, patch names, primary row labels.
 - **Section** (700, 11px, +0.18em, UPPERCASE): The dominant section header (`h2`).
   Tracked, uppercase, muted - a labeled panel divider, not a headline.
@@ -286,10 +289,36 @@ as physical parts, not decorated rectangles.
 - **Dropzone:** Dashed Hairline border, 8px radius - clearly an input target.
 
 ### Navigation
-- **Style:** Flat tab row in the Header Black bar. 10px uppercase tracked labels at
-  ~32% white. Hover lifts to ~72% white; **active** tab is full white with a 2px
-  Signal Orange bottom border. A `nav-sep` divides Reference from Library groups.
-- **Mobile:** Tabs wrap (`flex-wrap`); the sub-title hides under 640px.
+- **Path switch:** The header row carries a two-key **LIBRARY | LAB** selector
+  (`.group-switch`) - the site's primary nav. The active key is lit: Surface
+  Graphite fill, white label, and a lit LED dot. Each path owns an LED
+  color: **LIBRARY = Signal Orange, LAB = Trace Blue**. Inactive keys show a dim
+  LED that tints faintly toward its color on hover. The landing scope carries the
+  same pair (LIB / LAB), lit while that fork panel is under the pointer. These
+  two LEDs are the only place Trace Blue stands in for a path.
+- **Sub-nav:** The second row is a flat tab row for the current path only.
+  10px uppercase tracked labels at ~32% white, hover ~72% white, **active** tab
+  full white with a 2px Signal Orange bottom border. The landing page belongs to
+  neither path and shows no sub-nav row.
+  - LIBRARY: BROWSE · PACKS · FAVES · MINE · UPLOAD (FAVES and MINE signed-in only)
+  - LAB: LAYOUT · MAPPINGS · INSPECTOR · ISSUES (GitHub sessions only)
+  - The patch viewer opened with `?id=` belongs to LIBRARY; opened bare it is the LAB inspector.
+  - MOD (admins) sits in the auth area, not in either path.
+- **Mobile:** Tabs wrap (`flex-wrap`); the `//` separator and fw tag hide under 640px.
+
+### Landing Fork (signature)
+Two large Surface Graphite panels, one per path, each with a hardware key
+(A / B), a 30px title, a muted description, a glyph, and a tracked CTA. On
+hover/focus the border brightens, the key lights Signal Orange, a soft light
+follows the pointer. The Library panel's knob is a real control: pointer X
+across the panel turns it through 16 detents (all + each engine). The dialed
+engine sets the panel's link (`/library?type=…`), its CTA (with the public patch
+count from `/api/patches/counts`), and the scope above. The Lab panel's ADSR
+envelope draws in once, then pointer X scrubs a read-head along it. Over Lab the
+scope morphs into the same envelope drawn as stepped raw 16-bit values, with the
+read-head mirrored there and its stage, raw value, and percent display (raw /
+32767) in the readouts. Otherwise the scope (same language as the patch page's
+ADSR scope) shows a stylized per-engine waveform that crossfades as the knob turns.
 
 ### Selection Bar (signature)
 A fixed, centered floating bar (`.selbar`) that rises from the bottom when patches
@@ -297,7 +326,17 @@ are multi-selected - Header Black fill, panel radius (8px), "Floating bar" shado
 with an upward popover menu for pack assignment. The instrument's transient
 command surface.
 
-## 6. Do's and Don'ts
+## 6. Motion
+
+**The Pointer-Gated Motion Rule.** Nothing moves on its own. Ambient motion
+exists only on the landing page, and only while a mouse or pen is over the
+hero/fork region. It eases to a stop when the pointer leaves. No autoplay
+loops, no scroll-triggered reveals, no motion on any reference or library page
+beyond hover/press feedback. Touch and keyboard users get the static end state
+(on tap/focus). `prefers-reduced-motion: reduce` freezes all of it. The patch
+editor is out of scope for added motion.
+
+## 7. Do's and Don'ts
 
 ### Do:
 - **Do** keep Signal Orange (#FF4800) to ≤10% of any screen - one live signal per context.
@@ -309,6 +348,7 @@ command surface.
   Black < Panel Black < Surface Graphite) and reserve shadow for hover and floating bars.
 - **Do** reserve the eight scale-type colors strictly for value-mapping data.
 - **Do** keep prose columns ≤~620px (≈65–75ch) against the dark field.
+- **Do** gate any ambient motion on the pointer being in the region, and honor reduced motion.
 
 ### Don't:
 - **Don't** build the generic SaaS dashboard - no gradient hero metrics, no
@@ -321,3 +361,4 @@ command surface.
 - **Don't** put a resting drop shadow on a static surface - flat at rest, lift on interaction.
 - **Don't** use pure #FFFFFF on the body field; Readout White (#E7E5E0) is the text white.
 - **Don't** signal an error with orange - orange is the brand. Errors are Danger Red (`--danger`).
+- **Don't** add looping, autoplaying, or scroll-triggered motion; don't exceed 30px display type outside the landing title.

@@ -4,6 +4,7 @@ import { useAuth } from "../auth"
 import { apiGet, apiSend, type Pack } from "../api"
 import { Collapsible } from "../collapsible"
 import { LikeButton, DownloadCount } from "../like"
+import { loginPath } from "../paths"
 
 const VIEW_KEY = "te-op1-packs-view"
 const DISCOVER_VIEW_KEY = "te-op1-packs-discover-view"
@@ -52,11 +53,11 @@ function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void 
   )
 }
 
-function PackGrid({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean }) {
+export function PackGrid({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean }) {
   return (
     <div className="grid">
       {packs.map((p) => (
-        <Link className="card" key={p.id} to={`/packs/${p.id}`}>
+        <Link className="card" key={p.id} to={`/library/packs/${p.id}`}>
           <div className="card-eyebrow">
             <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>
               {p.is_public ? "public" : "private"}
@@ -79,14 +80,14 @@ function PackList({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
   return (
     <div className="list">
       {packs.map((p) => (
-        <Link className="list-row" key={p.id} to={`/packs/${p.id}`}>
+        <Link className="list-row" key={p.id} to={`/library/packs/${p.id}`}>
           <span className={"chip list-type " + (p.is_public ? "vis-public" : "vis-private")}>
             {p.is_public ? "public" : "private"}
           </span>
-          <span className="list-name">{p.name}</span>
-          {showAuthor && p.author ? <span className="list-author">by {p.author}</span> : (
-            <span className="list-author">{p.item_count ?? 0} patches</span>
-          )}
+          <span className="list-title">
+            <span className="list-name">{p.name}</span>
+            <span className="list-byline">{showAuthor && p.author ? `by ${p.author}` : `${p.item_count ?? 0} patches`}</span>
+          </span>
           <div className="list-actions">
             <DownloadCount n={p.download_count} />
             <LikeButton type="pack" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} />
@@ -97,7 +98,7 @@ function PackList({ packs, showAuthor }: { packs: Pack[]; showAuthor: boolean })
   )
 }
 
-function MyPacks() {
+export function MyPacks() {
   const [packs, setPacks] = useState<Pack[]>([])
   const [name, setName] = useState("")
   const [busy, setBusy] = useState(true)
@@ -135,7 +136,7 @@ function MyPacks() {
       {busy ? (
         <p className="muted">Loading…</p>
       ) : packs.length === 0 ? (
-        <p className="muted">No packs yet. Create one above, then add patches from <Link to="/patches">Patches</Link>.</p>
+        <p className="muted">No packs yet. Create one above, then add patches from the <Link to="/library">library</Link>.</p>
       ) : (
         <>
           <div className="browse-head">
@@ -208,7 +209,7 @@ function DiscoverPacks() {
       {busy && packs.length === 0 ? (
         <p className="muted">Loading…</p>
       ) : packs.length === 0 ? (
-        <p className="muted">{q.trim() ? `No public packs match "${q.trim()}".` : "No public packs yet."}</p>
+        <p className="muted">{q.trim() ? `No public packs match "${q.trim()}"` : "No public packs yet"}</p>
       ) : (
         <>
           <div className="browse-head">
@@ -223,26 +224,19 @@ function DiscoverPacks() {
 }
 
 export default function Packs() {
-  const { user, loading } = useAuth()
-
-  if (loading) return <p className="muted">Loading…</p>
-  if (!user) {
-    return (
-      <>
-        <h1 className="hero-title">Packs</h1>
-        <p className="lead">Please <Link to="/login">log in</Link>.</p>
-      </>
-    )
-  }
+  const { user } = useAuth()
 
   return (
     <>
       <h1 className="hero-title">Packs</h1>
-      <p className="lead">Group patches into a pack and share it as a single .zip of .aif files.</p>
+      <p className="lead">
+        Curated sets of patches, downloaded as a single .zip of .aif files.
+        {!user && <> <Link to={loginPath("/library/packs")}>Log in</Link> to build and share your own.</>}
+      </p>
 
-      <MyPacks />
+      {user && <MyPacks />}
 
-      <h2>Discover public packs</h2>
+      <h2>Public packs</h2>
       <DiscoverPacks />
     </>
   )

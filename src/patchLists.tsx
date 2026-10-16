@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react"
-import { Link } from "react-router-dom"
-import { useAuth } from "../auth"
-import { apiGet, apiSend, type PatchSummary } from "../api"
-import { useSelection, SelectionBar, type Selection } from "../packs"
-import { Collapsible } from "../collapsible"
-import { LikeButton, DownloadCount } from "../like"
+import { Link, useSearchParams } from "react-router-dom"
+import { useAuth } from "./auth"
+import { apiGet, apiSend, type PatchSummary } from "./api"
+import type { Selection } from "./packs"
+import { Collapsible } from "./collapsible"
+import { LikeButton, DownloadCount } from "./like"
 
-const TYPES = [
+// Patch lists shared by the Library pages: the public browser (/library) and
+// the signed-in owner's list (/library/mine).
+
+export const TYPES = [
   "amp", "cluster", "dbox", "digital", "dimension", "dna", "drwave",
   "dsynth", "fm", "phase", "pulse", "sampler", "string", "vocoder", "voltage",
 ]
@@ -58,7 +61,7 @@ function ViewToggle({ view, setView }: { view: View; setView: (v: View) => void 
 
 // ---------- My patches ----------
 
-function MyPatches({ selection }: { selection: Selection }) {
+export function MyPatches({ selection }: { selection: Selection }) {
   const [items, setItems] = useState<PatchSummary[]>([])
   const [err, setErr] = useState("")
   const [busy, setBusy] = useState(true)
@@ -131,7 +134,7 @@ function MyPatches({ selection }: { selection: Selection }) {
       {busy ? (
         <p className="muted">Loading…</p>
       ) : items.length === 0 ? (
-        <p className="muted">You haven't uploaded anything yet. <Link to="/upload">Upload one</Link>.</p>
+        <p className="muted">You haven't uploaded anything yet. <Link to="/library/upload">Upload one</Link>.</p>
       ) : (
         <>
           <div className="browse-head">
@@ -240,14 +243,18 @@ function ModButtons({ mod }: { mod: ModActions }) {
   )
 }
 
-function GridCard({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void; mod?: ModActions }) {
+interface RowProps { p: PatchSummary; selected: boolean; onToggle?: () => void; onTagClick: (t: string) => void; mod?: ModActions }
+
+function GridCard({ p, selected, onToggle, onTagClick, mod }: RowProps) {
   const tags = p.tags.split(",").filter(Boolean).slice(0, 6)
   return (
     <div className={"card" + (selected ? " selected" : "")}>
       <div className="card-eyebrow">
-        <label className="card-check">
-          <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
-        </label>
+        {onToggle && (
+          <label className="card-check">
+            <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
+          </label>
+        )}
         <span className="chip">{p.type}</span>
         {p.author ? <span>by {p.author}</span> : null}
       </div>
@@ -268,16 +275,20 @@ function GridCard({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary;
   )
 }
 
-function ListRow({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; selected: boolean; onToggle: () => void; onTagClick: (t: string) => void; mod?: ModActions }) {
+function ListRow({ p, selected, onToggle, onTagClick, mod }: RowProps) {
   const tags = p.tags.split(",").filter(Boolean).slice(0, 4)
   return (
     <div className={"list-row" + (selected ? " selected" : "")}>
-      <label className="card-check list-check">
-        <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
-      </label>
+      {onToggle && (
+        <label className="card-check list-check">
+          <input type="checkbox" checked={selected} onChange={onToggle} aria-label={`Select ${p.name}`} />
+        </label>
+      )}
       <span className="chip list-type">{p.type}</span>
-      <span className="list-name">{p.name}</span>
-      {p.author ? <span className="list-author">by {p.author}</span> : null}
+      <span className="list-title">
+        <span className="list-name">{p.name}</span>
+        {p.author ? <span className="list-byline">by {p.author}</span> : null}
+      </span>
       <div className="list-tags">
         {tags.map((t) => (
           <span key={t} className="chip tag chip-filter" onClick={() => onTagClick(t)} title={`Filter by ${t}`}>{t}</span>
@@ -294,19 +305,22 @@ function ListRow({ p, selected, onToggle, onTagClick, mod }: { p: PatchSummary; 
   )
 }
 
-function DiscoverPatches({ selection }: { selection: Selection }) {
+/** The public library browser. Filters seed from the URL (?q=&type=&tag=&sort=)
+ * so the landing page and engine links can deep-link into a search. */
+export function DiscoverPatches({ selection }: { selection: Selection }) {
   const { user } = useAuth()
+  const [params] = useSearchParams()
   const [items, setItems] = useState<PatchSummary[]>([])
-  const [type, setType] = useState("")
-  const [q, setQ] = useState("")
-  const [tag, setTag] = useState("")
-  const [sort, setSort] = useState("")
+  const [type, setType] = useState(() => params.get("type") || "")
+  const [q, setQ] = useState(() => params.get("q") || "")
+  const [tag, setTag] = useState(() => params.get("tag") || "")
+  const [sort, setSort] = useState(() => params.get("sort") || "")
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle("te-op1-patches-discover-view")
   const [modBusy, setModBusy] = useState<number | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const filtersRef = useRef({ type: "", q: "", tag: "", sort: "" })
+  const filtersRef = useRef({ type, q, tag, sort })
   filtersRef.current = { type, q, tag, sort }
   const isFirstQTagRender = useRef(true)
 
@@ -375,20 +389,23 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
 
   return (
     <>
-      <h2>Discover patches</h2>
+      <input
+        className="search-big"
+        type="search"
+        placeholder="Search patches by name…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        aria-label="Search by name"
+        autoFocus={!!params.get("q")}
+      />
+      <div className="engine-chips" role="group" aria-label="Filter by engine">
+        <button className={"engine-chip" + (type === "" ? " active" : "")} onClick={() => setType("")} aria-pressed={type === ""}>all</button>
+        {TYPES.map((t) => (
+          <button key={t} className={"engine-chip" + (type === t ? " active" : "")} onClick={() => setType(type === t ? "" : t)} aria-pressed={type === t}>{t}</button>
+        ))}
+      </div>
       <div className="browse-head">
         <div className="row">
-          <select value={type} onChange={(e) => setType(e.target.value)} aria-label="Filter by engine">
-            <option value="">All engines</option>
-            {TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <input
-            type="search"
-            placeholder="Search name…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label="Search by name"
-          />
           <input
             type="search"
             placeholder="Filter by tag…"
@@ -414,7 +431,7 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
           <p className="muted">No patches found.</p>
           {hasFilters
             ? <p style={{ marginTop: 8 }}><button className="btn" onClick={clearFilters}>Clear filters</button></p>
-            : <p className="muted" style={{ marginTop: 4 }}>No community patches yet - <Link to="/upload">upload the first one</Link>.</p>
+            : <p className="muted" style={{ marginTop: 4 }}>No community patches yet - <Link to="/library/upload">upload the first one</Link>.</p>
           }
         </>
       ) : (
@@ -423,45 +440,18 @@ function DiscoverPatches({ selection }: { selection: Selection }) {
           {view === "grid" ? (
             <div className="grid">
               {items.map((p) => (
-                <GridCard key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} mod={modFor(p)} />
+                <GridCard key={p.id} p={p} selected={selection.has(p.id)} onToggle={user ? () => selection.toggle(p.id) : undefined} onTagClick={handleTagClick} mod={modFor(p)} />
               ))}
             </div>
           ) : (
             <div className="list">
               {items.map((p) => (
-                <ListRow key={p.id} p={p} selected={selection.has(p.id)} onToggle={() => selection.toggle(p.id)} onTagClick={handleTagClick} mod={modFor(p)} />
+                <ListRow key={p.id} p={p} selected={selection.has(p.id)} onToggle={user ? () => selection.toggle(p.id) : undefined} onTagClick={handleTagClick} mod={modFor(p)} />
               ))}
             </div>
           )}
         </>
       )}
-    </>
-  )
-}
-
-export default function Patches() {
-  const { user, loading } = useAuth()
-  const selection = useSelection()
-
-  if (loading) return <p className="muted">Loading…</p>
-  if (!user) {
-    return (
-      <>
-        <h1 className="hero-title">Patches</h1>
-        <p className="lead">Please <Link to="/login">log in</Link>.</p>
-      </>
-    )
-  }
-
-  return (
-    <>
-      <h1 className="hero-title">Patches</h1>
-      <p className="lead">Manage what you've published, and search the community library for more.</p>
-
-      <MyPatches selection={selection} />
-      <DiscoverPatches selection={selection} />
-
-      <SelectionBar ids={selection.ids} onClear={selection.clear} />
     </>
   )
 }

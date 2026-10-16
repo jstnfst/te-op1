@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react"
 import { apiSend } from "./api"
+import { useAuth } from "./auth"
+import { here } from "./paths"
 
 /**
  * The one like control, used on patch cards/rows, pack rows, and the pack
@@ -23,6 +25,7 @@ export function LikeButton({
   const [liked, setLiked] = useState(!!likedByMe)
   const [count, setCount] = useState(likeCount ?? 0)
   const [busy, setBusy] = useState(false)
+  const { user, loading } = useAuth()
 
   // Lists reload in place (filters, sort); keep in step with fresh props.
   useEffect(() => { setLiked(!!likedByMe); setCount(likeCount ?? 0) }, [likedByMe, likeCount])
@@ -31,6 +34,9 @@ export function LikeButton({
     e.preventDefault()
     e.stopPropagation()
     if (busy) return
+    // Browsing is public; liking needs an account. Send the visitor to log in
+    // and bring them straight back here.
+    if (!user && !loading) { window.location.href = here(); return }
     const next = !liked
     setLiked(next)
     setCount((c) => Math.max(0, c + (next ? 1 : -1)))
@@ -55,7 +61,7 @@ export function LikeButton({
       disabled={busy}
       aria-pressed={liked}
       aria-label={liked ? "Unlike" : "Like"}
-      title={liked ? "Unlike" : "Like"}
+      title={user ? (liked ? "Unlike" : "Like") : "Log in to like"}
     >
       <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
         <path
