@@ -100,6 +100,15 @@ const checkbox = (p: PatchSummary, sel: SelBind) => (
   <input type="checkbox" className="sel-box" {...sel.box} aria-label={`Select ${p.name}`} />
 )
 
+/** Download the patch's .aif: an icon button (arrow down onto a tray line). */
+const DownloadButton = ({ p, className = "" }: { p: PatchSummary; className?: string }) => (
+  <a className={"btn icon-btn " + className} href={`/api/patches/${p.id}/download`} aria-label={`Download ${p.name}.aif`} title="Download .aif">
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <path d="M8 2v8.5M4.5 7 8 10.5 11.5 7M2.5 13.5h11" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  </a>
+)
+
 const tagChips = (tags: string[], onTagClick?: (t: string) => void) => tags.map((t) => (
   <span key={t} className={"chip tag" + (onTagClick ? " chip-filter" : "")} onClick={onTagClick && (() => onTagClick(t))} title={onTagClick ? `Filter by ${t}` : undefined}>{t}</span>
 ))
@@ -117,7 +126,7 @@ export function GridCard({ p, selected, sel, onTagClick, mod, chip, extra, onLik
       <div className="card-tags">{tagChips(p.tags.split(",").filter(Boolean).slice(0, 6), onTagClick)}</div>
       <div className="row card-actions">
         <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
-        <a className="btn" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        <DownloadButton p={p} />
         <DownloadCount n={p.download_count} />
         <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
         {mod && <ModButtons mod={mod} />}
@@ -148,7 +157,7 @@ export function ListRow({ p, selected, sel, onTagClick, mod, chip, extra, onLike
       <div className="list-actions">
         <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
         <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
-        <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
+        <DownloadButton p={p} className="list-dl" />
         {mod && <ModButtons mod={mod} />}
         {extra}
       </div>
