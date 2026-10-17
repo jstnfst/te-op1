@@ -41,11 +41,12 @@ function OldPackRedirect() {
 
 // The header + footer are rendered site-wide by public/site-header.js (shared
 // with the static reference pages), so the SPA only owns the <main> content.
-// The landing page breaks out of the centered column for its full-bleed hero.
+// The landing page and log in break out of the centered column for their
+// full-bleed shader stages.
 export default function App() {
   const { pathname } = useLocation()
   return (
-    <main className={pathname === "/" ? "landing" : undefined}>
+    <main className={pathname === "/" ? "landing" : pathname === "/login" ? "stage" : undefined}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />

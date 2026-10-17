@@ -1,0 +1,80 @@
+/* Log in (/login): a full-bleed stage on the home hero's shader, the pitch on
+   the left and a glass card of providers on the right. The shader's colors
+   are the same custom properties the home hero sets (see landing.css). */
+
+main.stage { max-width: none; padding: 0; }
+
+.login-stage {
+  --hero-ground: var(--bg);
+  --hero-ink-1: var(--c-percent);
+  --hero-ink-2: var(--c-centered);
+  --hero-ink-3: var(--c-decimal);
+  --hero-glow: .42;
+  position: relative; overflow: hidden; min-height: calc(100vh - var(--site-header-h, 88px));
+  display: flex; align-items: center; padding: 56px 32px 64px; background: var(--hero-ground);
+  border-bottom: 1px solid var(--border); }
+.login-stage > .hero-shader { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block;
+  opacity: 0; transition: opacity .6s; }
+.login-stage > .hero-shader.ready { opacity: 1; }
+/* settle the shader into the page at the foot, and darken behind the copy */
+.login-stage::after { content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--bg) 70%, transparent), transparent 60%),
+              linear-gradient(to bottom, transparent 60%, var(--bg) 100%); }
+.login-grid { position: relative; z-index: 1; width: 100%; max-width: 1100px; margin: 0 auto;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 400px); gap: 48px 64px; align-items: center; }
+
+/* ── copy ── */
+.login-copy .eyebrow { margin-bottom: 18px; }
+.login-title { font-size: clamp(44px, 6vw, 80px); font-weight: 800; line-height: .98; letter-spacing: -.035em; margin-bottom: 18px; }
+.login-lead { font-size: 13px; font-weight: 300; line-height: 1.7; color: var(--muted); max-width: 46ch; margin-bottom: 20px; }
+.login-perks { list-style: none; max-width: 520px; border-top: 1px solid rgba(255,255,255,.08); }
+.login-perks li { display: grid; grid-template-columns: 28px 96px minmax(0, 1fr); gap: 4px 12px; align-items: baseline;
+  padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+.login-perk-n { font-size: 10px; color: var(--knob-null); font-variant-numeric: tabular-nums; }
+.login-perks b { font-size: 13px; font-weight: 700; }
+.login-perks li > span:last-child { font-size: 11px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+
+/* ── glass card (same glass as the home fork panels) ── */
+.login-card { border-radius: 8px; padding: 20px 20px 16px;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid rgba(255,255,255,.08); box-shadow: inset 0 1px 0 rgba(255,255,255,.06), 0 18px 50px rgba(0,0,0,.35);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%); }
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .login-card { background: var(--surface); }
+}
+.login-card-head { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.login-card .error { margin-bottom: 12px; }
+.login-providers { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+.login-provider { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 14px;
+  padding: 12px 14px; border-radius: 6px; color: var(--text); text-decoration: none; overflow: hidden;
+  background: color-mix(in srgb, var(--bg) 55%, transparent); border: 1px solid rgba(255,255,255,.07);
+  transition: background-color .25s, border-color .25s; }
+/* a line of light across the top edge on hover/focus, like the fork panels */
+.login-provider::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5) 50%, transparent);
+  opacity: 0; transform: scaleX(.3); transition: opacity .3s, transform .45s cubic-bezier(.25,1,.5,1); }
+.login-provider:hover, .login-provider:focus-visible { background: color-mix(in srgb, var(--surface) 75%, transparent); border-color: rgba(255,255,255,.16); }
+.login-provider:hover::before, .login-provider:focus-visible::before { opacity: 1; transform: scaleX(1); }
+.login-key { display: inline-flex; align-items: center; justify-content: center; height: 34px; border-radius: 4px;
+  font-size: 11px; font-weight: 800; color: var(--muted); background: var(--bg); border: 1px solid var(--border);
+  transition: background .2s, color .2s, border-color .2s; }
+.login-provider:hover .login-key, .login-provider:focus-visible .login-key { background: var(--orange); border-color: var(--orange); color: var(--orange-on); }
+.login-provider-name { display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
+.login-provider-name small { font-size: 10px; font-weight: 300; letter-spacing: .02em; color: var(--muted); }
+.login-go { color: var(--muted); transition: transform .2s, color .2s; }
+.login-provider:hover .login-go, .login-provider:focus-visible .login-go { color: var(--text); transform: translateX(3px); }
+
+.login-side .dev-login { margin-top: 16px; max-width: none; background: color-mix(in srgb, var(--bg) 60%, transparent); }
+
+@media (max-width: 860px) {
+  .login-grid { grid-template-columns: 1fr; }
+  .login-stage { align-items: flex-start; padding: 32px 16px 48px; }
+  .login-stage::after { background: linear-gradient(to bottom, color-mix(in srgb, var(--bg) 45%, transparent), var(--bg) 100%); }
+}
+@media (max-width: 480px) {
+  .login-perks li { grid-template-columns: 24px minmax(0, 1fr); }
+  .login-perks li > span:last-child { grid-column: 2; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .login-stage > .hero-shader, .login-provider, .login-provider::before, .login-key, .login-go { transition: none; }
+}

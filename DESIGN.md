@@ -398,7 +398,7 @@ beyond hover/press feedback. Touch and keyboard users get the static end state
 (on tap/focus). `prefers-reduced-motion: reduce` freezes all of it. The patch
 editor is out of scope for added motion.
 
-**Hero background.** The landing hero sits on a raymarched shader
+**Hero background.** The landing hero (and the log in page, `src/pages/login.css`) sits on a raymarched shader
 (`src/landing/HeroShader.tsx`, WebGL2), not a gradient. It is the one
 exception to the rule above: it plays on its own (`u_time` = seconds since
 playback started), pausing while off screen or in a hidden tab, and
