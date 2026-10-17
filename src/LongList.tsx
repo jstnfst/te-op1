@@ -128,8 +128,16 @@ export function LongList<T extends { id: number }>({
   useEffect(() => { document.fonts?.ready.then(() => setFontTick((t) => t + 1)) }, [])
   useLayoutEffect(() => {
     if (view !== "list" || !columns) return
+    // Sum the buttons themselves, not the cell's scrollWidth: the cell is
+    // right-aligned, so buttons that outgrow it (e.g. an admin's Make private,
+    // added once auth loads) spill out to the left, which scrollWidth misses
     let w = 0
-    boxRef.current?.querySelectorAll<HTMLElement>(".list-actions").forEach((a) => { w = Math.max(w, a.scrollWidth) })
+    boxRef.current?.querySelectorAll<HTMLElement>(".list-actions").forEach((a) => {
+      const kids = [...a.children].filter((k) => (k as HTMLElement).offsetParent !== null) as HTMLElement[]
+      const gap = parseFloat(getComputedStyle(a).columnGap) || 0
+      const need = kids.reduce((sum, k) => sum + k.offsetWidth, 0) + gap * Math.max(0, kids.length - 1)
+      w = Math.max(w, Math.ceil(need))
+    })
     if (w > actW) setActW(w)
   })
 
