@@ -1,18 +1,31 @@
 /* Landing page (/). The one expressive page on the site: an oversized title,
    a live scope, and the Library / Lab fork. Motion here is pointer-gated:
-   nothing moves until a mouse is over the hero or a fork panel, and
+   nothing moves until a mouse is over the hero or a fork panel (except the
+   hero's background shader, which plays on its own), and
    prefers-reduced-motion freezes all of it. See DESIGN.md "Pointer-Gated Motion". */
 
 main.landing { max-width: none; padding: 0; }
 
 /* ── HERO ── */
-.hero { position: relative; padding: 64px 32px 40px; border-bottom: 1px solid var(--border);
-  background:
-    radial-gradient(rgba(255,255,255,.055) 1px, transparent 1.2px) 0 0 / 22px 22px,
-    var(--bg); }
-/* fade the dot field out toward the bottom so the fork panels sit on clean ground */
+/* The hero's colors, read by the background shader (HeroShader.tsx): the
+   ground it glows on, and three inks it blends by depth - all from the
+   scale-type palette, so the hero speaks the same color language as the Lab.
+   --hero-glow is the glow's strength over the ground (0..1). */
+.hero {
+  --hero-ground: var(--bg);
+  --hero-ink-1: var(--c-percent);
+  --hero-ink-2: var(--c-centered);
+  --hero-ink-3: var(--c-decimal);
+  --hero-glow: .42;
+  position: relative; overflow: hidden; padding: 64px 32px 40px; border-bottom: 1px solid var(--border);
+  background: var(--hero-ground); }
+.hero > .hero-shader { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block;
+  opacity: 0; transition: opacity .6s; }
+.hero > .hero-shader.ready { opacity: 1; }
+/* fade the background into the page at the hero's foot; the fork panels sit
+   in the lower half, so the shader still shows through their glass */
 .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, transparent 30%, var(--bg) 92%); }
+  background: linear-gradient(to bottom, transparent 55%, var(--bg) 100%); }
 .hero > * { position: relative; z-index: 1; }
 
 /* minmax(0, …): column widths come from the grid, never from content, so the
@@ -78,16 +91,28 @@ main.landing { max-width: none; padding: 0; }
 
 /* ── FORK ── the two paths */
 .fork { max-width: 1180px; margin: 48px auto 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+/* Glass: the surface tone at partial opacity over a blur of the hero shader,
+   with a faint lit top edge. Hover brightens the glass and draws a line of
+   light across the top edge, out from the center (no pointer tracking). */
 .fork-panel { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px;
-  padding: 22px 24px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
-  color: var(--text); text-decoration: none;
-  transition: border-color .2s, transform .2s, box-shadow .2s; }
-/* soft light that follows the pointer (vars set in Home.tsx trackSpot) */
-.fork-panel::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .25s;
-  background: radial-gradient(340px circle at var(--mx, 50%) var(--my, 50%), rgba(255,255,255,.07), transparent 65%); }
+  padding: 22px 24px 20px; border-radius: 8px; color: var(--text); text-decoration: none;
+  background: color-mix(in srgb, var(--surface) 55%, transparent);
+  border: 1px solid rgba(255,255,255,.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  transition: background-color .3s, border-color .3s, transform .3s cubic-bezier(.25,1,.5,1), box-shadow .3s; }
+.fork-panel::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55) 50%, transparent);
+  opacity: 0; transform: scaleX(.3); transition: opacity .35s, transform .5s cubic-bezier(.25,1,.5,1); }
 .fork-panel > * { position: relative; }
-.fork-panel:hover, .fork-panel:focus-visible { border-color: #474b54; transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,.5); }
-.fork-panel:hover::before { opacity: 1; }
+.fork-panel:hover, .fork-panel:focus-visible {
+  background: color-mix(in srgb, var(--surface) 68%, transparent); border-color: rgba(255,255,255,.14);
+  transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.45); }
+.fork-panel:hover::before, .fork-panel:focus-visible::before { opacity: 1; transform: scaleX(1); }
+/* no backdrop blur: fall back to the solid surface so text stays legible */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .fork-panel { background: var(--surface); }
+}
 
 .fork-head { display: flex; align-items: center; gap: 10px; }
 .fork-key { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px;
@@ -190,13 +215,12 @@ main.landing { max-width: none; padding: 0; }
   .fork-glyph { width: 64px; }
   .scope-readout { gap: 14px; }
 }
-/* no hover on touch: no pointer light; panels still light up on tap/focus */
+/* no hover on touch: no lift; panels still light up on tap/focus */
 @media (hover: none) {
-  .fork-panel::before { display: none; }
-  .fork-panel:hover { transform: none; box-shadow: none; }
+  .fork-panel:hover { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fork-panel, .fork-panel::before, .fork-cta span, .knob-pointer, .scope-led, .scope-led::before, .lab-tile, .lab-tile-go { transition: none; }
+  .fork-panel, .fork-panel::before, .fork-cta span, .knob-pointer, .scope-led, .scope-led::before, .lab-tile, .lab-tile-go, .hero > .hero-shader { transition: none; }
   .lab-tile:hover { transform: none; }
   .fork-panel:hover, .fork-panel:focus-visible { transform: none; }
   .fork-panel:hover .env-line, .fork-panel:focus-visible .env-line { animation: none; }

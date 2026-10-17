@@ -100,9 +100,12 @@ port_pids() {
     lsof -ti "tcp:$port" -sTCP:LISTEN 2>/dev/null | sort -u
   fi
 }
+# Windows commands take /flags, which Git Bash would rewrite as paths
+# (/PID -> C:/Program Files/Git/PID); win runs one with that conversion off.
+win() { MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' "$@"; }
 kill_tree() {
   local pid=$1
-  if is_windows; then taskkill /PID "$pid" /T /F >/dev/null 2>&1 || true
+  if is_windows; then win taskkill /PID "$pid" /T /F >/dev/null 2>&1 || true
   else kill -- "-$pid" 2>/dev/null || kill "$pid" 2>/dev/null || true; fi
 }
 http_code() { curl -s -o /dev/null -m 5 -w '%{http_code}' "$1" 2>/dev/null || true; }
@@ -218,7 +221,7 @@ cmd_dev_login() {
   case "$who" in musician|github|admin|banned) ;; *) die "persona is one of: musician, github, admin, banned" ;; esac
   local url="http://localhost:8788/api/auth/dev?as=$who&next=/"
   echo "$url"
-  if is_windows; then cmd /c start "" "$url" 2>/dev/null || true
+  if is_windows; then win cmd /c start "" "$url" 2>/dev/null || true
   elif have open; then open "$url"; elif have xdg-open; then xdg-open "$url" >/dev/null 2>&1 || true; fi
 }
 
@@ -228,7 +231,7 @@ cmd_build_c() {
   [ -n "$cc" ] || die "no C compiler found (install MSVC Build Tools, clang or gcc)"
   say "Building mondo with $cc"
   case "$cc" in
-    cl) cmd /c "$(cygpath -w "$ROOT/build.bat")" ;;
+    cl) win cmd /c "$(cygpath -w "$ROOT/build.bat")" ;;
     *)  local out=mondo; is_windows && out=mondo.exe
         "$cc" -O2 -Wall -D_CRT_SECURE_NO_WARNINGS -o "$out" mondo.c cJSON.c -lm
         ok "built $out" ;;

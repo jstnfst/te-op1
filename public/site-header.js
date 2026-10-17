@@ -145,7 +145,15 @@
 
   function footerHTML() {
     return '<footer class="site">OP-1 Field firmware&nbsp;' + esc(FW) +
-      ' &middot; <a href="' + REPO + '">github.com/jstnfst/te-op1</a></footer>';
+      ' &middot; <a href="' + REPO + '">github.com/jstnfst/te-op1</a>' +
+      '<p class="footer-credit" data-footer-credit hidden>Hero shader by Xor, from ' +
+      '<a href="https://fragcoord.xyz" target="_blank" rel="noopener">fragcoord.xyz</a></p></footer>';
+  }
+  // The home page's hero runs Xor's shader (src/landing/HeroShader.tsx); its
+  // credit shows on that page only, kept in step as the SPA navigates.
+  function footerCredit() {
+    var c = document.querySelector("[data-footer-credit]");
+    if (c) c.hidden = location.pathname !== "/";
   }
 
   // Every header link is a full page load, and /api/auth/me answers only after
@@ -179,6 +187,7 @@
   var authUser = readHint();
 
   function render() {
+    footerCredit();
     var loc = current();
     var sw = document.querySelector("[data-group-switch]");
     if (sw) sw.innerHTML = groupSwitchHTML(loc);

@@ -398,6 +398,17 @@ beyond hover/press feedback. Touch and keyboard users get the static end state
 (on tap/focus). `prefers-reduced-motion: reduce` freezes all of it. The patch
 editor is out of scope for added motion.
 
+**Hero background.** The landing hero sits on a raymarched shader
+(`src/landing/HeroShader.tsx`, WebGL2), not a gradient. It is the one
+exception to the rule above: it plays on its own (`u_time` = seconds since
+playback started), pausing while off screen or in a hidden tab, and
+`prefers-reduced-motion` holds its first frame. Its
+colors are custom properties on `.hero` (`--hero-ground`, `--hero-ink-1..3`,
+`--hero-glow`), taken from the scale-type palette (%, centered %, decimal) so
+the landing speaks the Lab's color language; the shader only blends them by
+depth. The hero fades it out to `--bg` before the fork panels. Without WebGL2
+the hero is plain `--bg`.
+
 ## 7. Do's and Don'ts
 
 ### Do:

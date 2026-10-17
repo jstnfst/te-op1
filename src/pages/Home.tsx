@@ -4,6 +4,7 @@ import { apiGet, type PatchSummary } from "../api"
 import { DownloadCount } from "../like"
 import { TYPES } from "../patchLists"
 import { Scope, envLevel, ENV_STAGES, type ScopeHandle, type Side } from "../landing/Scope"
+import { HeroShader } from "../landing/HeroShader"
 import "../landing/landing.css"
 
 // Real samples of what each Lab tool holds, previewed in the "Inside the lab" tiles.
@@ -68,13 +69,6 @@ function EnvGlyph({ pos, label }: { pos: number; label: string }) {
       <span className="knob-label">{label}</span>
     </div>
   )
-}
-
-/** Light that follows the pointer inside a fork panel (pointer-gated; static otherwise). */
-function trackSpot(e: PointerEvent<HTMLElement>) {
-  const r = e.currentTarget.getBoundingClientRect()
-  e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`)
-  e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`)
 }
 
 function Trending() {
@@ -162,7 +156,6 @@ export default function Home() {
   // Pointer X across the Library panel turns the knob, detent by detent.
   // Whatever is dialed when the visitor clicks is where the link goes.
   function turnKnob(e: PointerEvent<HTMLElement>) {
-    trackSpot(e)
     if (e.pointerType === "touch") return
     const r = e.currentTarget.getBoundingClientRect()
     const x = Math.max(0, Math.min(0.999, (e.clientX - r.left) / r.width))
@@ -173,7 +166,6 @@ export default function Home() {
   // array from a real preset, and the link opens its card on the Layout page.
   // The glyph's envelope read-head follows the pointer.
   function scrubEnv(e: PointerEvent<HTMLElement>) {
-    trackSpot(e)
     if (e.pointerType === "touch") return
     const r = e.currentTarget.getBoundingClientRect()
     const u = Math.max(0, Math.min(0.999, (e.clientX - r.left) / r.width))
@@ -189,6 +181,7 @@ export default function Home() {
 
   // Motion is pointer-gated: the scope runs only while a mouse/pen is over
   // the hero. Touch and keyboard get the static end state (see Scope.setSide).
+  const heroRef = useRef<HTMLElement>(null)
   function enter(e: PointerEvent) {
     if (e.pointerType === "mouse" || e.pointerType === "pen") scope.current?.activate(true)
   }
@@ -201,11 +194,13 @@ export default function Home() {
   return (
     <>
       <section
+        ref={heroRef}
         className="hero"
         onPointerEnter={enter}
         onPointerMove={move}
         onPointerLeave={() => scope.current?.activate(false)}
       >
+        <HeroShader host={heroRef} />
         <div className="hero-top">
           <div className="hero-copy">
             <p className="eyebrow">OP-1 Field · community patches + format reference</p>
