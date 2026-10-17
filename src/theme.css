@@ -41,10 +41,6 @@ input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; 
 .engine-chip.empty:not(.active) { opacity: .45; }
 
 /* lab overview */
-.lab-stats { display: flex; flex-wrap: wrap; gap: 10px 32px; margin-top: 28px; font-size: 11px; color: var(--muted);
-  letter-spacing: .14em; text-transform: uppercase; }
-.lab-stats b { display: block; font-size: 30px; font-weight: 800; color: var(--text); letter-spacing: -.02em; text-transform: none; }
-.lab-tools .card-eyebrow { color: var(--muted); }
 .lab-issues a { color: var(--text); }
 
 /* collapsible "your own stuff" sections (My packs / My patches) */
@@ -251,6 +247,28 @@ a.list-row { text-decoration: none; color: inherit; }
 .list-tags > .chip { flex-shrink: 0; }
 .list-actions { display: flex; gap: 6px; flex-shrink: 0; }
 
+/* column grid (LongList `columns`): rows and the header in the sticky bar
+   share one track list, so every cell lines up under its label. The actions
+   track takes the widest row's actions (--act-w, measured by LongList). */
+.cols-patch { --list-cols: 18px 76px minmax(0, 1fr) 180px 92px var(--act-w, max-content); }
+.cols-pack  { --list-cols: 96px minmax(0, 1fr) 84px 92px var(--act-w, max-content); }
+.vlist.cols-patch .list-row, .vlist.cols-pack .list-row, .list-head {
+  display: grid; grid-template-columns: var(--list-cols); align-items: center; column-gap: 12px; }
+.vlist .list-row.skeleton { display: flex; }
+.vlist[class*="cols-"] .list-type { width: auto; min-width: 0; }
+.vlist[class*="cols-"] .list-tags { max-width: none; }
+.vlist[class*="cols-"] .list-actions { justify-content: flex-end; }
+/* actions never shrink or wrap, so their measured width is their real width */
+.vlist[class*="cols-"] .list-actions > * { flex-shrink: 0; white-space: nowrap; }
+.list-dls, .list-count { font-size: 11px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.list-owner { display: block; font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* header cells sit on the row grid: the bar's border + padding is 13px, a row's 8px */
+.list-head { margin: 8px -5px 0; padding-top: 8px; border-top: 1px solid var(--border);
+  font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.list-head > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list-head > span:last-child { text-align: right; }
+.list-head-box { display: block; width: 14px; height: 14px; border: 1px solid var(--muted); border-radius: 2px; }
+
 /* pack detail */
 .pack-author { font-size: 12px; font-weight: 300; color: var(--muted); margin-bottom: 4px; }
 .pack-actions { margin: 12px 0; }
@@ -274,6 +292,13 @@ a.list-row { text-decoration: none; color: inherit; }
   .list-tags { display: none; }
   .list-dl { display: none; }
   .list-act-ext { display: none; }
+  /* phone: tags and the count columns drop out; downloads/likes stay in actions */
+  .cols-patch { --list-cols: 18px 64px minmax(0, 1fr) var(--act-w, max-content); }
+  .cols-pack  { --list-cols: 72px minmax(0, 1fr) var(--act-w, max-content); }
+  .list-head { margin: 8px -3px 0; } /* the bar's padding is 10px here */
+  .vlist[class*="cols-"] .list-tags, .vlist[class*="cols-"] .list-dls, .vlist[class*="cols-"] .list-count,
+  .list-head.cols-patch > span:nth-child(4), .list-head.cols-patch > span:nth-child(5),
+  .list-head.cols-pack > span:nth-child(3), .list-head.cols-pack > span:nth-child(4) { display: none; }
 
   /* Compact chips: tighter tracking/padding, no reserved engine-chip column,
      and no public/private chips at all - visibility state is a desktop

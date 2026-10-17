@@ -18,7 +18,7 @@ const PAGES = [
   ["/library", ".page-nav"],
   ["/library/packs", ".page-nav"],
   ["/library/editor", "#viz .pgroup"],
-  ["/lab", ".lab-tools"],
+  ["/lab", ".fmap"],
   ["/lab/layout", "[data-site-header] header"],
   ["/lab/mappings", "[data-site-header] header"],
   ["/lab/inspector", "#viz .pgroup"],

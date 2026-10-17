@@ -27,8 +27,8 @@ function IssuesHome() {
 
   return (
     <>
-      <h1 className="hero-title">Issues</h1>
-      <p className="lead">Bugs, feature requests, and what's shipped - filed and tracked on GitHub.</p>
+      <h1 className="hero-title">Site issues</h1>
+      <p className="lead">Bugs and feature requests for this website, filed and tracked in its GitHub project, plus what's shipped.</p>
 
       <div className="row" style={{ margin: "18px 0 28px" }}>
         <Link className="btn primary" to="/issues/report?type=bug">Report bug</Link>
@@ -60,7 +60,7 @@ function IssuesHome() {
 
 export default function Issues() {
   return (
-    <RequireGithubIssues title="Issues">
+    <RequireGithubIssues title="Site issues">
       <IssuesHome />
     </RequireGithubIssues>
   )

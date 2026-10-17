@@ -253,7 +253,7 @@ function IssueReportHome() {
 
   return (
     <>
-      <h1 className="hero-title">Report an issue</h1>
+      <h1 className="hero-title">Report a site issue</h1>
       <p className="lead">
         Reports post as a GitHub issue on your account, tagged {kind === "bug" ? "bug" : "enhancement"}.
       </p>
@@ -267,7 +267,7 @@ function IssueReportHome() {
 
 export default function IssueReport() {
   return (
-    <RequireGithubIssues title="Report an issue">
+    <RequireGithubIssues title="Report a site issue">
       <IssueReportHome />
     </RequireGithubIssues>
   )

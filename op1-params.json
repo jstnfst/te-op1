@@ -27,11 +27,11 @@
   "fx.phone":        ["TONE", "GSM", "BAUD", "TELEMATIC"],
   "fx.punch":        ["FREQUENCY", "PUNCH", "ROUNDS", "POWER"],
   "fx.spring":       ["TONE", "TURNS", "DAMPING", "MIX"],
-  "fx.terminal":     ["FREQUENCY", "BITS", "MODEL", "MIX"],
+  "fx.terminal":     ["RATE", "BITS", "MODEL", "MIX"],
 
   "lfo.element":     ["SOURCE", "AMOUNT", "DESTINATION", "PARAMETER"],
   "lfo.midi":        ["PARAMETER 1", "PARAMETER 2", "PARAMETER 3", "PARAMETER 4", "DESTINATION 1", "DESTINATION 2", "DESTINATION 3", "DESTINATION 4"],
-  "lfo.random":      ["SPEED", "AMOUNT", "DESTINATION", "ENVELOPE", "PARAMETER"],
+  "lfo.random":      ["SPEED", "AMOUNT", "DESTINATION", "ENVELOPE", null, null, null, "PARAMETER"],
   "lfo.tremolo":     ["SPEED", "PITCH AMOUNT", "VOLUME LEVEL", "PITCH ENVELOPE", null, null, null, "LFO SHAPE"],
   "lfo.value":       ["SPEED", "AMOUNT", "DESTINATION", "PARAMETER", "LFO SHAPE"],
   "lfo.velocity":    ["AMP", "VOLUME AMOUNT", "DESTINATION", "PARAMETER"]

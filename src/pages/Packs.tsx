@@ -14,10 +14,9 @@ type View = "grid" | "list"
 const patchCount = (n = 0) => `${n} ${n === 1 ? "patch" : "patches"}`
 
 /** Status chip: public/private on your own lists, "yours" in the community list. */
-function PackChip({ p, community, list }: { p: Pack; community?: boolean; list?: boolean }) {
-  const cls = list ? "chip list-type " : "chip "
-  if (community) return p.is_mine ? <span className={cls + "yours"}>yours</span> : list ? <span className="list-type" /> : null
-  return <span className={cls + (p.is_public ? "vis-public" : "vis-private")}>{p.is_public ? "public" : "private"}</span>
+function PackChip({ p, community }: { p: Pack; community?: boolean }) {
+  if (community) return p.is_mine ? <span className="chip yours">yours</span> : null
+  return <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>{p.is_public ? "public" : "private"}</span>
 }
 
 export interface PackItemProps {
@@ -29,6 +28,13 @@ export interface PackItemProps {
   /** Community listing: every pack is public, so mark the viewer's own instead of visibility. */
   community?: boolean
 }
+
+/** List view's columns. The first says whose pack it is: on the community
+ * list, "you" or the author; on your own lists, public or private. */
+export const packColumns = (community?: boolean) => ({
+  kind: "pack",
+  labels: [community ? "Owner" : "Visibility", "Pack", "Patches", "Downloads", "Likes"],
+})
 
 /** One pack as a grid card or list row (LongList renderItem). */
 export function PackItem({ p, view, showAuthor, onLiked, community }: PackItemProps) {
@@ -52,15 +58,18 @@ export function PackItem({ p, view, showAuthor, onLiked, community }: PackItemPr
   }
   return (
     <Link className="list-row" to={`/library/packs/${p.id}`}>
-      <PackChip p={p} community={community} list />
+      <span className="list-type">
+        {community && !p.is_mine
+          ? <span className="list-owner">{p.author ?? ""}</span>
+          : <PackChip p={p} community={community} />}
+      </span>
       <span className="list-title">
         <span className="list-name">{p.name}</span>
-        <span className="list-byline">{author ? `by ${author}` : patchCount(p.item_count)}</span>
+        {!community && author ? <span className="list-byline">by {author}</span> : null}
       </span>
-      <div className="list-actions">
-        <DownloadCount n={p.download_count} />
-        {like}
-      </div>
+      <span className="list-count">{patchCount(p.item_count)}</span>
+      <span className="list-dls"><DownloadCount n={p.download_count} /></span>
+      <div className="list-actions">{like}</div>
     </Link>
   )
 }
@@ -112,6 +121,7 @@ export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolea
         noun={["pack", "packs"]}
         pageParam={pageParam}
         empty={<p className="muted">No packs yet. Create one above, then add patches from the <Link to="/library">library</Link>.</p>}
+        columns={packColumns()}
         renderItem={(p) => <PackItem p={p} view={view} showAuthor={false} />}
       />
     </Collapsible>
@@ -159,6 +169,7 @@ function DiscoverPacks() {
         view={view}
         noun={["public pack", "public packs"]}
         empty={<p className="muted">{typed ? `No public packs match "${typed}"` : "No public packs yet"}</p>}
+        columns={packColumns(true)}
         renderItem={(p) => <PackItem p={p} view={view} showAuthor community />}
       />
     </>

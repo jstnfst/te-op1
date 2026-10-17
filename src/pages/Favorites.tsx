@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom"
 import type { Pack, PatchSummary } from "../api"
 import { useSelection, SelectionToolbar } from "../packs"
-import { PatchItem, ViewToggle, useViewToggle } from "../patchLists"
-import { PackItem } from "./Packs"
+import { PATCH_COLUMNS, PatchItem, ViewToggle, useViewToggle } from "../patchLists"
+import { PackItem, packColumns } from "./Packs"
 import { useLongList } from "../useLongList"
 import { LongList } from "../LongList"
 
@@ -40,6 +40,7 @@ export default function Favorites() {
               view={patchView}
               noun={["liked patch", "liked patches"]}
               toolbar={<SelectionToolbar selection={selection} />}
+              columns={PATCH_COLUMNS}
               empty={<p className="muted">No liked patches yet</p>}
               renderItem={(p) => (
                 <PatchItem
@@ -68,6 +69,7 @@ export default function Favorites() {
               noun={["liked pack", "liked packs"]}
               pageParam="ppage"
               empty={<p className="muted">No liked packs yet</p>}
+              columns={packColumns()}
               renderItem={(k) => <PackItem p={k} view={packView} showAuthor onLiked={(liked) => { if (!liked) packs.reload() }} />}
             />
           </section>

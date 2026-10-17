@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react"
 import { useWindowVirtualizer } from "@tanstack/react-virtual"
 import { useLocation, useNavigationType } from "react-router-dom"
 import { PER_PAGE, type LongListData } from "./useLongList"
@@ -31,6 +31,7 @@ export function LongList<T extends { id: number }>({
   pageParam = "page",
   toolbar,
   empty,
+  columns,
 }: {
   list: LongListData<T>
   view: "grid" | "list"
@@ -41,6 +42,9 @@ export function LongList<T extends { id: number }>({
   pageParam?: string
   toolbar?: ReactNode
   empty?: ReactNode
+  /** List view's column grid: `kind` picks the track layout in theme.css
+   * (.cols-patch / .cols-pack), `labels` are the header cells, one per track. */
+  columns?: { kind: string; labels: ReactNode[] }
 }) {
   const boxRef = useRef<HTMLDivElement>(null)
   const barRef = useRef<HTMLDivElement>(null)
@@ -114,6 +118,19 @@ export function LongList<T extends { id: number }>({
     if (!real) return
     const h = real.offsetHeight
     if (h > 0 && Math.abs(h - rowH) > 1) { setRowH(h); requestAnimationFrame(() => v.measure()) }
+  })
+
+  // Every row's actions cell takes the widest one seen, so the columns line up
+  // down the list and under the header (rows recycle; the width only grows).
+  const [actW, setActW] = useState(0)
+  // the web font lands after first paint and widens the buttons: measure again
+  const [, setFontTick] = useState(0)
+  useEffect(() => { document.fonts?.ready.then(() => setFontTick((t) => t + 1)) }, [])
+  useLayoutEffect(() => {
+    if (view !== "list" || !columns) return
+    let w = 0
+    boxRef.current?.querySelectorAll<HTMLElement>(".list-actions").forEach((a) => { w = Math.max(w, a.scrollWidth) })
+    if (w > actW) setActW(w)
   })
 
   // fetch the pages that cover the rendered rows (overscan included)
@@ -324,7 +341,7 @@ export function LongList<T extends { id: number }>({
   if (total === 0) return <div className="longlist" ref={anchorRef}>{empty ?? <p className="muted">Nothing here yet</p>}</div>
 
   return (
-    <div className="longlist" ref={anchorRef}>
+    <div className="longlist" ref={anchorRef} style={actW ? ({ "--act-w": `${actW}px` } as CSSProperties) : undefined}>
       <div className="listbar" ref={barRef}>
         {toolbar}
         <div className="listbar-pager">
@@ -357,11 +374,16 @@ export function LongList<T extends { id: number }>({
             </nav>
           )}
         </div>
+        {view === "list" && columns && (
+          <div className={`list-head cols-${columns.kind}`} role="presentation">
+            {columns.labels.map((l, k) => <span key={k}>{l}</span>)}
+          </div>
+        )}
       </div>
 
       {list.error && <p className="error">{list.error} <button className="btn" onClick={list.retry}>Retry</button></p>}
 
-      <div ref={boxRef} className={view === "grid" ? "vgrid" : "list vlist"} style={{ height: v.getTotalSize(), position: "relative" }}>
+      <div ref={boxRef} className={view === "grid" ? "vgrid" : `list vlist${columns ? ` cols-${columns.kind}` : ""}`} style={{ height: v.getTotalSize(), position: "relative" }}>
         {vrows.map((r) => {
           const start = r.index * cols
           const cells = []

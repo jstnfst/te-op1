@@ -29,7 +29,7 @@ macOS/Linux). `./master-control.sh help` lists every command.
 ./master-control.sh dev up         # build, then run the dev server in the background
 ./master-control.sh dev login      # sign in as a mock persona (musician, github, admin, banned)
 ./master-control.sh test website   # smoke-test every page on desktop + phone widths
-./master-control.sh dev down       # stop it and free ports 8788 / 5173
+./master-control.sh dev down       # stop it and free ports 8788 / 8789
 ```
 
 | Group | Commands |
@@ -54,16 +54,19 @@ npx wrangler d1 migrations apply te-op1-db --local
 mondo.exe samples collection samples.js   # if samples.js isn't present
 node scripts/seed.mjs --local
 
-npm run dev    # Vite on :5173, wrangler Pages on http://localhost:8788
+npm run dev    # Vite on http://localhost:8788, wrangler (Functions) on :8789
 ```
 
-Open **http://localhost:8788** (the wrangler origin - that's where `/api/*` and
-cookies work). For local OAuth, register `http://localhost:8788/api/auth/<provider>/callback`
+Open **http://localhost:8788**. Vite serves the site from source with live reload
+(the SPA hot-updates; static pages in `public/` show changes on refresh) and
+forwards `/api/*` to wrangler on :8789, keeping the Host header, so cookies,
+OAuth callbacks and dev login all see localhost:8788. For local OAuth, register `http://localhost:8788/api/auth/<provider>/callback`
 as a redirect URI in each provider console.
 
-Port 8788 serves the built `dist/` (wrangler's proxy doesn't reach Vite here),
-so run `npm run build` after frontend changes. `functions/` reloads on its own;
-`.dev.vars` changes need a restart of `npm run dev`.
+No build is needed to see frontend changes. A small dev-only plugin in
+`vite.config.ts` applies `public/_redirects` (e.g. `/lab/layout` serves
+`params.html`) and Pages' pretty URLs, so local URLs match production.
+`functions/` reloads on its own; `.dev.vars` changes need `./master-control.sh dev restart`.
 
 ### Volume data (dev only)
 

@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"wrangler pages dev --proxy 5173 --port 8788\" \"node scripts/watch-static.mjs\"",
+    "dev": "concurrently -k -n web,api \"vite\" \"wrangler pages dev public --port 8789 --ip 127.0.0.1\"",
     "build": "vite build",
     "typecheck": "tsc -b",
     "preview": "vite preview",

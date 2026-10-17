@@ -4,16 +4,23 @@ Observations on how the hardware displays parameter values. Raw values are
 16-bit integers (0–32767, sometimes negative). The display scale varies by
 parameter type.
 
+> **Source of truth for % and centered knobs: `public/knob-model.js`** (shared by
+> the patch editor, inspector, Lab, and Mappings page). A `%` knob reads 0–100%
+> linearly across its full turn (its hardware min → max); a `centered %` knob reads
+> −100% → +100% across its full turn, 0 at center. Raw → display points quoted below
+> for these knobs are history from the reverse-engineering steps; where one
+> disagrees with the model, the model wins.
+
 ---
 
 ## Display scale types seen so far
 
 | Scale type | Description | Example |
 |---|---|---|
-| `%` | Linear 0–100 percentage | DIGITALNESS, POWER |
-| `centered %` | Linear, centered at 0, negative possible | DETUNE+RINGMOD |
+| `%` | Linear 0–100% across the knob's full turn (hardware min → max) | DIGITALNESS, POWER |
+| `centered %` | Linear −100% → +100% across the full turn, 0 at center | pulse MODULATION |
 | `discrete-N` | Discrete steps 0–N (or 1–N) | OCTAVE (0–6), ROUNDS (1–24), AMOUNT in lfo.value (0–24) |
-| `hz` | Frequency in Hz | FILTER FREQ in dimension |
+| `hz` | Frequency in Hz | FILTER CUTOFF FREQ in dimension (cubic 0–18 kHz), RATE in terminal (linear 100 Hz–20 kHz) |
 | `tempo-dial` | Non-linear BPM/tempo dial | SPEED in lfo.value |
 | `selector` | Named discrete options | DESTINATION, PARAMETER (context-dependent) |
 | `non-linear` | Appears near max at ~34% linear | IMPULSE in synth.string |
@@ -43,7 +50,7 @@ parameter type.
 |---|---|---|---|
 | 0 | WAVE SHAPER | `%` | |
 | 1 | OCTAVE | `discrete-6` | 0–6 inclusive; 19712 → 4; hardware min=2048, hardware max=26624 |
-| 2 | DETUNE+RINGMOD | `centered %` | Negative values; -10369 → 33; hardware min=-32768 |
+| 2 | DETUNE+RINGMOD | `%` | Full turn −32768–32767 = 0–100%; raw is signed but the display is unipolar |
 | 3 | DIGITALNESS | `%` | |
 
 ### synth.dimension
@@ -51,7 +58,7 @@ parameter type.
 |---|---|---|---|
 | 0 | WAVEFORM | `%` | |
 | 1 | STEREO | `%` | |
-| 2 | FILTER CUTOFF FREQ | `hz` | Displays in Hz; 13742 → 1320 Hz |
+| 2 | FILTER CUTOFF FREQ | `hz` | Cubic across a full turn: Hz = 18000 · t³ (0 Hz → 18 kHz); 13742 → ~1.3 kHz |
 | 3 | RESONANCE | `%` | |
 
 ### fx.punch
@@ -75,7 +82,7 @@ parameter type.
 ### lfo.value
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear tempo dial; hardware min=0, max=16384 (oracle); differs from tremolo max (32440) |
+| 0 | SPEED | `tempo-dial` | LFO speed dial (see lfo.random); raw 0–16384 |
 | 1 | AMOUNT | `centered %` | Bipolar -100 to +100; 23255 → ~71% |
 | 2 | DESTINATION | `selector` | Selects which synth parameter to modulate; for amp synth: hardware max=11264 (oracle lfo-max(2)) |
 | 3 | PARAMETER | `selector` | Discrete, options depend on DESTINATION value; hardware max=15360 |
@@ -84,15 +91,15 @@ parameter type.
 ### synth.drwave
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVE TYPE AND LENGTH | `discrete-98` | 0–98; hardware max=24568 (oracle synthmax(6)); encodes wave type + length together; 14209 → 57, 24568 → 98 |
-| 1 | FILTER | `discrete-98` | 0–98; hardware max=16379 (oracle); 11735 → 70, 16379 → 98 |
-| 2 | PHASE | `discrete-98` | 0–98; hardware max=16377 (oracle); 8199 → 49, 16377 → 98 |
-| 3 | CHORUS | `discrete-99` | 0–99; 100 steps; 0 → 0, 32767 → 99 |
+| 0 | WAVE TYPE AND LENGTH | `discrete-99` | 0–99 linear across a full turn, raw 0–24575 |
+| 1 | FILTER | `discrete-98` | 0–98 linear across a full turn, raw 0–16379 |
+| 2 | PHASE | `discrete-98` | 0–98 linear across a full turn, raw 0–16377 |
+| 3 | CHORUS | `discrete-99` | 0–99 linear across a full turn |
 
 ### fx.delay
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | RANGE | `ms-inverse` | Delay time in ms; **inverse**: lower raw = more time; range 31.25–1000ms; raw 8000 → 125ms; hardware min=1024, hardware max=11264 |
+| 0 | RANGE | `selector-6` | 6 steps, each option holding until the next: 1024 → 1000 ms, 2944 → 500 ms, 4544 → 250 ms, 6144 → 125 ms, 8704 → 62.5 ms, 11264 → 31.25 ms (detents 0, 4, 10, 16, 23, 29) |
 | 1 | SPEED | `discrete-99` | 0–99; raw 10624 → 25; hardware min=3276, hardware max=32767 |
 | 2 | FEEDBACK | `discrete-99` | 0–99; raw 8328 → 50; hardware max=16384 |
 | 3 | LEVEL | `%` | Approximately linear; hardware max=32767 |
@@ -108,7 +115,7 @@ parameter type.
 ### synth.dna
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FILTER | `centered %` | Centered %; formula raw/32767×100; hardware min=−29491 (−90%), max=32767 (+100%) (oracle dna-filter-minmax) |
+| 0 | FILTER | `%` | Full turn −29491–32767 = 0–100% (oracle dna-filter-minmax); raw is signed but the display is unipolar |
 | 1 | WAVE NUMBER | `%` | Hardware min=4608, hardware max=12800 (limited range) |
 | 2 | WAVE MODIFIER | `%` | max=32767 |
 | 3 | NOISE | `%` | |
@@ -150,16 +157,16 @@ parameter type.
 ### synth.pulse
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FILTER | `%` | 18848 → ~57%; hardware max=23168 |
-| 1 | AMPLITUDE | `%` | 3984 → ~12%; hardware max=16384 |
-| 2 | PULSE TWO | `%` | 10752 → ~33%; hardware max=16384 |
+| 0 | FILTER | `%` | Full turn 0–23168 = 0–100% (oracle synthmax(10)). Early estimate "18848 → ~57%" (raw/32767, preset pd_just_a_phase) superseded: 18848 → 81% |
+| 1 | AMPLITUDE | `%` | Full turn 0–16384 = 0–100% (oracle synthmax(10)) |
+| 2 | PULSE TWO | `%` | Full turn 0–16384 = 0–100% (oracle synthmax(10)) |
 | 3 | MODULATION | `centered %` | Symmetric range −16384–+16384; −16384 → −100%, 16384 → 100% (oracle pulse-modulation-minmax) |
 
 ### synth.phase
 | Index | Name | Scale | Notes |
 |---|---|---|---|
 | 0 | PHASE SHIFT | `%` | 0 → min |
-| 1 | DISTORTION AMOUNT | `%` | 14310 → 44, 29491 → 90; hardware max=29491 (oracle synthmax(9)); does not reach 32767 |
+| 1 | DISTORTION AMOUNT | `%` | Full turn 0–29491 = 0–100% (oracle synthmax(9)) |
 | 2 | PHASE FILTER | `%` | 0 → min |
 | 3 | PHASE TILT | `%` | 0 → min |
 
@@ -186,10 +193,10 @@ parameter type.
 ### synth.fm
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FM AMOUNT | `discrete-99` | 0–99; 31743 → 95 |
-| 1 | FREQUENCY | `discrete-99` | 0–99; 17352 → 52 |
-| 2 | TOPOLOGY | `selector` | Hardware min=1024, max=17408 (oracle min3+synthmax(8)); 9 options; 13312 → 6 |
-| 3 | DETUNE | `discrete-99` | 0–99; 0 → 0 |
+| 0 | FM AMOUNT | `discrete-99` | 0–99 linear across a full turn, raw 0–32767 |
+| 1 | FREQUENCY | `discrete-99` | 0–99 linear across a full turn, raw 0–32767 |
+| 2 | TOPOLOGY | `selector` | Hardware min=1024, max=17408 (oracle min3+synthmax(8)); 9 options 0–8 at 1024 + 2048 × n |
+| 3 | DETUNE | `discrete-99` | 0–99 linear across a full turn, raw 0–32767 |
 | 4 | - | `fixed` | Firmware-managed FM operator constant; always 15000 across all oracle captures |
 | 5 | - | `fixed` | Firmware-managed FM operator constant; always 0 across all oracle captures |
 | 6 | - | `fixed` | Firmware-managed FM operator constant; always 100 across all oracle captures |
@@ -206,9 +213,9 @@ parameter type.
 ### fx.grid
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | X SIZE | `discrete-99` | 0–99; non-linear; 9064 → 50; hardware min=1344, hardware max=16704 |
-| 1 | Y SIZE | `discrete-99` | 0–99; non-linear; 6032 → 30; hardware min=1344, hardware max=16704 |
-| 2 | Z FEEDBACK | `discrete-99` | 0–99; ~linear; 23248 → 72; hardware max=32767 |
+| 0 | X SIZE | `discrete-99` | 0–99 linear across a full turn; hardware min=1344, hardware max=16704 |
+| 1 | Y SIZE | `discrete-99` | 0–99 linear across a full turn; hardware min=1344, hardware max=16704 |
+| 2 | Z FEEDBACK | `discrete-99` | 0–99 linear across a full turn, raw 0–32767 |
 | 3 | MIX | `%` | approximately linear; hardware max=32767 |
 | 4–7 | - | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
@@ -217,26 +224,26 @@ parameter type.
 |---|---|---|---|
 | 0 | TONE | `%` | Hardware min=1344, hardware max=16448 |
 | 1 | TURNS | `%` | Hardware min=7744, hardware max=16448 |
-| 2 | DAMPING | `%` | 4096 → ~12%; hardware max=16384 |
+| 2 | DAMPING | `%` | Full turn 0–16384 = 0–100% |
 | 3 | MIX | `%` | Hardware max=32767 |
 | 4–7 | - | `fixed` | Firmware-managed constant; always 8000 across all oracle captures |
 
 ### lfo.tremolo
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `tempo-dial` | Non-linear tempo dial; hardware min=0, max=32440 (oracle); raw sweep: 0, 2943, 4576, 12751, 16348, 22228, 29422, 32440 |
+| 0 | SPEED | `tempo-dial` | LFO speed dial (see lfo.random); raw 0–32440 |
 | 1 | PITCH AMOUNT | `centered %` | Bipolar -100 to +100; 985 → ~3%, 2264 → ~7% |
 | 2 | VOLUME LEVEL | `centered %` | Bipolar -100 to +100; -12759 → -38 |
 | 3 | PITCH ENVELOPE | `%` | 4592 → ~14%, 12136 → ~37% |
-| 7 | LFO SHAPE | `selector` | Confirmed at index 7; 0 → default, 19456 → "exponential", 32767 → max; indices 4–6 are null |
+| 7 | LFO SHAPE | `selector` | Zones starting at 0 sine, 7161 triangle, 14322 exponential, 21483 square, 28644 halfwidth (full turn stores 32767); indices 4–6 are null |
 
 ### fx.terminal
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | FREQUENCY | `hz` | Log Hz scale; raw 0 → 100 Hz, raw 32767 → 20 kHz |
+| 0 | RATE | `hz` | Linear across the full turn: raw 0 → 100 Hz, raw 32767 → 20 kHz (named RATE on the device and in the random LFO PARAMETER list) |
 | 1 | BITS | `decimal` | raw 0 → 2.0 bits, raw 32767 → 16 bits |
 | 2 | MODEL | `decimal` | Continuous decimal scale 1.0–6.0; raw 0 → 1.0, raw 32767 → 6.0 |
-| 3 | MIX | `%` | raw 32767 → 100%; raw 14322 → 50% |
+| 3 | MIX | `%` | Full turn 0–32767 = 0–100% |
 
 ### synth.sampler
 | Index | Name | Scale | Notes |
@@ -257,9 +264,9 @@ to the standard keys. Explore presets now include these fields: `base_freq=261.6
 ### synth.vocoder
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | WAVEFORM | `selector-8` | Named options: S, 1, 2, 3, 4, 5, 6, N (8 options); raw 0 → "S" |
-| 1 | FORMANT | `discrete-centered` | Range -4 to +4 (9 steps); raw 0 → -4 (so 0 is the minimum, not center) |
-| 2 | BANDS | `discrete-7` | 0–7 inclusive (8 steps); raw 0 → 0 |
+| 0 | WAVEFORM | `selector-8` | Zones of 4608 starting at 0: S, 1, 2, 3, 4, 5, 6, N (full turn stores 32767); about 9 detents each |
+| 1 | FORMANT | `discrete-centered` | -4 to +4 linear across a full turn (raw 0 → -4, 16384 → 0, 32767 → +4) |
+| 2 | BANDS | `discrete-7` | 0–7 linear across a full turn |
 | 3 | MIX | `%` | raw 0 → 0 |
 
 ### fx.cwo
@@ -293,11 +300,12 @@ to the standard keys. Explore presets now include these fields: `base_freq=261.6
 ### lfo.random
 | Index | Name | Scale | Notes |
 |---|---|---|---|
-| 0 | SPEED | `non-linear` | Like other LFO speeds; 4952 → 6 |
-| 1 | AMOUNT | `discrete-99` | 0–99 (not 0–24 like element/tremolo); 7167 → 21 |
-| 2 | DESTINATION | `selector` | 4952 → "fx" |
-| 3 | ENVELOPE | `%` | ~linear; 28925 → ~88% |
-| 4 | PARAMETER | `selector` | Context-dependent on DESTINATION; raw 0 → "freq" when destination = "fx" |
+| 0 | SPEED | `tempo-dial` | 33 detents across a full turn; reads 8, 7, 6, 5, 4, 3, 2, 1 at detents 0, 3, 5, … 15, then the dial at 1/2 (17), 3/8 (21), 1/4 (25), 1/8 (29), 0 (33); each reading holds until the next |
+| 1 | AMOUNT | `discrete-99` | 0–99 linear across a full turn |
+| 2 | DESTINATION | `selector` | 1024 synth, 2144 envelope, 4160 fx, 7168 mix (same as lfo.element). The device doesn't save it reliably (its presets all load as fx); presets written with these raws load correctly |
+| 3 | ENVELOPE | `%` | linear % |
+| 4–6 | - | unused | always 0 |
+| 7 | PARAMETER | `selector` | Zones 6898.5 apart from 0: the knobs of the DESTINATION in order, then ALL when DESTINATION = fx (grid: 0 X SIZE, 6898 Y SIZE, 13797 Z FEEDBACK, 20695 MIX, 27594 ALL) |
 
 ### adsr (global, all synth types)
 

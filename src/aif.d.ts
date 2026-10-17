@@ -12,5 +12,18 @@ declare global {
     }
     /** public/layout-params.js: engine key -> parameter name per array index (null = unused). */
     OP1_LAYOUT?: Record<string, Array<string | null>>
+    /** public/mapping-data.js: scale type -> label, description, color. */
+    OP1_SCALES?: Record<string, { label: string; desc: string; color: string }>
+    /** public/mapping-data.js: [engine, index (or "4–7" for a fixed run), name, scale type,
+     * [raw, display] sample points, info]. */
+    OP1_MAPPINGS?: Array<[string, number | string, string, string, Array<[number, number | string]>, string]>
+    /** public/knob-model.js: knob travel and raw -> display, shared with the patch editor. */
+    OP1_KNOB?: {
+      range(eng: string, idx: number): [number, number]
+      display(eng: string, idx: number, raw: number): number | string | null
+      frac(eng: string, idx: number, raw: number): number
+      isSelector(eng: string, idx: number): boolean
+      isContinuous(eng: string, idx: number): boolean
+    }
   }
 }

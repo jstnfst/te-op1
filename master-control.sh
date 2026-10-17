@@ -24,7 +24,7 @@ DB="te-op1-db"
 PROJECT="te-op1"
 PROD="https://te-op1.pages.dev"
 LOCAL="http://127.0.0.1:8788"
-DEV_PORTS=(8788 5173)
+DEV_PORTS=(8788 8789)            # Vite (the site) and wrangler (the /api Functions)
 MC_DIR="$ROOT/.wrangler/mc"      # gitignored with the rest of .wrangler/
 PID_FILE="$MC_DIR/dev.pid"
 LOG_FILE="$MC_DIR/dev.log"
@@ -169,9 +169,7 @@ cmd_dev_up() {
     [ -z "$(port_pids "$p")" ] || die "port $p is already in use. If it's an old dev server: ./master-control.sh dev down"
   done
   [ -f .dev.vars ] || die ".dev.vars missing: run ./master-control.sh setup"
-  # port 8788 serves the built dist/ (wrangler's proxy can't reach Vite), so build first
-  say "Building the web app"
-  npm run --silent build >/dev/null
+  # Vite on 8788 serves the source live; it forwards /api to wrangler on 8789
   say "Starting the dev server (log: .wrangler/mc/dev.log)"
   if have setsid && ! is_windows; then setsid npm run dev >"$LOG_FILE" 2>&1 < /dev/null &
   else npm run dev >"$LOG_FILE" 2>&1 < /dev/null & fi

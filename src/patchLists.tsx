@@ -127,19 +127,25 @@ export function GridCard({ p, selected, sel, onTagClick, mod, chip, extra, onLik
   )
 }
 
+/** List view's columns (header labels, one per cell of ListRow). */
+export const PATCH_COLUMNS = {
+  kind: "patch",
+  labels: [<i className="list-head-box" title="Select" aria-label="Select" />, "Synth", "Preset", "Tags", "Downloads", "Actions"],
+}
+
 export function ListRow({ p, selected, sel, onTagClick, mod, chip, extra, onLiked }: RowProps) {
   return (
     <div className={"list-row" + (sel ? " selectable" : "") + (selected ? " selected" : "")} {...sel?.card}>
-      {sel && <span className="card-check list-check">{checkbox(p, sel)}</span>}
-      <span className="chip list-type">{p.type}</span>
-      {chip}
+      <span className="card-check list-check">{sel && checkbox(p, sel)}</span>
+      <span className="list-type"><span className="chip">{p.type}</span></span>
       <span className="list-title">
         <span className="list-name">{p.name}</span>
+        {chip}
         {p.author ? <span className="list-byline">by {p.author}</span> : null}
       </span>
       <div className="list-tags">{tagChips(p.tags.split(",").filter(Boolean).slice(0, 4), onTagClick)}</div>
+      <span className="list-dls"><DownloadCount n={p.download_count} /></span>
       <div className="list-actions">
-        <DownloadCount n={p.download_count} />
         <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
         <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
         <a className="btn list-dl" href={`/api/patches/${p.id}/download`}>Download .aif</a>
@@ -229,6 +235,7 @@ export function MyPatches({ selection }: { selection: Selection }) {
         view={view}
         noun={["patch", "patches"]}
         toolbar={<SelectionToolbar selection={selection} />}
+        columns={PATCH_COLUMNS}
         empty={<p className="muted">You haven't uploaded anything yet. <Link to="/library/upload">Upload one</Link>.</p>}
         renderItem={(p) => (
           <PatchItem
@@ -367,6 +374,7 @@ export function DiscoverPatches({ selection }: { selection: Selection }) {
         view={view}
         noun={["patch", "patches"]}
         toolbar={<SelectionToolbar selection={selection} />}
+        columns={PATCH_COLUMNS}
         empty={hasFilters ? (
           <>
             <p className="muted">No patches found</p>

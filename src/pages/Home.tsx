@@ -14,7 +14,7 @@ const SAMPLE_PRESET: Array<[string, string]> = [["name", "sirius_signals"], ["ty
 
 const SCALE_TYPES: Array<[string, string]> = [
   ["percent", "%"], ["centered", "centered %"], ["discrete", "discrete"], ["selector", "selector"],
-  ["hz", "hz (log)"], ["tempo", "tempo dial"], ["inverse", "ms inverse"], ["decimal", "decimal"],
+  ["hz", "hz"], ["tempo", "tempo dial"], ["decimal", "decimal"],
 ]
 
 /** The Library knob's detents: no filter, then every engine. */

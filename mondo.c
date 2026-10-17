@@ -966,7 +966,7 @@ static const ParamRow FX_PARAMS_MAX[] = {
 static const ParamRow LFO_MIN_PARAMS[] = {
     {"element",  {1024,-32767,1024,1024,0,0,0,0}},
     {"midi",     {1024,1024,1024,1024,1024,1024,1024,1024}},
-    {"random",   {0,0,1024,0,1024,0,0,0}},
+    {"random",   {0,0,1024,0,0,0,0,0}},
     {"tremolo",  {0,-32767,-32767,0,0,0,0,0}},
     {"value",    {0,-32767,1024,1024,0,0,0,0}},
     {NULL, {0}}   /* velocity handled dynamically */
@@ -975,7 +975,7 @@ static const ParamRow LFO_MIN_PARAMS[] = {
 static const ParamRow LFO_MAX_PARAMS[] = {
     {"element",  {7168,32767,7168,15360,0,0,0,0}},
     {"midi",     {15360,15360,15360,15360,7168,7168,7168,7168}},
-    {"random",   {32767,32767,7168,32767,15360,0,0,0}},
+    {"random",   {32767,32767,7168,32767,0,0,0,27594}},
     {"tremolo",  {32440,32767,32767,32767,0,0,0,32767}},
     {"value",    {16384,32767,11264,15360,28086,0,0,0}},
     {"velocity", {32767,32767,7168,15360,0,0,0,0}},
@@ -1143,6 +1143,11 @@ static int run_explore(int vel_dest_raw, int vel_param) {
     int si, fi, li, mi;
     int n = 0;
     int vel_min[8] = {0, -32767, vel_dest_raw, vel_param, 0, 0, 0, 0};
+    /* random LFO: DESTINATION at index 2, PARAMETER at index 7. The device
+       doesn't save DESTINATION reliably (presets it writes all load as fx),
+       so generated presets always write it explicitly. */
+    int rnd_min[8] = {0, 0, vel_dest_raw, 0, 0, 0, 0, 0};
+    int rnd_max[8] = {32767, 32767, vel_dest_raw, 32767, 0, 0, 0, 0};
 
     /* Count synth/fx/lfo type lengths */
     int n_synth = 0, n_fx = 0, n_lfo = 0;
@@ -1196,13 +1201,14 @@ static int run_explore(int vel_dest_raw, int vel_param) {
                     if (mi == 0) {  /* min */
                         knobs = param_lookup(SYNTH_KNOBS_MIN, synth, ZEROS);
                         fxp   = param_lookup(FX_PARAMS_MIN,   fx,    ZEROS);
-                        lfop  = (strcmp(lfo, "velocity") == 0)
-                                ? (const int *)vel_min
-                                : param_lookup(LFO_MIN_PARAMS, lfo, ZEROS);
+                        lfop  = (strcmp(lfo, "velocity") == 0) ? (const int *)vel_min
+                              : (strcmp(lfo, "random")   == 0) ? (const int *)rnd_min
+                              : param_lookup(LFO_MIN_PARAMS, lfo, ZEROS);
                     } else {        /* max */
                         knobs = param_lookup(SYNTH_KNOBS_MAX, synth, MAXS);
                         fxp   = param_lookup(FX_PARAMS_MAX,   fx,    MAXS);
-                        lfop  = param_lookup(LFO_MAX_PARAMS,  lfo,   MAXS);
+                        lfop  = (strcmp(lfo, "random") == 0) ? (const int *)rnd_max
+                              : param_lookup(LFO_MAX_PARAMS,  lfo,   MAXS);
                     }
 
                     if (strcmp(synth, "dbox") == 0)
@@ -1441,15 +1447,15 @@ static int cmd_build(int argc, char *argv[]) {
 
     /* -- explore subcommand -- */
     if (argc >= 2 && strcmp(argv[1], "explore") == 0) {
-        int vel_dest_raw = 1024;  /* synth */
+        int vel_dest_raw = 1024;  /* synth; velocity + random DESTINATION */
         int vel_param    = 1024;
         for (i = 2; i < argc - 1; i++) {
             if (strcmp(argv[i], "-dest") == 0) {
                 const char *d = argv[++i];
                 if      (strcmp(d, "synth")    == 0) vel_dest_raw = 1024;
-                else if (strcmp(d, "envelope") == 0) vel_dest_raw = 5824;
-                else if (strcmp(d, "fx")       == 0) vel_dest_raw = 10144;
-                else if (strcmp(d, "mix")      == 0) vel_dest_raw = 15360;
+                else if (strcmp(d, "envelope") == 0) vel_dest_raw = 2144;
+                else if (strcmp(d, "fx")       == 0) vel_dest_raw = 4160;
+                else if (strcmp(d, "mix")      == 0) vel_dest_raw = 7168;
             } else if (strcmp(argv[i], "-param") == 0) {
                 vel_param = atoi(argv[++i]);
             }

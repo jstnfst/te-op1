@@ -5,7 +5,7 @@ import { apiGet, apiSend, type PatchSummary } from "../api"
 import { LikeButton, DownloadCount } from "../like"
 import { loginPath } from "../paths"
 import { useSelection, SelectionToolbar } from "../packs"
-import { PatchItem, ViewToggle, useViewToggle } from "../patchLists"
+import { PATCH_COLUMNS, PatchItem, ViewToggle, useViewToggle } from "../patchLists"
 import { useLongList } from "../useLongList"
 import { LongList } from "../LongList"
 
@@ -223,6 +223,7 @@ export default function Pack() {
         list={items}
         view={view}
         noun={["patch", "patches"]}
+        columns={PATCH_COLUMNS}
         toolbar={
           <SelectionToolbar
             selection={selection}

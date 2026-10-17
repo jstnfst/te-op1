@@ -11,10 +11,23 @@
   <link rel="stylesheet" href="/site.css">
   <script src="/site-header.js" defer></script>
   <style>
-    /* Theme tokens (incl. --knob-null) + header/nav/footer chrome live in /site.css */
+    /* Theme tokens (incl. --knob-null, --c-<scale>) + header/nav/footer chrome
+       and the scale chips live in /site.css. Scale-type colors here are data:
+       every colored knob and key is that slot's mapping, as on the Lab home
+       and the Mappings page. */
+
+    /* --c per scale type, shared by knobs, row keys, and legend keys */
+    .s-percent  { --c: var(--c-percent); }
+    .s-centered { --c: var(--c-centered); }
+    .s-discrete { --c: var(--c-discrete); }
+    .s-selector { --c: var(--c-selector); }
+    .s-hz       { --c: var(--c-hz); }
+    .s-tempo    { --c: var(--c-tempo); }
+    .s-decimal  { --c: var(--c-decimal); }
+    .s-unknown  { --c: var(--muted); }
 
     /* ── FILTER ROW (page-specific, sits under the shared nav) ── */
-    .filter-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.04); background: var(--header-bg); }
+    .filter-nav { display: flex; flex-wrap: wrap; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.04); background: var(--header-bg); }
     .f-btn { font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: .12em; color: rgba(255,255,255,.28); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 7px 12px 6px; transition: color .15s, border-color .15s; }
     .f-btn:hover { color: rgba(255,255,255,.65); }
     .f-btn.active { color: rgba(255,255,255,.85); border-bottom-color: rgba(255,255,255,.3); }
@@ -22,130 +35,281 @@
 
     /* ── MAIN ── */
     main { max-width: 1200px; margin: 0 auto; padding: 28px 32px 80px; }
-    .intro { margin-bottom: 24px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
-    .intro p { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.9; max-width: 660px; }
+    .intro { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 40px; align-items: end;
+      margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .intro h1 { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 10px; }
+    .intro p { font-size: 13px; font-weight: 300; color: var(--muted); line-height: 1.7; max-width: 640px; }
     .intro code { font-family: inherit; background: var(--border); padding: 1px 5px; border-radius: 2px; font-size: 11px; color: var(--text); }
-    .intro a { color: var(--muted); }
-    .intro a:hover { color: var(--text); }
+    .intro a { color: var(--text); }
+    .stats { display: grid; grid-template-columns: repeat(3, auto); gap: 18px 32px; }
+    .stats div { display: flex; flex-direction: column-reverse; gap: 2px; }
+    .stats dt { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+    .stats dd { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+
+    /* ── LEGEND (scale types; a key highlights its slots on every card) ── */
+    .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 8px; }
+    .legend-title { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+    .key { display: inline-flex; align-items: center; gap: 7px; font-family: inherit; font-size: 10px; font-weight: 700;
+      letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: none;
+      border: 1px solid var(--border); border-radius: 4px; padding: 5px 9px 4px; transition: color .15s, border-color .15s; }
+    button.key:hover { color: var(--text); }
+    .key[aria-pressed="true"] { color: var(--text); border-color: var(--c); }
+    .key i { width: 12px; height: 8px; border-radius: 2px; background: var(--c); flex-shrink: 0; }
+    .key .n { font-weight: 400; letter-spacing: 0; opacity: .7; font-variant-numeric: tabular-nums; }
+    .key.static { border-color: transparent; padding-left: 4px; }
+    .key i.fixed { background: repeating-linear-gradient(135deg, var(--knob-null) 0 2px, transparent 2px 4px); }
+    .key i.unused { background: none; border: 1px dashed var(--knob-null); }
+    .legend-hint { font-size: 11px; font-weight: 300; color: var(--muted); margin-bottom: 8px; }
+
+    /* ── GROUPS ── */
+    .group { margin-top: 28px; }
+    .group-title { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border);
+      font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+    .group-title b { font-weight: 400; letter-spacing: 0; opacity: .6; }
 
     /* ── GRID + CARD ── */
-    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(258px, 1fr)); gap: 10px; }
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 16px 18px 14px; transition: box-shadow .18s, transform .18s; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(264px, 1fr)); gap: 10px; }
+    .card { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
+      padding: 14px 16px 12px; transition: border-color .18s, opacity .18s; }
     /* deep-linked card (#engine.key): a static orange frame marks where you landed */
     .card.targeted { border-color: var(--orange); box-shadow: 0 0 0 1px var(--orange) inset; }
-    .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,.5); transform: translateY(-2px); }
-    .card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-    .g-badge { font-size: 8px; font-weight: 700; letter-spacing: .18em; padding: 2px 6px 1px; border-radius: 2px; }
-    .g-badge.synth { background: rgba(255,72,0,.18);    color: var(--orange); }
-    .g-badge.fx    { background: rgba(59,158,234,.18);  color: var(--blue);   }
-    .g-badge.lfo   { background: rgba(139,92,246,.18);  color: var(--purple); }
-    .g-badge.adsr  { background: rgba(34,197,94,.18);   color: var(--green);  }
-    .g-badge.dbox  { background: rgba(255,72,0,.18);   color: var(--orange); }
-    .card-type { font-size: 18px; font-weight: 700; letter-spacing: .01em; margin-bottom: 12px; }
-    .knob-strip { margin-bottom: 12px; }
-    .knob-strip svg { display: block; overflow: visible; }
-    .knob-tick { transform-box: fill-box; transform-origin: 50% 100%; transition: transform .35s ease; }
-    .card:hover .knob-tick { transform: rotate(45deg); transition: transform .35s cubic-bezier(.34,1.56,.64,1); }
-    .param-list { list-style: none; }
-    .param-item { display: flex; align-items: baseline; gap: 8px; padding: 3px 0; }
-    .param-item + .param-item { border-top: 1px solid #24262C; }
-    .p-idx { font-size: 9px; font-weight: 300; color: var(--knob-null); width: 14px; flex-shrink: 0; text-align: right; }
-    .p-name { font-size: 11px; font-weight: 400; letter-spacing: .03em; }
+    .card.dim { opacity: .35; }
+    .card-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+    .card-type { font-size: 16px; font-weight: 700; letter-spacing: .01em; }
+    .card-type .pre { font-weight: 300; color: var(--muted); }
+    .card-count { font-size: 10px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
+    /* knob strip: one knob per array index, filled with its scale color */
+    .knob-strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; margin-bottom: 10px; padding: 10px 6px 6px;
+      background: var(--bg); border-radius: 4px; }
+    .kn { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .kn svg { display: block; overflow: visible; }
+    .kn .face { fill: var(--c); transition: opacity .15s; }
+    .kn .ring { fill: none; stroke: var(--text); stroke-width: 1.5; opacity: 0; transition: opacity .15s; }
+    .kn .tick { stroke: var(--bg); stroke-width: 2; stroke-linecap: round; }
+    .kn .empty { fill: none; stroke: var(--knob-null); stroke-width: 1.2; stroke-dasharray: 2 2; }
+    .kn .hatch { fill: url(#hatch); stroke: var(--knob-null); stroke-width: 1.2; }
+    .kn span { font-size: 10px; color: var(--knob-null); font-variant-numeric: tabular-nums; }
+    .kn.on span { color: var(--muted); }
+
+    .param-list { list-style: none; flex: 1; }
+    .param-item { display: grid; grid-template-columns: 10px 14px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+      padding: 4px 4px; border-radius: 2px; transition: background .12s, opacity .15s; }
+    .param-item + .param-item { box-shadow: 0 -1px 0 var(--bg); }
+    .p-key { width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
+    .p-key.fixed { background: repeating-linear-gradient(135deg, var(--knob-null) 0 2px, transparent 2px 4px); }
+    .p-idx { font-size: 10px; font-weight: 300; color: var(--knob-null); text-align: right; font-variant-numeric: tabular-nums; }
+    .p-name { font-size: 11px; font-weight: 400; letter-spacing: .03em; overflow-wrap: anywhere; }
+    .param-item.fixed .p-name { color: var(--muted); }
+    .card-foot { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border); font-size: 10px; letter-spacing: .1em; }
+    .card-foot a { color: var(--muted); text-decoration: none; }
+    .card-foot a:hover { color: var(--text); }
+
+    /* a hovered row and its knob light up together */
+    .param-item.hl { background: var(--bg); }
+    .kn.hl .ring { opacity: 1; }
+    /* legend highlight: other slots step back */
+    .param-item.dim { opacity: .3; }
+    .kn.dim .face, .kn.dim .hatch { opacity: .2; }
+
+    @media (hover: hover) and (pointer: fine) {
+      .card:hover { border-color: #474b54; }
+      .kn .tick { transition: transform .3s cubic-bezier(.25,1,.5,1); transform-box: view-box; }
+      .card:hover .kn .tick { transform: rotate(40deg); }
+    }
+    @media (max-width: 760px) {
+      .intro { grid-template-columns: 1fr; }
+    }
     @media (max-width: 640px) {
       main { padding: 20px 16px 60px; }
+      .filter-nav { padding: 0 8px; }
+      .stats dd { font-size: 16px; }
     }
     @media (prefers-reduced-motion: reduce) {
-      .card, .knob-tick, .card:hover .knob-tick { transition: none; transform: none; }
-      .card:hover { box-shadow: none; }
+      .card, .kn .face, .kn .ring, .kn .tick, .param-item { transition: none; }
+      .card:hover .kn .tick { transform: none; }
     }
   </style>
 </head>
 <body data-section="layout">
 <div data-site-header></div>
-<div class="filter-nav" aria-label="Filter by group">
-  <button class="f-btn active" data-g="all">ALL<span class="n" id="count-all">31</span></button>
-  <button class="f-btn" data-g="synth">SYNTH<span class="n">15</span></button>
-  <button class="f-btn" data-g="fx">FX<span class="n">9</span></button>
-  <button class="f-btn" data-g="lfo">LFO<span class="n">6</span></button>
-  <button class="f-btn" data-g="adsr">ADSR<span class="n">1</span></button>
-</div>
+<div class="filter-nav" aria-label="Filter by group" id="filters"></div>
 
 <main>
   <section class="intro">
-    <p>
-      Each OP-1 Field patch embeds a JSON blob in an AIFF-C container.
-      The blob holds the synth engine, one envelope (ADSR for most synths; dyna_env for dbox), one FX chain, and one LFO -
-      all as 16-bit integers (0&ndash;32767) in fixed 8-element arrays.
-      This page maps every known array index to a named parameter.
-      See <a href="display.html">Value Mappings</a> for raw-to-display value mappings
-      and <code>display-notes.md</code> for full scale documentation.
-    </p>
+    <div>
+      <h1>Knob layout</h1>
+      <p>
+        Each OP-1 Field patch embeds a JSON blob in an AIFF-C container: the synth engine, one envelope
+        (ADSR for most synths; dyna_env for dbox), one FX and one LFO, each a fixed 8-element array of
+        16-bit integers. Every card names the parameter behind each array index, colored by how its raw
+        value reads on screen. See <a href="/lab/mappings">Value mappings</a> for the raw-to-display
+        detail.
+      </p>
+    </div>
+    <dl class="stats" id="stats"></dl>
   </section>
-  <div id="grid" class="grid" role="list" aria-label="Parameter reference cards"></div>
+
+  <div class="legend" id="legend" aria-label="Scale types"></div>
+  <p class="legend-hint">Pick a scale type to highlight its knobs on every card</p>
+
+  <div id="groups"></div>
 </main>
 
 <div data-site-footer></div>
 
+<!-- shared hatch fill for firmware-fixed knobs -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <pattern id="hatch" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="2" height="4" style="fill:var(--knob-null)"></rect>
+    </pattern>
+  </defs>
+</svg>
+
 <script src="/layout-params.js"></script>
+<script src="/mapping-data.js"></script>
+<script src="/knob-model.js"></script>
 <script>
-  
-
-  // the table lives in /layout-params.js (shared with the landing page)
+  // the tables live in /layout-params.js, /mapping-data.js and /knob-model.js
+  // (shared with the Lab home, the Mappings page and the patch editor)
   const PARAMS = window.OP1_LAYOUT;
+  const SCALES = window.OP1_SCALES;
+  const K = window.OP1_KNOB;
 
+  const GROUPS = [['synth', 'Synth'], ['env', 'Envelope'], ['fx', 'FX'], ['lfo', 'LFO']];
+  const groupOf = key => (key === 'adsr' || key === 'dbox.dyna_env' ? 'env' : key.split('.')[0]);
 
-  function knobSVG(slots) {
-    const R = 7, gap = 19, pad = 2;
-    const w = 7 * gap + R * 2, h = R * 2 + pad * 2;
-    const circles = slots.map((name, i) => {
-      const cx = R + i * gap, cy = R + pad;
-      return name !== null
-        ? `<g transform="translate(${cx},${cy})"><circle r="${R}" fill="#FF4800"/>` +
-          `<line class="knob-tick" x1="0" y1="0" x2="0" y2="${-(R-2)}" stroke="white" stroke-width="1.5" stroke-linecap="round"/></g>`
-        : `<circle cx="${cx}" cy="${cy}" r="${R}" fill="none" stroke="#4A4E57" stroke-width="1.5"/>`;
-    }).join('');
-    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true">${circles}</svg>`;
-  }
-
-  function renderCards(filter) {
-    const grid = document.getElementById('grid');
-    grid.innerHTML = '';
-    Object.entries(PARAMS).forEach(([key, rawParams]) => {
-      const parts = key.split('.');
-      const [group, type] = parts.length > 1 ? parts : [parts[0], parts[0].toUpperCase()];
-      if (filter !== 'all' && group !== filter) return;
-      const slots = [...rawParams];
-      while (slots.length < 8) slots.push(null);
-      const activeParams = slots.map((n, i) => n !== null ? {idx: i, name: n} : null).filter(Boolean);
-      const card = document.createElement('article');
-      card.className = 'card';
-      card.id = key;
-      card.setAttribute('role', 'listitem');
-      card.innerHTML =
-        `<div class="card-head">
-          <span class="g-badge ${group}">${group.toUpperCase()}</span>
-        </div>
-        <div class="card-type">${type}</div>
-        <div class="knob-strip">${knobSVG(slots)}</div>
-        <ul class="param-list" aria-label="${type} parameters">
-          ${activeParams.map(({idx, name}) =>
-            `<li class="param-item"><span class="p-idx">${idx}</span><span class="p-name">${name}</span></li>`
-          ).join('')}
-        </ul>`;
-      grid.appendChild(card);
-    });
-  }
-
-  document.querySelectorAll('.f-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.f-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderCards(btn.dataset.g);
-    });
+  // firmware-fixed runs ("4–7") from the mappings table
+  const FIXED = {};
+  window.OP1_MAPPINGS.forEach(([eng, idx, , type]) => {
+    if (type !== 'fixed' || typeof idx !== 'string') return;
+    const [a, b] = idx.split('–').map(Number);
+    for (let i = a; i <= b; i++) (FIXED[eng] = FIXED[eng] || {})[i] = idx;
   });
 
-  renderCards('all');
+  // every engine as { key, group, pre, name, slots[8] }, slot = { idx, name, scale } | fixed | null
+  const ENGINES = Object.entries(PARAMS).map(([key, names]) => {
+    const dot = key.indexOf('.');
+    const slots = [];
+    for (let i = 0; i < 8; i++) {
+      const name = names[i];
+      if (name) {
+        const e = K.entry(key, i);
+        slots.push({ idx: i, name, scale: e && SCALES[e.scale] ? e.scale : 'unknown' });
+      } else if (FIXED[key] && FIXED[key][i]) slots.push({ idx: i, fixed: FIXED[key][i] });
+      else slots.push(null);
+    }
+    return { key, group: groupOf(key), pre: dot > 0 ? key.slice(0, dot + 1) : '', name: dot > 0 ? key.slice(dot + 1) : key, slots };
+  });
+
+  const named = ENGINES.flatMap(e => e.slots.filter(s => s && s.name));
+  const scaleCount = {};
+  named.forEach(s => { scaleCount[s.scale] = (scaleCount[s.scale] || 0) + 1; });
+
+  // ── header numbers ──
+  document.getElementById('stats').innerHTML = [
+    [ENGINES.length, 'engines'], [named.length, 'named knobs'],
+    [Object.keys(scaleCount).filter(t => t !== 'unknown').length, 'scale types'],
+  ].map(([n, l]) => `<div><dt>${l}</dt><dd>${n}</dd></div>`).join('');
+
+  // ── filter row ──
+  const filters = document.getElementById('filters');
+  [['all', 'All', ENGINES.length], ...GROUPS.map(([g, l]) => [g, l, ENGINES.filter(e => e.group === g).length])]
+    .forEach(([g, l, n]) => {
+      const b = document.createElement('button');
+      b.className = 'f-btn' + (g === 'all' ? ' active' : '');
+      b.dataset.g = g;
+      b.innerHTML = `${l.toUpperCase()}<span class="n">${n}</span>`;
+      filters.appendChild(b);
+    });
+
+  // ── legend: most common scale first ──
+  let hl = null;
+  const legend = document.getElementById('legend');
+  legend.innerHTML = '<span class="legend-title">Scale</span>' +
+    Object.keys(scaleCount).filter(t => t !== 'unknown').sort((a, b) => scaleCount[b] - scaleCount[a])
+      .map(t => `<button class="key s-${t}" data-t="${t}" aria-pressed="false"><i></i>${SCALES[t].label}<span class="n">${scaleCount[t]}</span></button>`).join('') +
+    '<span class="key static"><i class="fixed"></i>fixed</span><span class="key static"><i class="unused"></i>unused</span>';
+  legend.addEventListener('click', ev => {
+    const b = ev.target.closest('button.key');
+    if (!b) return;
+    hl = hl === b.dataset.t ? null : b.dataset.t;
+    legend.querySelectorAll('button.key').forEach(k => k.setAttribute('aria-pressed', String(k.dataset.t === hl)));
+    applyHighlight();
+  });
+
+  function applyHighlight() {
+    document.querySelectorAll('[data-scale]').forEach(el => el.classList.toggle('dim', !!hl && el.dataset.scale !== hl));
+    document.querySelectorAll('.card').forEach(c => c.classList.toggle('dim', !!hl && !c.querySelector(`[data-scale="${hl}"]`)));
+  }
+
+  // ── cards ──
+  const R = 9;
+  function knob(slot, i) {
+    const box = R * 2 + 4, c = box / 2;
+    let body, cls = 'kn', attrs = `data-i="${i}"`;
+    if (slot && slot.name) {
+      cls += ` on s-${slot.scale}`;
+      attrs += ` data-scale="${slot.scale}"`;
+      body = `<circle class="ring" cx="${c}" cy="${c}" r="${R + 1.5}"/><circle class="face" cx="${c}" cy="${c}" r="${R}"/>` +
+        `<line class="tick" x1="${c}" y1="${c}" x2="${c}" y2="${c - R + 3}" style="transform-origin:${c}px ${c}px"/>`;
+    } else if (slot) {
+      body = `<circle class="hatch" cx="${c}" cy="${c}" r="${R - 1}"/>`;
+    } else {
+      body = `<circle class="empty" cx="${c}" cy="${c}" r="${R - 1}"/>`;
+    }
+    const title = slot ? (slot.name ? `${i} ${slot.name}` : `${i} fixed`) : `${i} unused`;
+    return `<div class="${cls}" ${attrs} title="${title}"><svg width="${box}" height="${box}" viewBox="0 0 ${box} ${box}" aria-hidden="true">${body}</svg><span>${i}</span></div>`;
+  }
+
+  function cardHtml(e) {
+    const n = e.slots.filter(s => s && s.name).length;
+    const rows = [];
+    e.slots.forEach(s => {
+      if (s && s.name) rows.push(`<li class="param-item s-${s.scale}" data-i="${s.idx}" data-scale="${s.scale}">` +
+        `<i class="p-key"></i><span class="p-idx">${s.idx}</span><span class="p-name">${s.name}</span>` +
+        `<span class="scale-chip chip-${s.scale}">${s.scale === 'unknown' ? '?' : SCALES[s.scale].label}</span></li>`);
+    });
+    const fixedRun = e.slots.find(s => s && s.fixed);
+    if (fixedRun) rows.push(`<li class="param-item fixed"><i class="p-key fixed"></i><span class="p-idx"></span>` +
+      `<span class="p-name">${fixedRun.fixed} fixed by firmware</span><span></span></li>`);
+    return `<article class="card" id="${e.key}" role="listitem">
+        <div class="card-head"><div class="card-type"><span class="pre">${e.pre}</span>${e.name}</div><span class="card-count">${n} / 8</span></div>
+        <div class="knob-strip">${e.slots.map(knob).join('')}</div>
+        <ul class="param-list" aria-label="${e.key} parameters">${rows.join('')}</ul>
+        <div class="card-foot"><a href="/lab/mappings#${encodeURIComponent(e.key)}">VALUE MAPPINGS →</a></div>
+      </article>`;
+  }
+
+  function render(filter) {
+    document.getElementById('groups').innerHTML = GROUPS.filter(([g]) => filter === 'all' || g === filter).map(([g, label]) => {
+      const list = ENGINES.filter(e => e.group === g);
+      return `<section class="group" aria-label="${label}"><h2 class="group-title">${label}<b>${list.length}</b></h2>` +
+        `<div class="grid" role="list">${list.map(cardHtml).join('')}</div></section>`;
+    }).join('');
+    applyHighlight();
+  }
+
+  filters.addEventListener('click', ev => {
+    const btn = ev.target.closest('.f-btn');
+    if (!btn) return;
+    filters.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('active', b === btn));
+    render(btn.dataset.g);
+  });
+
+  // hovering a row lights its knob, and the other way round
+  const groupsEl = document.getElementById('groups');
+  function hover(ev, on) {
+    const el = ev.target.closest('.param-item[data-i], .kn.on');
+    if (!el) return;
+    const card = el.closest('.card');
+    card.querySelectorAll(`[data-i="${el.dataset.i}"]`).forEach(x => x.classList.toggle('hl', on));
+  }
+  groupsEl.addEventListener('mouseover', ev => hover(ev, true));
+  groupsEl.addEventListener('mouseout', ev => hover(ev, false));
+
+  render('all');
 
   // Deep link: /lab/layout#fx.spring scrolls to that engine's card and marks
   // it (static outline, no animation). Used by the landing page's Lab dial.
@@ -154,9 +318,9 @@
     const key = decodeURIComponent(location.hash.slice(1));
     if (!key) return;
     let card = document.getElementById(key);
-    if (!card && window.OP1_LAYOUT[key]) {
+    if (!card && PARAMS[key]) {
       // a group filter is hiding it: go back to ALL first
-      document.querySelector('.f-btn[data-g="all"]').click();
+      filters.querySelector('.f-btn[data-g="all"]').click();
       card = document.getElementById(key);
     }
     if (!card) return;

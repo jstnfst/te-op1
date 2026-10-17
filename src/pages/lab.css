@@ -1,0 +1,179 @@
+/* Lab home (/lab): hero + stats, the format map (engines x array slots,
+   colored by scale type) with its slot panel, then the full-reference rows.
+   Scale-type colors here are data: every colored mark is a slot's mapping. */
+
+/* --c per scale type, shared by map cells, legend keys, slot keys, and the knob */
+.labhome .s-percent  { --c: var(--c-percent); }
+.labhome .s-centered { --c: var(--c-centered); }
+.labhome .s-discrete { --c: var(--c-discrete); }
+.labhome .s-selector { --c: var(--c-selector); }
+.labhome .s-hz       { --c: var(--c-hz); }
+.labhome .s-tempo    { --c: var(--c-tempo); }
+.labhome .s-decimal  { --c: var(--c-decimal); }
+.labhome .s-unknown  { --c: var(--muted); }
+
+/* ── hero ── */
+.lab-hero { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 24px 48px; align-items: end;
+  padding-bottom: 28px; border-bottom: 1px solid var(--border); }
+.labhome .lab-stats { display: grid; grid-template-columns: repeat(3, auto); gap: 18px 36px; margin: 0; }
+.labhome .lab-stats div { display: flex; flex-direction: column-reverse; gap: 2px; }
+.labhome .lab-stats dt { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.labhome .lab-stats dd { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) { .lab-hero { grid-template-columns: 1fr; } .labhome .lab-stats { justify-content: start; } }
+
+/* ── format map ── */
+.fmap-section { margin-top: 36px; }
+.fmap-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 20px; }
+.fmap-head h2 { margin: 0; }
+.fmap-how { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; max-width: 620px; }
+
+.fmap-legend { display: flex; flex-wrap: wrap; gap: 5px; margin: 16px 0 18px; }
+.fmap-key, .fmap-key-static { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--muted); padding: 5px 7px 4px;
+  border: 1px solid var(--border); border-radius: 2px; background: none; }
+.fmap-key { transition: color .15s, border-color .15s; }
+.fmap-key:hover { color: var(--text); border-color: #474b54; }
+.fmap-key[aria-pressed="true"] { color: var(--text); border-color: var(--c); }
+.fmap-key i, .fmap-key-static i { width: 12px; height: 8px; border-radius: 2px; background: var(--c); flex-shrink: 0; }
+.fmap-key-n { font-weight: 400; letter-spacing: 0; opacity: .7; font-variant-numeric: tabular-nums; }
+.fmap-key-static { border-color: transparent; padding-left: 4px; }
+.fmap-key-static i.fixed { background: repeating-linear-gradient(135deg, var(--knob-null) 0 2px, transparent 2px 4px); }
+.fmap-key-static i.unused { background: none; border: 1px dashed var(--border); }
+
+.fmap-body { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 32px; align-items: start; }
+
+.fmap { --label-w: 108px; min-width: 0; }
+.fmap-row { display: grid; grid-template-columns: var(--label-w) repeat(8, minmax(0, 1fr)); gap: 3px; align-items: center; }
+.fmap-row + .fmap-row { margin-top: 3px; }
+.fmap-label { font-size: 11px; font-weight: 400; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  padding-right: 8px; transition: color .12s; }
+.fmap-row.on .fmap-label { color: var(--text); }
+.fmap-row.pinned .fmap-label { font-weight: 700; color: var(--text); }
+.fmap-cols span { font-size: 9px; font-weight: 700; letter-spacing: .14em; color: var(--knob-null); text-align: center; text-transform: uppercase;
+  transition: color .12s; }
+.fmap-cols .fmap-label { text-align: left; }
+.fmap-cols span.on { color: var(--text); }
+.fmap-group-title { margin: 14px 0 6px; padding-bottom: 4px; border-bottom: 1px solid var(--border);
+  font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
+.fmap-group-title b { font-weight: 400; letter-spacing: 0; opacity: .6; margin-left: 4px; }
+.fmap-group:first-of-type .fmap-group-title { margin-top: 8px; }
+.fmap [role="gridcell"] { display: block; }
+
+.fmap-cell { display: block; width: 100%; height: 16px; padding: 0; border: 0; border-radius: 2px;
+  background: color-mix(in srgb, var(--c) 62%, var(--bg)); transition: background .12s, opacity .15s, box-shadow .12s; }
+.fmap-cell:hover { background: var(--c); }
+.fmap-cell.s-unused { background: none; box-shadow: inset 0 0 0 1px #2a2c33; }
+.fmap-cell.s-unused:hover { box-shadow: inset 0 0 0 1px var(--muted); }
+.fmap-cell.s-fixed { background: repeating-linear-gradient(135deg, var(--knob-null) 0 2px, transparent 2px 5px); }
+.fmap-cell.pinned { background: var(--c, transparent); box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text); }
+.fmap-cell.s-unused.pinned, .fmap-cell.s-fixed.pinned { box-shadow: 0 0 0 2px var(--bg), 0 0 0 3px var(--text); }
+.fmap-cell.dim { opacity: .12; }
+.fmap-cell:focus-visible { outline-offset: 3px; }
+
+/* ── slot panel ── */
+.fpanel { position: sticky; top: calc(var(--site-header-h, 88px) + 16px); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 16px 18px 14px; transition: border-color .15s; }
+.fpanel.preview { border-color: #474b54; }
+.fpanel-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.fpanel-group { font-size: 8px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted);
+  border: 1px solid var(--border); border-radius: 2px; padding: 2px 6px 1px; }
+.fpanel-engine { font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+
+.fpanel-strip { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; margin-bottom: 14px; }
+.fpanel-slotkey { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 4px 0 2px; background: none;
+  border: 1px solid transparent; border-radius: 4px; color: var(--knob-null); font-size: 9px; transition: border-color .12s, color .12s; }
+.fpanel-slotkey i { width: 16px; height: 16px; border-radius: 50%; background: var(--c, none); }
+.fpanel-slotkey.s-unused i { background: none; box-shadow: inset 0 0 0 1.5px var(--knob-null); }
+.fpanel-slotkey.s-fixed i { background: repeating-linear-gradient(135deg, var(--knob-null) 0 2px, transparent 2px 4px); }
+.fpanel-slotkey:hover { color: var(--text); }
+.fpanel-slotkey.on { color: var(--text); border-color: var(--border); background: var(--bg); }
+
+.fpanel-title { display: flex; align-items: baseline; gap: 8px; }
+.fpanel-idx { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.fpanel-name { font-size: 16px; font-weight: 700; line-height: 1.3; }
+.fpanel-scale { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-size: 11px; font-weight: 300;
+  color: var(--muted); line-height: 1.5; }
+
+.fpanel-dial { display: flex; align-items: center; gap: 16px; margin: 14px 0 6px; }
+.knob-big { width: 120px; height: 120px; flex-shrink: 0; cursor: ns-resize; touch-action: none; user-select: none; }
+.knob-big:focus-visible { outline-offset: 0; border-radius: 50%; }
+.kb-sweep { fill: none; stroke: var(--border); stroke-width: 2; }
+.kb-fill { fill: none; stroke: var(--c); stroke-width: 3; stroke-linecap: round; }
+.kb-tick { stroke: color-mix(in srgb, var(--c) 55%, var(--bg)); stroke-width: 3; stroke-linecap: round; cursor: pointer; transition: stroke .12s; }
+.kb-tick:hover { stroke: var(--c); }
+.kb-tick.on { stroke: var(--text); }
+.kb-body { fill: var(--bg); stroke: var(--border); stroke-width: 1.5; }
+.kb-pointer { transform-origin: 60px 60px; }
+/* detented knobs ease between detents; turning knobs follow the drag 1:1 */
+.knob-big.stepped .kb-pointer { transition: transform .2s cubic-bezier(.25, 1, .5, 1); }
+.kb-pointer line { stroke: var(--c); stroke-width: 3; stroke-linecap: round; }
+.kb-cap { fill: var(--border); }
+
+.fpanel-readout { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fpanel-readout > div { display: flex; align-items: baseline; gap: 8px; }
+.ro-k { font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.ro-v { font-size: 16px; font-weight: 700; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+/* raw and display each sit on their own line under their label: option
+   names ("reverse sawtooth", "sound output") wrap at word breaks */
+.fpanel-readout > .ro-line { flex-direction: column; align-items: flex-start; gap: 4px; }
+.ro-v.hot { font-size: 16px; font-weight: 800; line-height: 1.3; color: var(--c); overflow-wrap: break-word; }
+.fpanel-readout .ro-arrow { margin: 4px 0 2px; font-size: 11px; color: var(--knob-null); line-height: 1; }
+.fpanel-readout .ro-step { margin-top: 6px; font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--knob-null); }
+
+.fpanel-axis { margin-top: 10px; }
+.axis-track { position: relative; height: 18px; }
+.axis-track::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 2px; background: var(--border); }
+.axis-range { position: absolute; top: 8px; height: 2px; background: var(--c); opacity: .5; }
+.axis-zero { position: absolute; top: 3px; width: 1px; height: 12px; background: var(--knob-null); }
+.axis-pt { position: absolute; top: 4px; width: 10px; height: 10px; margin-left: -5px; padding: 0; border-radius: 50%;
+  border: 2px solid var(--surface); background: color-mix(in srgb, var(--c) 60%, var(--bg)); transition: transform .12s, background .12s; }
+.axis-pt:hover { background: var(--c); }
+.axis-pt.on { background: var(--text); z-index: 1; }
+.axis-tick { position: absolute; top: 4px; width: 2px; height: 10px; margin-left: -1px; background: color-mix(in srgb, var(--c) 60%, var(--bg)); }
+.axis-tick.on { background: var(--c); }
+.axis-ends { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--knob-null); font-variant-numeric: tabular-nums; }
+
+.fpanel-info { margin-top: 10px; font-size: 10px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+.fpanel-empty { margin: 18px 0 8px; font-size: 12px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+.fpanel-links { display: flex; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
+.fpanel-links a { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); text-decoration: none; }
+.fpanel-links a:hover { color: var(--text); }
+
+@media (max-width: 900px) {
+  .fmap-body { grid-template-columns: 1fr; }
+  .fpanel { position: static; order: -1; }
+}
+@media (max-width: 480px) {
+  .fmap { --label-w: 76px; }
+  .fmap-label { font-size: 10px; }
+  .fmap-row { gap: 2px; }
+}
+
+/* ── full-reference rows ── */
+.lab-tools-sec { margin-top: 44px; }
+.lab-toolrows { list-style: none; border-top: 1px solid var(--border); }
+.lab-toolrows li { border-bottom: 1px solid var(--border); }
+.lab-toolrows a { display: grid; grid-template-columns: 28px 160px minmax(0, 1fr) auto; gap: 4px 16px; align-items: baseline;
+  padding: 14px 4px; text-decoration: none; color: var(--text); transition: background .15s; }
+.lab-toolrows a:hover { background: var(--surface); }
+.lab-tool-n { font-size: 10px; color: var(--knob-null); font-variant-numeric: tabular-nums; }
+.lab-toolrows b { font-size: 14px; font-weight: 700; }
+.lab-toolrows a > span:not(.lab-tool-n) { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.6; }
+.lab-toolrows i { font-style: normal; color: var(--muted); transition: transform .18s, color .18s; }
+.lab-toolrows a:hover i { color: var(--text); transform: translateX(3px); }
+@media (max-width: 640px) {
+  .lab-toolrows a { grid-template-columns: 28px minmax(0, 1fr) auto; }
+  .lab-toolrows a > span:not(.lab-tool-n) { grid-column: 2; grid-row: 2; }
+}
+
+/* ── firmware known issues ── */
+.fw-issues { list-style: none; margin-top: 14px; border-top: 1px solid var(--border); }
+.fw-issues li { padding: 14px 4px; border-bottom: 1px solid var(--border); max-width: 72ch; }
+.fw-issues h3 { margin: 0 0 6px; font-size: 13px; font-weight: 700; }
+.fw-issues p { margin: 0 0 6px; font-size: 11px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+.fw-issues .fw-fix { margin: 0; color: var(--text); }
+.fw-issues .fw-fix b { margin-right: 6px; font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .kb-pointer, .axis-pt, .fmap-cell, .lab-toolrows i { transition: none; }
+}

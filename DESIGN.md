@@ -329,6 +329,28 @@ Below 900px the scope is hidden: it is pointer-driven, and on small (usually tou
 screens it would only push the two paths below the fold. Otherwise the scope (same language as the patch page's
 ADSR scope) shows a stylized per-engine waveform that crossfades as the knob turns.
 
+### Format Map (signature)
+The Lab home (`/lab`, `src/pages/Lab.tsx`) joins the two reference tables into one
+view: `public/layout-params.js` (which parameter sits at each array index) and
+`public/mapping-data.js` (how that slot's raw value displays; the same table the
+Mappings page renders). A grid holds one row per engine (grouped Synth, Envelope,
+FX, LFO) and one column per array index. Each cell is filled with its slot's
+scale-type color, so the colors are data. Firmware constants are hatched
+Knob Null, and unused slots are an empty hairline outline. The legend keys (sorted
+by count) are toggles that dim every other type. Hovering a cell previews it in
+the slot panel; a click pins it, and the URL keeps it (`?e=adsr&i=4`). Arrow keys
+walk the grid with a roving tabindex. The sticky slot panel shows the engine's
+eight slot keys, the slot's name and scale chip, and the slot's knob. The knob
+uses the same model as the patch editor (`public/knob-model.js`: each knob's raw
+travel and its raw → display formula), so it reads exactly as the editor does.
+Percent and centered knobs turn continuously over their travel (drag up/right, Shift
+for fine; arrows step 1%). Selectors step through their named options, and scales
+without a general formula (discrete, hz, tempo, ...) step through their known
+points. Under the knob, a raw axis spans the knob's travel, filled to the current
+value. Each knob starts mid-travel (a centered knob at 0). Detented knobs ease between detents; turning knobs follow the drag 1:1.
+Under 900px the panel
+stacks above the map.
+
 ### Selection Toolbar (signature)
 The first line of a long list's sticky bar (`SelectionToolbar` in `src/packs.tsx`,
 inside `.listbar`) on every selectable patch list: Browse, Mine, Favorites, and a
