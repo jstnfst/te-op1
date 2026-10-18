@@ -17,21 +17,25 @@ main.landing { max-width: none; padding: 0; }
   --hero-ink-2: var(--c-centered);
   --hero-ink-3: var(--c-decimal);
   --hero-glow: .42;
-  position: relative; overflow: hidden; padding: 64px 32px 40px; border-bottom: 1px solid var(--border);
+  position: relative; overflow: hidden; padding: 40px 32px 40px; border-bottom: 1px solid var(--border);
   background: var(--hero-ground); }
 .hero > .hero-shader { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block;
   opacity: 0; transition: opacity .6s; }
 .hero > .hero-shader.ready { opacity: 1; }
-/* fade the background into the page at the hero's foot; the fork panels sit
-   in the lower half, so the shader still shows through their glass */
+/* darken the shader behind the eyebrow at the top, and fade it into the page
+   at the hero's foot; the fork panels sit in the lower half, so the shader
+   still shows through their glass */
 .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, transparent 55%, var(--bg) 100%); }
+  background:
+    linear-gradient(to bottom, color-mix(in srgb, var(--bg) 92%, transparent) 0, color-mix(in srgb, var(--bg) 70%, transparent) 64px, transparent 132px),
+    linear-gradient(to bottom, transparent 55%, var(--bg) 100%); }
 .hero > * { position: relative; z-index: 1; }
 
 /* minmax(0, …): column widths come from the grid, never from content, so the
    scope's live readouts can't widen (and so resize) anything while dialing */
 .hero-top { max-width: 1180px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; }
-.hero .eyebrow { margin-bottom: 22px; }
+/* one line above both the title and the scope, over the darkened top */
+.hero .hero-eyebrow { max-width: 1180px; margin: 0 auto 26px; color: color-mix(in srgb, var(--text) 72%, var(--muted)); }
 .land-title { font-size: clamp(44px, 6.4vw, 88px); font-weight: 800; line-height: .98; letter-spacing: -.035em; color: var(--text); }
 .land-title-sub { font-size: .62em; font-weight: 300; color: var(--muted); letter-spacing: -.04em; }
 
@@ -48,6 +52,8 @@ main.landing { max-width: none; padding: 0; }
   text-transform: uppercase; color: rgba(255,255,255,.32); transition: color .2s; }
 .scope-led::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.16);
   transition: background .2s, box-shadow .2s; }
+a.scope-led { text-decoration: none; }
+a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .scope[data-side="library"] .led-library { color: rgba(255,255,255,.75); }
 .scope[data-side="library"] .led-library::before { background: var(--orange); box-shadow: 0 0 8px rgba(255,72,0,.8); }
 .scope[data-side="lab"] .led-lab { color: rgba(255,255,255,.75); }
@@ -121,7 +127,10 @@ main.landing { max-width: none; padding: 0; }
 .fork-panel:hover .fork-key, .fork-panel:focus-visible .fork-key { background: var(--orange); border-color: var(--orange); color: var(--orange-on); }
 .fork-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
 
-.fork-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; }
+/* title and copy start at the top in both panels, whatever the glyph's
+   height; the CTA keeps to the bottom, so the two panels read as a pair */
+.fork-body { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.fork-cta { margin-top: auto; }
 .fork-title { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 10px; }
 .fork-desc { font-size: 13px; font-weight: 300; line-height: 1.7; color: var(--muted); max-width: 44ch; }
 .fork-cta { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); transition: color .2s; }

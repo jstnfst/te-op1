@@ -1,4 +1,5 @@
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react"
+import { Link } from "react-router-dom"
 import { LAYOUT_SAMPLES } from "./layoutSamples"
 
 /** Which path the visitor is leaning toward, as read from the fork panel under the pointer. */
@@ -168,6 +169,8 @@ export function Scope({ ref }: { ref: Ref<ScopeHandle> }) {
   }
 
   function draw() {
+    // a late call (pointer/blur events, a last frame) after unmount: nothing to draw into
+    if (!figRef.current) return
     const st = s.current
     let d = ""
     for (let i = 0; i <= POINTS; i++) {
@@ -321,14 +324,15 @@ export function Scope({ ref }: { ref: Ref<ScopeHandle> }) {
   for (let i = 1; i < SLOTS; i++) slotGrid.push(<line key={i} x1={(W / SLOTS) * i} y1={0} x2={(W / SLOTS) * i} y2={H} />)
 
   return (
-    <figure className="scope" aria-hidden="true" ref={figRef}>
+    <figure className="scope" ref={figRef}>
+      {/* the two LEDs double as the two paths' front doors */}
       <div className="scope-bar">
-        <span className="scope-leds">
-          <span className="scope-led led-library">lib</span>
-          <span className="scope-led led-lab">lab</span>
-        </span>
+        <nav className="scope-leds" aria-label="Paths">
+          <Link className="scope-led led-library" to="/library">lib</Link>
+          <Link className="scope-led led-lab" to="/lab">lab</Link>
+        </nav>
       </div>
-      <div className="scope-screen-wrap">
+      <div className="scope-screen-wrap" aria-hidden="true">
         <svg className="scope-screen" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none">
           <g className="scope-grid">{grid}</g>
           <g ref={waveGridRef} className="scope-grid">{waveGrid}</g>
@@ -347,7 +351,7 @@ export function Scope({ ref }: { ref: Ref<ScopeHandle> }) {
           ))}
         </div>
       </div>
-      <div className="scope-readout">
+      <div className="scope-readout" aria-hidden="true">
         {ro.map((r, i) => (
           <span className="ro" key={i}><span ref={r} /><b ref={rv[i]} /></span>
         ))}

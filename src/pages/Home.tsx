@@ -201,9 +201,9 @@ export default function Home() {
         onPointerLeave={() => scope.current?.activate(false)}
       >
         <HeroShader host={heroRef} />
+        <p className="eyebrow hero-eyebrow">OP-1 Field · community patches + format reference</p>
         <div className="hero-top">
           <div className="hero-copy">
-            <p className="eyebrow">OP-1 Field · community patches + format reference</p>
             <h1 className="land-title">
               Patches for<br />your OP-1<br /><span className="land-title-sub">and how they work</span>
             </h1>

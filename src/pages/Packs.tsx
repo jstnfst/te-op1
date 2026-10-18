@@ -8,6 +8,7 @@ import { loginPath } from "../paths"
 import { DeleteButton, useViewToggle, ViewToggle, VisibilityButton } from "../patchLists"
 import { useLongList } from "../useLongList"
 import { LongList } from "../LongList"
+import { HowSteps, type Step } from "./Library"
 
 type View = "grid" | "list"
 
@@ -99,8 +100,8 @@ export function PackItem({ p, view, showAuthor, onLiked, community, owner }: Pac
   )
 }
 
-/** The viewer's own packs. `shelf` = the Packs page's titled section; Mine uses the plain fold. */
-export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolean; pageParam?: string }) {
+/** The viewer's own packs (Mine). */
+export function MyPacks({ pageParam = "ppage" }: { pageParam?: string }) {
   const [name, setName] = useState("")
   const [err, setErr] = useState("")
   const [view, setView] = useViewToggle("te-op1-packs-view")
@@ -134,14 +135,8 @@ export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolea
 
   const count = list.total
   return (
-    <Collapsible
-      storageKey="te-op1-packs-mine-open"
-      className={shelf ? "shelf" : undefined}
-      summary={shelf
-        ? <><span className="shelf-title">Your packs</span>{count !== null && <span className="shelf-count">{count}</span>}</>
-        : `My packs${count === null ? "" : ` (${count})`}`}
-    >
-      <div className="browse-head" style={{ margin: shelf ? "4px 0 12px" : "16px 0 12px" }}>
+    <Collapsible storageKey="te-op1-packs-mine-open" summary={`My packs${count === null ? "" : ` (${count})`}`}>
+      <div className="browse-head" style={{ margin: "16px 0 12px" }}>
         <div className="row">
           <input
             type="text"
@@ -189,20 +184,20 @@ function DiscoverPacks() {
 
   return (
     <>
-      <div className="browse-head" style={{ margin: "16px 0 12px" }}>
-        <div className="row">
-          <input
-            type="search"
-            placeholder="Search public packs…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            aria-label="Search public packs"
-          />
-          <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort order">
-            <option value="">Newest</option>
-            <option value="likes">Most liked</option>
-          </select>
-        </div>
+      {/* same filter row as the patch browser: search, sort, view */}
+      <div className="filter-row">
+        <input
+          className="search-big"
+          type="search"
+          placeholder="Search packs by name…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search packs by name"
+        />
+        <select className="sort-select" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort order">
+          <option value="">Newest</option>
+          <option value="likes">Most liked</option>
+        </select>
         <ViewToggle view={view} setView={setView} />
       </div>
       <LongList
@@ -217,26 +212,33 @@ function DiscoverPacks() {
   )
 }
 
+const STEPS: Step[] = [
+  { n: "1", title: "Find", body: "Search by name, or sort by most liked" },
+  { n: "2", title: "Open", body: "See every patch inside before you take it" },
+  { n: "3", title: "Take", body: "Download the whole pack as one .zip" },
+]
+
+/** /library/packs - public packs, laid out like the patch browser. Your own live in Mine. */
 export default function Packs() {
   const { user } = useAuth()
 
   return (
     <>
-      <h1 className="hero-title">Packs</h1>
-      <p className="lead">
-        Curated sets of patches, downloaded as one .zip.
-        {!user && <> <Link to={loginPath("/library/packs")}>Log in</Link> to build your own.</>}
-      </p>
-
-      {user && <MyPacks shelf pageParam="ypage" />}
-
-      <section className="community">
-        <div className="section-head">
-          <h2 className="section-title">Community packs</h2>
-          <span className="section-sub">Public packs from everyone{user ? ", yours included" : ""}</span>
+      <div className="lib-hero">
+        <div>
+          <p className="eyebrow">Library</p>
+          <h1 className="hero-title">Find a pack</h1>
+          <p className="lead">
+            Curated sets of patches, downloaded as one .zip.
+            {user
+              ? <> Yours are in <Link to="/library/mine">Mine</Link>.</>
+              : <> <Link to={loginPath("/library/packs")}>Log in</Link> to build your own.</>}
+          </p>
         </div>
-        <DiscoverPacks />
-      </section>
+        <HowSteps steps={STEPS} />
+      </div>
+
+      <DiscoverPacks />
     </>
   )
 }

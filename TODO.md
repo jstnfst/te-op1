@@ -1,14 +1,10 @@
-# the hero buttons should look more similar
-after reducing the verbosity of the text, the hero page now has two paragraphs that don't vertically align, making the heading text of the two paths (LIBRARY, LAB) show up as dissimmilar. Change "Find a sound" and "See how it thinks" so they're vertically aligned to the top of the panel that they're inside. the paragraph text should also be top-aligned so that a user isn't surprised about the location of where the text starts.
+# pack visibility control should go with the other controls in the ACTIONS column in library/mine page on the list view
 
-# the SCOPE in the hero has inert LIB and LAB elements when clicked; they should allow navigation
-LIB should go to the ALL filter
+# clicking packs page's link to MINE should scroll to the My Packs section
 
-# gradient the top of the page underneath the text in the .eyebrow
-from the top of the page down to the eyebrow we need a darkening gradient such that the shader canvas doesn't inhibit the legibility of the eyebrow. brighten the eyebrow text a touch. move the eyebrow up a vertical line. it can appear above the SCOPE and the .land-title to accomodate this change.
+# if elements are collapsed on MINE, and navigated to from the BROWSE or PACKS page, expand it
 
-# remove your packs from packs
-users can go to MINE for their packs. make the head of this page more similar to `/library` BROWSE
+# clipboard panel should have a clear button to deselect the currently selected clipboard
 
-# in the .lead of the library browse, link them to MINE if they're logged in
-same for library/packs, link them to MINE so they can see their packs
+# saving a patch owned by a different user in a pack results in an error
+the error message, `Preset needs an integer "synth_version".`, is shown to users. i don't think we should show an error in this case. we should assume the user wanted to save a new patch. why does this error show up? how can we work around the error and do as the user has asked?

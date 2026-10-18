@@ -52,29 +52,7 @@ input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; 
 .collapsible > summary:focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 .collapsible-body { margin-top: 14px; }
 
-/* "shelf": the viewer's own collection on the Packs page. Same titled-section
-   treatment as "Community packs" below it (title, count, hairline), so both
-   lists share a left edge and differ by heading, not by a frame. */
-.collapsible.shelf { margin: 32px 0 0; }
-.collapsible.shelf > summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 10px; font-size: 16px; font-weight: 700;
-  letter-spacing: normal; text-transform: none; color: var(--text); padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-/* flex hides the native marker, so draw the fold arrow */
-.collapsible.shelf > summary { list-style: none; cursor: pointer; }
-.collapsible.shelf > summary::-webkit-details-marker { display: none; }
-/* arrow at the row's right end, so "Your packs" starts on the same edge as "Community packs" */
-.collapsible.shelf > summary::after { content: "▾"; margin-left: auto; align-self: center; font-size: 16px; line-height: 1;
-  color: var(--muted); transition: transform .15s, color .15s; }
-.collapsible.shelf:not([open]) > summary::after { transform: rotate(90deg); }
-.collapsible.shelf > summary:hover::after { color: var(--text); }
-.shelf-count { font-size: 11px; font-weight: 700; color: var(--muted); border: 1px solid var(--border); border-radius: 2px; padding: 1px 6px 0; }
-.shelf .collapsible-body { margin-top: 16px; }
-
-/* titled page section (Packs: "Community packs"), same heading scale as the shelf */
-.community { margin-top: 48px; }
-.section-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
-.section-title { font-size: 16px; font-weight: 700; letter-spacing: normal; text-transform: none; color: var(--text); margin: 0; }
-.section-sub { font-size: 11px; font-weight: 300; color: var(--muted); }
-/* the viewer's own pack inside the community list */
+/* the viewer's own pack inside the community pack list */
 .chip.yours { background: none; color: var(--text); border: 1px solid #474b54; padding: 1px 5px 0; }
 
 /* cards */
