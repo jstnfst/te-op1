@@ -50,11 +50,11 @@ header.site { background: var(--header-bg); position: sticky; top: calc(-1 * var
 .group-btn:hover { color: rgba(255,255,255,.8); }
 .group-btn.active { color: #fff; background: var(--surface); }
 /* each path has its own LED color, matching the landing scope:
-   LIBRARY = Signal Orange, LAB = Trace Blue. Hover tints the LED dimly. */
-.group-library:hover::before { background: rgba(255,72,0,.45); }
-.group-lab:hover::before { background: rgba(59,158,234,.5); }
-.group-library.active::before { background: var(--orange); box-shadow: 0 0 6px rgba(255,72,0,.7); }
-.group-lab.active::before { background: var(--blue); box-shadow: 0 0 6px rgba(59,158,234,.75); }
+   LIBRARY = Signal Orange, LAB = Trace Blue. A hovered LED lights in the
+   same full color as the active one, so a path's color never changes; the
+   label brightening already says it's hovered. */
+.group-library:hover::before, .group-library.active::before { background: var(--orange); box-shadow: 0 0 6px rgba(255,72,0,.7); }
+.group-lab:hover::before, .group-lab.active::before { background: var(--blue); box-shadow: 0 0 6px rgba(59,158,234,.75); }
 .header-spacer { margin-left: auto; }
 .fw-tag { font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28);
   border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; white-space: nowrap; }

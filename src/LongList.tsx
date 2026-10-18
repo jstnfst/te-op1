@@ -420,7 +420,7 @@ export function LongList<T extends { id: number }>({
           )
         })}
       </div>
-      <p className="list-end">That's all {total} {label}</p>
+      <p className="list-end">{total === 1 ? `That's the only ${noun[0]}` : total === 2 ? `That's both ${noun[1]}` : `That's all ${total} ${noun[1]}`}</p>
     </div>
   )
 }

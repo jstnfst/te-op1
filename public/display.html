@@ -83,7 +83,8 @@
     .param-table tr:last-child td { border-bottom: none; }
     .param-table tbody tr:not(.engine-group-row):hover td { background: var(--surface); }
     .engine-cell { font-weight: 700; white-space: nowrap; }
-    .idx-cell { color: var(--muted); font-size: 10px; text-align: right; width: 28px; font-variant-numeric: tabular-nums; }
+    /* one line, always: a fixed run reads "4–7" and widens the column instead of wrapping */
+    .idx-cell { color: var(--muted); font-size: 10px; text-align: right; width: 28px; white-space: nowrap; font-variant-numeric: tabular-nums; }
     .samples-cell { font-size: 10px; font-weight: 300; color: var(--muted); }
     .sample-pair { display: inline-block; margin-right: 8px; white-space: nowrap; }
     .sample-pair .raw { color: var(--muted); font-variant-numeric: tabular-nums; }
@@ -209,7 +210,7 @@
   SCALES_BY_COUNT.forEach(([type, meta]) => {
     const n = counts[type];
     const pct = (n / total * 100).toFixed(1);
-    barEl.innerHTML += `<button class="dist-seg s-${type}" data-f="${type}" style="flex:${n}" title="${meta.label}: ${n} slots (${pct}%)" aria-label="${meta.label}: ${n} slots">` +
+    barEl.innerHTML += `<button class="dist-seg s-${type}" data-f="${type}" style="flex:${n}" title="${meta.label}: ${n} ${n === 1 ? 'slot' : 'slots'} (${pct}%)" aria-label="${meta.label}: ${n} ${n === 1 ? 'slot' : 'slots'}">` +
       (n / total > .06 ? `<span>${meta.label}</span>` : '') + `</button>`;
     cardsEl.innerHTML += `<button class="scale-card s-${type}" data-f="${type}" aria-pressed="false">
       <i class="${type === 'fixed' ? 'hatch' : ''}"></i><b>${meta.label}</b><span class="n">${n}<small>${pct}%</small></span>

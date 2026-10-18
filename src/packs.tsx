@@ -289,7 +289,7 @@ export function SelectionToolbar({
             onChange={toggleAll}
             aria-label={allOn ? "Deselect all" : "Select all"}
           />
-          <span>{n ? <><b>{n}</b> selected</> : <>Select all {selectAll.count}</>}</span>
+          <span>{n ? <><b>{n}</b> selected</> : <>{selectAll.count === 1 ? "Select it" : `Select all ${selectAll.count}`}</>}</span>
         </label>
       ) : n > 0 ? (
         <span className="seltool-all"><span><b>{n}</b> selected</span></span>

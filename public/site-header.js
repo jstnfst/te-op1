@@ -203,8 +203,8 @@
         ? (authUser.isAdmin ? '<a href="/mod" class="mod-link' + (loc.section === "mod" ? " active" : "") + '">mod</a>' : "") +
           (authUser.avatar ? '<img src="' + esc(authUser.avatar) + '" alt="">' : "") +
           "<span>" + esc(authUser.name || authUser.email || "account") + "</span>" +
-          '<a href="/api/auth/logout" data-logout>log out</a>'
-        : '<a href="' + esc(loginHref()) + '">log in</a>';
+          '<a href="/api/auth/logout" data-logout>Log out</a>'
+        : '<a href="' + esc(loginHref()) + '">Log in</a>';
     }
   }
 
@@ -224,8 +224,10 @@
 
   // The header scrolls with the page until its tab bar (.page-nav) reaches
   // the top, then the tab bar stays pinned there (site.css: sticky at minus
-  // the header row's height); pages without a tab bar scroll it away whole.
-  //   --header-row-h    the row that scrolls away (title, LIBRARY | LAB, auth)
+  // the header row's height). Pages without a tab bar (home, log in) pin the
+  // header row itself, so the top-level navigation stays in reach.
+  //   --header-row-h    how much scrolls away: the row (title, LIBRARY | LAB,
+  //                     auth) when there's a tab bar to pin, else nothing
   //   --site-header-h   what stays pinned: page-level sticky bars (the list
   //                     toolbar, the Lab panel) sit just under it
   //   --site-header-full  the whole header, for layouts sized to the first screen
@@ -234,11 +236,13 @@
   function trackHeaderHeight() {
     var h = document.querySelector("header.site");
     var row = h && h.querySelector(".header-row");
+    var nav = h && h.querySelector(".page-nav");
     if (!h || !row) return;
     var root = document.documentElement.style;
     var set = function () {
-      root.setProperty("--header-row-h", row.offsetHeight + "px");
-      root.setProperty("--site-header-h", (h.offsetHeight - row.offsetHeight) + "px");
+      var away = nav && !nav.hidden ? row.offsetHeight : 0;
+      root.setProperty("--header-row-h", away + "px");
+      root.setProperty("--site-header-h", (h.offsetHeight - away) + "px");
       root.setProperty("--site-header-full", h.offsetHeight + "px");
     };
     set();

@@ -111,7 +111,8 @@ const reducedMotion = () =>
  * single redraw). Frames write the paths and readouts straight to the DOM,
  * so React never re-renders per frame.
  */
-export function Scope({ ref }: { ref: Ref<ScopeHandle> }) {
+/** `onLed`: the pointer (or focus) is on the LIB / LAB link, or left it (null). */
+export function Scope({ ref, onLed }: { ref: Ref<ScopeHandle>; onLed?: (side: Side) => void }) {
   const pathRef = useRef<SVGPathElement>(null)
   const glowRef = useRef<SVGPathElement>(null)
   const figRef = useRef<HTMLElement>(null)
@@ -328,8 +329,13 @@ export function Scope({ ref }: { ref: Ref<ScopeHandle> }) {
       {/* the two LEDs double as the two paths' front doors */}
       <div className="scope-bar">
         <nav className="scope-leds" aria-label="Paths">
-          <Link className="scope-led led-library" to="/library">lib</Link>
-          <Link className="scope-led led-lab" to="/lab">lab</Link>
+          {(["library", "lab"] as const).map((side) => (
+            <Link key={side} className={`scope-led led-${side}`} to={"/" + side}
+              onPointerEnter={() => onLed?.(side)} onPointerLeave={() => onLed?.(null)}
+              onFocus={() => onLed?.(side)} onBlur={() => onLed?.(null)}>
+              {side === "library" ? "lib" : "lab"}
+            </Link>
+          ))}
         </nav>
       </div>
       <div className="scope-screen-wrap" aria-hidden="true">

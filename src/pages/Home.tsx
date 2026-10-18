@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type PointerEvent } from "react"
+import { useEffect, useRef, useState, type CSSProperties, type PointerEvent } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { apiGet, type PatchSummary } from "../api"
 import { DownloadCount } from "../like"
@@ -35,15 +35,36 @@ const readout = (p: PatchSummary): Array<[string, string]> =>
  * puts it back on frame 0. Touch and keyboard get frame 0 (ALL / init). */
 function useScrub(n: number) {
   const [i, setI] = useState(0)
+  const [on, setOn] = useState(false)
   const bind = {
     onPointerMove: (e: PointerEvent<HTMLElement>) => {
       if (e.pointerType === "touch" || n < 1) return
       const r = e.currentTarget.getBoundingClientRect()
+      setOn(true)
       setI(Math.min(n - 1, Math.floor(Math.max(0, (e.clientX - r.left) / r.width) * n)))
     },
-    onPointerLeave: () => setI(0),
+    onPointerLeave: () => { setI(0); setOn(false) },
   }
-  return { i, bind }
+  return { i, on, bind }
+}
+
+/* The Mappings tile's tint: a rainbow of the scale colors laid across the
+   tile, each color centred over the pointer zone that picks it (zone 0 is
+   ALL). The rainbow never moves and always shows whole: at full strength
+   under ALL, and with a picked scale its band stays full while the rest
+   dips to RAINBOW_DIP. */
+const RAINBOW_DIP = "rgba(0,0,0,.3)" // mask alpha for the colors not picked
+const ZONES = SCALE_TYPES.length + 1
+const scaleColor = (t: string) => (t === "fixed" ? "var(--knob-null)" : `var(--c-${t})`)
+const RAINBOW = "linear-gradient(90deg, " + SCALE_TYPES.map(([t], k) =>
+  `${scaleColor(t)} ${(((k + 1.5) / ZONES) * 100).toFixed(1)}%`).join(", ") + ")"
+function rainbowStyle(i: number): CSSProperties {
+  if (i === 0) return { "--rainbow": RAINBOW } as CSSProperties
+  const a = (i / ZONES) * 100, b = ((i + 1) / ZONES) * 100
+  return {
+    "--rainbow": RAINBOW,
+    "--rainbow-mask": `linear-gradient(90deg, ${RAINBOW_DIP} ${(a - 3).toFixed(1)}%, #000 ${a.toFixed(1)}%, #000 ${b.toFixed(1)}%, ${RAINBOW_DIP} ${(b + 3).toFixed(1)}%)`,
+  } as CSSProperties
 }
 
 /** The Library knob's detents: no filter, then every engine. */
@@ -215,7 +236,7 @@ export default function Home() {
   const labCta = labKey ? `Open ${labKey} in the knob layout` : "Open the lab"
   const libraryHref = engine === "all" ? "/library" : `/library?type=${encodeURIComponent(engine)}`
   const libraryCta = engine === "all"
-    ? (count === null ? "Browse patches" : `Browse all ${count} patches`)
+    ? (count === null || count === 0 ? "Browse patches" : count === 1 ? "Browse the only patch" : `Browse all ${count} patches`)
     : (count === null ? `Browse ${engine} patches` : count === 0 ? `No ${engine} patches yet` : `Browse ${count} ${engine} ${count === 1 ? "patch" : "patches"}`)
 
   // Motion is pointer-gated: the scope runs only while a mouse/pen is over
@@ -229,6 +250,14 @@ export default function Home() {
     scope.current?.setX((e.clientX - r.left) / r.width)
   }
   const lean = (side: Side) => () => scope.current?.setSide(side)
+  // The scope's LIB / LAB links play their path the way the far left of its
+  // fork panel does: the LED lights, and the dial goes to ALL (Library) or
+  // the overview (Lab) - exactly where each link goes.
+  function ledHover(side: Side) {
+    if (side === "library") setDial(0)
+    if (side === "lab") { setLabIdx(0); setEnvPos(0) }
+    scope.current?.setSide(side)
+  }
 
   return (
     <>
@@ -247,7 +276,7 @@ export default function Home() {
               Patches for<br />your OP-1<br /><span className="land-title-sub">and how they work</span>
             </h1>
           </div>
-          <Scope ref={scope} />
+          <Scope ref={scope} onLed={ledHover} />
         </div>
 
         <div className="fork">
@@ -330,7 +359,8 @@ export default function Home() {
                 )
               })()}
             </a>
-            <a className="lab-tile" href={"/lab/mappings" + (scalePick ? "#" + scalePick : "")} {...scaleTile.bind}>
+            <a className={"lab-tile rainbow" + (scaleTile.on ? " lit" : "")} href={"/lab/mappings" + (scalePick ? "#" + scalePick : "")}
+              style={rainbowStyle(scaleTile.i)} {...scaleTile.bind}>
               <div className="lab-tile-head"><span className="lab-tile-name">Mappings</span></div>
               <p className="lab-tile-desc">How a raw value becomes the number on screen, by scale type</p>
               {/* frame 0 is ALL (every chip lit), then one scale type per frame */}

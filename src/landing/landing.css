@@ -183,6 +183,14 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
   background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
   transition: box-shadow .18s, transform .18s, border-color .18s; }
 .lab-tile:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474b54; }
+/* Mappings tile: its scale-color rainbow (Home.tsx rainbowStyle) tints the
+   surface while hovered, masked down to the picked scale's band */
+.lab-tile.rainbow { position: relative; overflow: hidden; }
+.lab-tile.rainbow > * { position: relative; }
+.lab-tile.rainbow::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0;
+  background: var(--rainbow); -webkit-mask-image: var(--rainbow-mask, none); mask-image: var(--rainbow-mask, none);
+  transition: opacity .25s; }
+.lab-tile.rainbow.lit::before { opacity: .16; }
 .lab-tile-head { display: flex; align-items: baseline; justify-content: space-between; }
 .lab-tile-name { font-size: 16px; font-weight: 700; }
 .lab-tile-desc { font-size: 12px; font-weight: 300; line-height: 1.6; color: var(--muted); }
