@@ -16,6 +16,9 @@
  *   mondo wrap      <input.aif|.wav> [output.aif]                (was wrap-sampler.exe)
  *   mondo wrap      <directory>
  *   mondo samples   <preset.json | directory> [output.js]        (was dump-samples.exe)
+ *   mondo op1       ls [-r] [path] | pull <path> [dest] | push [-f] <local> <folder>
+ *                   | mkdir [-p] <path> | rm [-r] <path> | mv <path> <new name>
+ *                   (files on a connected OP-1 Field over MTP; Windows only)
  *
  * Build: cl mondo.c cJSON.c /Fe:mondo.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  */
@@ -27,8 +30,11 @@
 #include <time.h>
 #include <math.h>
 #ifdef _WIN32
+#define COBJMACROS     /* C-style IFoo_Method(p, ...) wrappers for the WPD COM interfaces */
 #include <io.h>        /* _findfirst, _findnext */
 #include <windows.h>
+#include <PortableDeviceApi.h>   /* mondo op1 */
+#include <PortableDevice.h>
 #endif
 #include "op1_aif.h"
 #include "cJSON.h"
@@ -4107,6 +4113,917 @@ static int cmd_samples(int argc, char *argv[]) {
 }
 
 /* =========================================================================
+ * ==============================  mondo op1  ==============================
+ * (list / copy / create / delete files on a connected OP-1 Field)
+ *
+ * The OP-1 Field is an MTP device, not a USB drive: Explorer shows it under
+ * "This PC" but it gets no drive letter, so fopen / FindFirstFile can't
+ * reach it. Everything here goes through the Windows Portable Devices (WPD)
+ * COM API instead. Device paths are '/'-separated, relative to the device's
+ * storage root ("synth/myfolder/patch.aif"), and matched case-insensitively.
+ * ========================================================================= */
+
+#ifdef _WIN32
+
+#pragma comment(lib, "ole32.lib")
+#pragma comment(lib, "oleaut32.lib")
+#pragma comment(lib, "PortableDeviceGUIDs.lib")
+
+#define OP1_MAX_SEGS  32
+#define OP1_PATH_MAX  1024
+#define OP1_DEFAULT_DEVICE "OP-1"
+#define OP1_VID       L"vid_2367"   /* teenage engineering USB vendor ID */
+
+typedef struct {
+    WCHAR    *id;      /* WPD object ID (CoTaskMem) */
+    WCHAR    *name;    /* file name on the device (CoTaskMem) */
+    int       is_dir;
+    ULONGLONG size;
+    double    date;    /* VT_DATE modified time, 0 if the device didn't say */
+} Op1Entry;
+
+static IPortableDevice           *g_op1_dev;
+static IPortableDeviceContent    *g_op1_content;
+static IPortableDeviceProperties *g_op1_props;
+static IPortableDeviceResources  *g_op1_res;
+static WCHAR                     *g_op1_root;   /* storage object ID */
+
+/* ---- string helpers ---- */
+
+/* Wide -> UTF-8 for printing. Rotates through 4 buffers so a printf can
+   take a few of these at once. */
+static const char *op1_u8(const WCHAR *w) {
+    static char bufs[4][OP1_PATH_MAX * 3];
+    static int slot;
+    char *b = bufs[slot++ & 3];
+    if (!WideCharToMultiByte(CP_UTF8, 0, w ? w : L"", -1, b, sizeof(bufs[0]), NULL, NULL))
+        b[0] = '\0';
+    return b;
+}
+
+static WCHAR *op1_wide(const char *s) {
+    int n = MultiByteToWideChar(CP_ACP, 0, s, -1, NULL, 0);
+    WCHAR *w = malloc(n * sizeof(WCHAR));
+    MultiByteToWideChar(CP_ACP, 0, s, -1, w, n);
+    return w;
+}
+
+static WCHAR *op1_cotask_dup(const WCHAR *s) {
+    size_t n = (wcslen(s) + 1) * sizeof(WCHAR);
+    WCHAR *d = CoTaskMemAlloc(n);
+    if (d) memcpy(d, s, n);
+    return d;
+}
+
+static int op1_fail(const char *what, HRESULT hr) {
+    fprintf(stderr, "op1: %s failed (0x%08lx)\n", what, (unsigned long)hr);
+    return 1;
+}
+
+/* Split a device path into segments in place; returns the segment count.
+   Empty and "." segments are dropped, so "", "/" and "." are the root. */
+static int op1_split(WCHAR *path, WCHAR **segs) {
+    int n = 0;
+    WCHAR *ctx = NULL;
+    for (WCHAR *t = wcstok_s(path, L"/\\", &ctx); t; t = wcstok_s(NULL, L"/\\", &ctx)) {
+        if (wcscmp(t, L".") == 0) continue;
+        if (n == OP1_MAX_SEGS) return -1;
+        segs[n++] = t;
+    }
+    return n;
+}
+
+/* Split a device path into parent path and last segment. Returns the
+   segment count (0 = the root, which has no parent). */
+static int op1_split_leaf(const WCHAR *path, WCHAR *parent, WCHAR *leaf) {
+    WCHAR buf[OP1_PATH_MAX];
+    WCHAR *segs[OP1_MAX_SEGS];
+    wcsncpy(buf, path, OP1_PATH_MAX - 1);
+    buf[OP1_PATH_MAX - 1] = L'\0';
+    int n = op1_split(buf, segs);
+    parent[0] = leaf[0] = L'\0';
+    if (n <= 0) return n;
+    for (int i = 0; i < n - 1; i++) {
+        if (i) wcscat(parent, L"/");
+        wcscat(parent, segs[i]);
+    }
+    wcscpy(leaf, segs[n - 1]);
+    return n;
+}
+
+static void op1_make_local_dirs(const WCHAR *path) {
+    WCHAR tmp[OP1_PATH_MAX];
+    wcsncpy(tmp, path, OP1_PATH_MAX - 1);
+    tmp[OP1_PATH_MAX - 1] = L'\0';
+    for (WCHAR *p = tmp + 1; *p; p++) {
+        if (*p == L'\\' || *p == L'/') {
+            WCHAR c = *p; *p = L'\0';
+            CreateDirectoryW(tmp, NULL);
+            *p = c;
+        }
+    }
+    CreateDirectoryW(tmp, NULL);
+}
+
+/* ---- WPD object helpers ---- */
+
+static void op1_entry_free(Op1Entry *e) {
+    CoTaskMemFree(e->id);
+    CoTaskMemFree(e->name);
+    e->id = e->name = NULL;
+}
+
+static void op1_free_entries(Op1Entry *e, int n) {
+    for (int i = 0; i < n; i++) op1_entry_free(&e[i]);
+    free(e);
+}
+
+static int op1_cmp_entry(const void *a, const void *b) {
+    return _wcsicmp(((const Op1Entry *)a)->name, ((const Op1Entry *)b)->name);
+}
+
+static HRESULT op1_new_values(IPortableDeviceValues **v) {
+    return CoCreateInstance(&CLSID_PortableDeviceValues, NULL, CLSCTX_INPROC_SERVER,
+                            &IID_IPortableDeviceValues, (void **)v);
+}
+
+/* Fill name / type / size / date for one object (out->id is left alone). */
+static HRESULT op1_stat(const WCHAR *id, Op1Entry *out) {
+    IPortableDeviceKeyCollection *keys = NULL;
+    IPortableDeviceValues *vals = NULL;
+    HRESULT hr = CoCreateInstance(&CLSID_PortableDeviceKeyCollection, NULL, CLSCTX_INPROC_SERVER,
+                                  &IID_IPortableDeviceKeyCollection, (void **)&keys);
+    if (FAILED(hr)) return hr;
+    IPortableDeviceKeyCollection_Add(keys, &WPD_OBJECT_ORIGINAL_FILE_NAME);
+    IPortableDeviceKeyCollection_Add(keys, &WPD_OBJECT_NAME);
+    IPortableDeviceKeyCollection_Add(keys, &WPD_OBJECT_CONTENT_TYPE);
+    IPortableDeviceKeyCollection_Add(keys, &WPD_OBJECT_SIZE);
+    IPortableDeviceKeyCollection_Add(keys, &WPD_OBJECT_DATE_MODIFIED);
+    hr = IPortableDeviceProperties_GetValues(g_op1_props, id, keys, &vals);
+    IPortableDeviceKeyCollection_Release(keys);
+    if (FAILED(hr)) return hr;   /* S_FALSE (some keys missing) is fine */
+
+    /* Prefer the real file name; WPD_OBJECT_NAME can drop the extension. */
+    if (FAILED(IPortableDeviceValues_GetStringValue(vals, &WPD_OBJECT_ORIGINAL_FILE_NAME, &out->name))
+        || !out->name || !out->name[0]) {
+        CoTaskMemFree(out->name);
+        out->name = NULL;
+        if (FAILED(IPortableDeviceValues_GetStringValue(vals, &WPD_OBJECT_NAME, &out->name)) || !out->name) {
+            CoTaskMemFree(out->name);
+            out->name = op1_cotask_dup(id);
+        }
+    }
+
+    GUID ct;
+    out->is_dir = 0;
+    if (SUCCEEDED(IPortableDeviceValues_GetGuidValue(vals, &WPD_OBJECT_CONTENT_TYPE, &ct)))
+        out->is_dir = IsEqualGUID(&ct, &WPD_CONTENT_TYPE_FOLDER) ||
+                      IsEqualGUID(&ct, &WPD_CONTENT_TYPE_FUNCTIONAL_OBJECT);
+
+    out->size = 0;
+    IPortableDeviceValues_GetUnsignedLargeIntegerValue(vals, &WPD_OBJECT_SIZE, &out->size);
+
+    PROPVARIANT pv;
+    PropVariantInit(&pv);
+    out->date = 0;
+    if (SUCCEEDED(IPortableDeviceValues_GetValue(vals, &WPD_OBJECT_DATE_MODIFIED, &pv)) && pv.vt == VT_DATE)
+        out->date = pv.date;
+    PropVariantClear(&pv);
+
+    IPortableDeviceValues_Release(vals);
+    return S_OK;
+}
+
+/* List the direct children of a device object. Caller frees with
+   op1_free_entries. */
+static HRESULT op1_children(const WCHAR *parent, Op1Entry **out, int *count) {
+    IEnumPortableDeviceObjectIDs *en = NULL;
+    Op1Entry *list = NULL;
+    int n = 0, cap = 0;
+    HRESULT hr = IPortableDeviceContent_EnumObjects(g_op1_content, 0, parent, NULL, &en);
+    if (FAILED(hr)) return hr;
+
+    for (;;) {
+        PWSTR ids[32];
+        ULONG got = 0;
+        hr = IEnumPortableDeviceObjectIDs_Next(en, 32, ids, &got);
+        if (FAILED(hr)) break;
+        for (ULONG i = 0; i < got; i++) {
+            if (n == cap) {
+                cap = cap ? cap * 2 : 32;
+                list = realloc(list, cap * sizeof(*list));
+            }
+            memset(&list[n], 0, sizeof(*list));
+            list[n].id = ids[i];
+            if (FAILED(op1_stat(ids[i], &list[n])))
+                list[n].name = op1_cotask_dup(ids[i]);
+            n++;
+        }
+        if (hr == S_FALSE || got == 0) { hr = S_OK; break; }
+    }
+    IEnumPortableDeviceObjectIDs_Release(en);
+
+    if (FAILED(hr)) { op1_free_entries(list, n); return hr; }
+    *out = list;
+    *count = n;
+    return S_OK;
+}
+
+/* Find a child by name. Returns 1 (found, *out filled - caller frees with
+   op1_entry_free), 0 (not found), or -1 (device error, already printed). */
+static int op1_find_child(const WCHAR *parent, const WCHAR *name, Op1Entry *out) {
+    Op1Entry *kids;
+    int nk;
+    HRESULT hr = op1_children(parent, &kids, &nk);
+    if (FAILED(hr)) { op1_fail("list folder", hr); return -1; }
+    int found = 0;
+    for (int i = 0; i < nk; i++) {
+        if (_wcsicmp(kids[i].name, name) == 0) {
+            *out = kids[i];
+            kids[i].id = kids[i].name = NULL;
+            found = 1;
+            break;
+        }
+    }
+    op1_free_entries(kids, nk);
+    return found;
+}
+
+/* Resolve a device path to its object. Returns 1 on success (*out filled -
+   caller frees with op1_entry_free), 0 if it doesn't exist (message
+   printed), -1 on device error. */
+static int op1_resolve(const WCHAR *path, Op1Entry *out) {
+    WCHAR buf[OP1_PATH_MAX];
+    WCHAR *segs[OP1_MAX_SEGS];
+    wcsncpy(buf, path, OP1_PATH_MAX - 1);
+    buf[OP1_PATH_MAX - 1] = L'\0';
+    int ns = op1_split(buf, segs);
+    if (ns < 0) { fprintf(stderr, "op1: path too deep: %s\n", op1_u8(path)); return 0; }
+
+    Op1Entry e = {0};
+    e.id = op1_cotask_dup(g_op1_root);
+    e.name = op1_cotask_dup(L"OP-1");
+    e.is_dir = 1;
+
+    for (int i = 0; i < ns; i++) {
+        Op1Entry next;
+        int r = e.is_dir ? op1_find_child(e.id, segs[i], &next) : 0;
+        op1_entry_free(&e);
+        if (r <= 0) {
+            if (r == 0) fprintf(stderr, "op1: not found on device: %s\n", op1_u8(path));
+            return r;
+        }
+        e = next;
+    }
+    *out = e;
+    return 1;
+}
+
+static int op1_open(const char *want, int explicit_name) {
+    IPortableDeviceManager *mgr = NULL;
+    IPortableDeviceValues *client = NULL;
+    PWSTR *ids = NULL;
+    DWORD nids = 0;
+    WCHAR *match = NULL;
+    WCHAR *wwant = op1_wide(want);
+
+    HRESULT hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
+    if (FAILED(hr)) return op1_fail("CoInitializeEx", hr);
+
+    hr = CoCreateInstance(&CLSID_PortableDeviceManager, NULL, CLSCTX_INPROC_SERVER,
+                          &IID_IPortableDeviceManager, (void **)&mgr);
+    if (FAILED(hr)) { free(wwant); return op1_fail("PortableDeviceManager", hr); }
+
+    IPortableDeviceManager_RefreshDeviceList(mgr);
+    IPortableDeviceManager_GetDevices(mgr, NULL, &nids);
+    if (nids) {
+        ids = calloc(nids, sizeof(*ids));
+        if (FAILED(IPortableDeviceManager_GetDevices(mgr, ids, &nids))) nids = 0;
+    }
+
+    /* Match on friendly name; without -d also accept any teenage engineering
+       device by USB vendor ID, in case the friendly name ever changes. */
+    for (int pass = 0; pass < 2 && !match; pass++) {
+        for (DWORD i = 0; i < nids && !match; i++) {
+            if (pass == 0) {
+                WCHAR fname[256] = L"";
+                DWORD len = 256;
+                IPortableDeviceManager_GetDeviceFriendlyName(mgr, ids[i], fname, &len);
+                if (_wcsicmp(fname, wwant) == 0) match = op1_cotask_dup(ids[i]);
+            } else if (!explicit_name) {
+                WCHAR low[512];
+                wcsncpy(low, ids[i], 511);
+                low[511] = L'\0';
+                _wcslwr(low);
+                if (wcsstr(low, OP1_VID)) match = op1_cotask_dup(ids[i]);
+            }
+        }
+    }
+
+    if (!match) {
+        fprintf(stderr, "op1: device \"%s\" not found - is the OP-1 connected, on, and in MTP mode?\n", want);
+        if (nids) fprintf(stderr, "portable devices present:\n");
+        for (DWORD i = 0; i < nids; i++) {
+            WCHAR fname[256] = L"";
+            DWORD len = 256;
+            IPortableDeviceManager_GetDeviceFriendlyName(mgr, ids[i], fname, &len);
+            fprintf(stderr, "  %s\n", op1_u8(fname));
+        }
+    }
+    for (DWORD i = 0; i < nids; i++) CoTaskMemFree(ids[i]);
+    free(ids);
+    free(wwant);
+    IPortableDeviceManager_Release(mgr);
+    if (!match) return 1;
+
+    hr = op1_new_values(&client);
+    if (FAILED(hr)) { CoTaskMemFree(match); return op1_fail("client info", hr); }
+    IPortableDeviceValues_SetStringValue(client, &WPD_CLIENT_NAME, L"mondo");
+    IPortableDeviceValues_SetUnsignedIntegerValue(client, &WPD_CLIENT_MAJOR_VERSION, 1);
+    IPortableDeviceValues_SetUnsignedIntegerValue(client, &WPD_CLIENT_MINOR_VERSION, 0);
+    IPortableDeviceValues_SetUnsignedIntegerValue(client, &WPD_CLIENT_REVISION, 0);
+    IPortableDeviceValues_SetUnsignedIntegerValue(client, &WPD_CLIENT_SECURITY_QUALITY_OF_SERVICE,
+                                                  SECURITY_IMPERSONATION);
+
+    hr = CoCreateInstance(&CLSID_PortableDeviceFTM, NULL, CLSCTX_INPROC_SERVER,
+                          &IID_IPortableDevice, (void **)&g_op1_dev);
+    if (SUCCEEDED(hr)) hr = IPortableDevice_Open(g_op1_dev, match, client);
+    IPortableDeviceValues_Release(client);
+    CoTaskMemFree(match);
+    if (FAILED(hr)) return op1_fail("open device", hr);
+
+    hr = IPortableDevice_Content(g_op1_dev, &g_op1_content);
+    if (SUCCEEDED(hr)) hr = IPortableDeviceContent_Properties(g_op1_content, &g_op1_props);
+    if (SUCCEEDED(hr)) hr = IPortableDeviceContent_Transfer(g_op1_content, &g_op1_res);
+    if (FAILED(hr)) return op1_fail("device content", hr);
+
+    /* The device object's first folder-like child is the storage ("OP-1"). */
+    Op1Entry *kids;
+    int nk;
+    hr = op1_children(WPD_DEVICE_OBJECT_ID, &kids, &nk);
+    if (FAILED(hr)) return op1_fail("find storage", hr);
+    for (int i = 0; i < nk && !g_op1_root; i++) {
+        if (kids[i].is_dir) { g_op1_root = kids[i].id; kids[i].id = NULL; }
+    }
+    op1_free_entries(kids, nk);
+    if (!g_op1_root) { fprintf(stderr, "op1: device has no storage\n"); return 1; }
+    return 0;
+}
+
+static void op1_close(void) {
+    CoTaskMemFree(g_op1_root);
+    if (g_op1_res)     IPortableDeviceResources_Release(g_op1_res);
+    if (g_op1_props)   IPortableDeviceProperties_Release(g_op1_props);
+    if (g_op1_content) IPortableDeviceContent_Release(g_op1_content);
+    if (g_op1_dev)     { IPortableDevice_Close(g_op1_dev); IPortableDevice_Release(g_op1_dev); }
+    CoUninitialize();
+}
+
+static HRESULT op1_delete(const WCHAR *id, int recursive) {
+    IPortableDevicePropVariantCollection *c = NULL;
+    HRESULT hr = CoCreateInstance(&CLSID_PortableDevicePropVariantCollection, NULL, CLSCTX_INPROC_SERVER,
+                                  &IID_IPortableDevicePropVariantCollection, (void **)&c);
+    if (FAILED(hr)) return hr;
+    PROPVARIANT pv;
+    PropVariantInit(&pv);
+    pv.vt = VT_LPWSTR;
+    pv.pwszVal = (LPWSTR)id;   /* Add() copies; not ours to clear */
+    hr = IPortableDevicePropVariantCollection_Add(c, &pv);
+    if (SUCCEEDED(hr))
+        hr = IPortableDeviceContent_Delete(g_op1_content,
+                 recursive ? PORTABLE_DEVICE_DELETE_WITH_RECURSION : PORTABLE_DEVICE_DELETE_NO_RECURSION,
+                 c, NULL);
+    IPortableDevicePropVariantCollection_Release(c);
+    return hr;
+}
+
+/* The OP-1 answers E_FAIL when a folder would nest deeper than
+   synth/<folder> or drum/<folder>. */
+static int op1_folder_fail(HRESULT hr) {
+    op1_fail("create folder", hr);
+    if (hr == E_FAIL)
+        fprintf(stderr, "op1: (the OP-1 only allows one folder level, e.g. synth/<folder>/patch.aif)\n");
+    return 1;
+}
+
+static HRESULT op1_make_folder(const WCHAR *parent_id, const WCHAR *name, WCHAR **new_id) {
+    IPortableDeviceValues *v = NULL;
+    HRESULT hr = op1_new_values(&v);
+    if (FAILED(hr)) return hr;
+    IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_PARENT_ID, parent_id);
+    IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_NAME, name);
+    IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_ORIGINAL_FILE_NAME, name);
+    IPortableDeviceValues_SetGuidValue(v, &WPD_OBJECT_CONTENT_TYPE, &WPD_CONTENT_TYPE_FOLDER);
+    IPortableDeviceValues_SetGuidValue(v, &WPD_OBJECT_FORMAT, &WPD_OBJECT_FORMAT_PROPERTIES_ONLY);
+    hr = IPortableDeviceContent_CreateObjectWithPropertiesOnly(g_op1_content, v, new_id);
+    IPortableDeviceValues_Release(v);
+    return hr;
+}
+
+/* ---- transfers ---- */
+
+static int op1_pull_file(const Op1Entry *e, const WCHAR *dest, int verbose) {
+    IStream *st = NULL;
+    DWORD opt = 0;
+    HRESULT hr = IPortableDeviceResources_GetStream(g_op1_res, e->id, &WPD_RESOURCE_DEFAULT,
+                                                    STGM_READ, &opt, &st);
+    if (FAILED(hr)) return op1_fail("open device file", hr);
+
+    FILE *f = _wfopen(dest, L"wb");
+    if (!f) {
+        fprintf(stderr, "op1: cannot write %s\n", op1_u8(dest));
+        IStream_Release(st);
+        return 1;
+    }
+    if (opt < 4096) opt = 256 * 1024;
+    BYTE *buf = malloc(opt);
+    ULONGLONG total = 0;
+    int rc = 0;
+    for (;;) {
+        ULONG got = 0;
+        hr = IStream_Read(st, buf, opt, &got);
+        if (FAILED(hr)) { rc = op1_fail("read", hr); break; }
+        if (got == 0) break;
+        if (fwrite(buf, 1, got, f) != got) {
+            fprintf(stderr, "op1: write error: %s\n", op1_u8(dest));
+            rc = 1;
+            break;
+        }
+        total += got;
+    }
+    free(buf);
+    fclose(f);
+    IStream_Release(st);
+
+    if (rc) _wremove(dest);
+    else if (verbose) printf("  %s  (%llu bytes)\n", op1_u8(dest), total);
+    return rc;
+}
+
+static void op1_pull_tree(const Op1Entry *dir, const WCHAR *dest, WalkStats *stats) {
+    Op1Entry *kids;
+    int nk;
+    op1_make_local_dirs(dest);
+    HRESULT hr = op1_children(dir->id, &kids, &nk);
+    if (FAILED(hr)) { op1_fail("list folder", hr); stats->failed++; return; }
+    for (int i = 0; i < nk; i++) {
+        WCHAR child[OP1_PATH_MAX];
+        swprintf(child, OP1_PATH_MAX, L"%ls\\%ls", dest, kids[i].name);
+        if (kids[i].is_dir) {
+            op1_pull_tree(&kids[i], child, stats);
+        } else if (op1_pull_file(&kids[i], child, 1) == 0) {
+            stats->processed++;
+        } else {
+            stats->failed++;
+        }
+    }
+    op1_free_entries(kids, nk);
+}
+
+/* Upload one local file into parent_id as `name`. With force, an existing
+   file of that name is deleted first (MTP has no in-place overwrite). */
+static int op1_push_file(const WCHAR *local, const WCHAR *parent_id, const WCHAR *name,
+                         int force, int verbose) {
+    Op1Entry existing;
+    int r = op1_find_child(parent_id, name, &existing);
+    if (r < 0) return 1;
+    int replaced = 0;
+    if (r == 1) {
+        int is_dir = existing.is_dir;
+        HRESULT hr = S_OK;
+        if (!is_dir && force) hr = op1_delete(existing.id, 0);
+        op1_entry_free(&existing);
+        if (is_dir) {
+            fprintf(stderr, "op1: a folder named %s already exists there\n", op1_u8(name));
+            return 1;
+        }
+        if (!force) {
+            fprintf(stderr, "op1: %s already exists on device (use -f to overwrite)\n", op1_u8(name));
+            return 1;
+        }
+        if (FAILED(hr)) return op1_fail("delete existing file", hr);
+        replaced = 1;
+    }
+
+    FILE *f = _wfopen(local, L"rb");
+    if (!f) { fprintf(stderr, "op1: cannot read %s\n", op1_u8(local)); return 1; }
+    _fseeki64(f, 0, SEEK_END);
+    ULONGLONG size = (ULONGLONG)_ftelli64(f);
+    _fseeki64(f, 0, SEEK_SET);
+
+    IPortableDeviceValues *v = NULL;
+    HRESULT hr = op1_new_values(&v);
+    if (FAILED(hr)) { fclose(f); return op1_fail("values", hr); }
+    IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_PARENT_ID, parent_id);
+    IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_NAME, name);
+    IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_ORIGINAL_FILE_NAME, name);
+    IPortableDeviceValues_SetUnsignedLargeIntegerValue(v, &WPD_OBJECT_SIZE, size);
+    IPortableDeviceValues_SetGuidValue(v, &WPD_OBJECT_CONTENT_TYPE, &WPD_CONTENT_TYPE_GENERIC_FILE);
+    IPortableDeviceValues_SetGuidValue(v, &WPD_OBJECT_FORMAT, &WPD_OBJECT_FORMAT_UNSPECIFIED);
+
+    IStream *st = NULL;
+    DWORD opt = 0;
+    hr = IPortableDeviceContent_CreateObjectWithPropertiesAndData(g_op1_content, v, &st, &opt, NULL);
+    IPortableDeviceValues_Release(v);
+    if (FAILED(hr)) { fclose(f); return op1_fail("create device file", hr); }
+
+    if (opt < 4096) opt = 256 * 1024;
+    BYTE *buf = malloc(opt);
+    int rc = 0;
+    size_t got;
+    while ((got = fread(buf, 1, opt, f)) > 0) {
+        ULONG wrote = 0;
+        hr = IStream_Write(st, buf, (ULONG)got, &wrote);
+        if (FAILED(hr) || wrote != got) { rc = op1_fail("write", FAILED(hr) ? hr : E_FAIL); break; }
+    }
+    if (!rc && ferror(f)) { fprintf(stderr, "op1: read error: %s\n", op1_u8(local)); rc = 1; }
+    if (!rc) {
+        hr = IStream_Commit(st, STGC_DEFAULT);
+        if (FAILED(hr)) rc = op1_fail("commit", hr);
+    } else {
+        IStream_Revert(st);
+    }
+    free(buf);
+    fclose(f);
+    IStream_Release(st);
+
+    if (rc && replaced)
+        fprintf(stderr, "op1: note - the previous %s on the device was already removed\n", op1_u8(name));
+    if (!rc && verbose)
+        printf("  %s  (%llu bytes)\n", op1_u8(name), size);
+    return rc;
+}
+
+static void op1_push_tree(const WCHAR *local, const WCHAR *parent_id, const WCHAR *name,
+                          int force, WalkStats *stats) {
+    Op1Entry existing;
+    WCHAR *dir_id = NULL;
+    int r = op1_find_child(parent_id, name, &existing);
+    if (r < 0) { stats->failed++; return; }
+    if (r == 1) {
+        if (!existing.is_dir) {
+            fprintf(stderr, "op1: a file named %s already exists there\n", op1_u8(name));
+            op1_entry_free(&existing);
+            stats->failed++;
+            return;
+        }
+        dir_id = existing.id;          /* merge into the existing folder */
+        existing.id = NULL;
+        op1_entry_free(&existing);
+    } else {
+        HRESULT hr = op1_make_folder(parent_id, name, &dir_id);
+        if (FAILED(hr)) { op1_folder_fail(hr); stats->failed++; return; }
+        printf("  %s/\n", op1_u8(name));
+    }
+
+    WCHAR pattern[OP1_PATH_MAX];
+    swprintf(pattern, OP1_PATH_MAX, L"%ls\\*", local);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    if (h != INVALID_HANDLE_VALUE) {
+        do {
+            if (wcscmp(fd.cFileName, L".") == 0 || wcscmp(fd.cFileName, L"..") == 0) continue;
+            WCHAR child[OP1_PATH_MAX];
+            swprintf(child, OP1_PATH_MAX, L"%ls\\%ls", local, fd.cFileName);
+            if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+                op1_push_tree(child, dir_id, fd.cFileName, force, stats);
+            else if (op1_push_file(child, dir_id, fd.cFileName, force, 1) == 0)
+                stats->processed++;
+            else
+                stats->failed++;
+        } while (FindNextFileW(h, &fd));
+        FindClose(h);
+    }
+    CoTaskMemFree(dir_id);
+}
+
+/* ---- verbs ---- */
+
+static void op1_print_entry(const Op1Entry *e, const char *prefix) {
+    SYSTEMTIME st;
+    if (e->is_dir) printf("%12s  ", "<dir>");
+    else           printf("%12llu  ", e->size);
+    if (e->date != 0 && VariantTimeToSystemTime(e->date, &st))
+        printf("%04u-%02u-%02u %02u:%02u", st.wYear, st.wMonth, st.wDay, st.wHour, st.wMinute);
+    else
+        printf("%16s", "");
+    printf("  %s%s%s\n", prefix, op1_u8(e->name), e->is_dir ? "/" : "");
+}
+
+static void op1_ls_dir(const WCHAR *id, const char *prefix, int recursive) {
+    Op1Entry *kids;
+    int nk;
+    HRESULT hr = op1_children(id, &kids, &nk);
+    if (FAILED(hr)) { op1_fail("list folder", hr); return; }
+    qsort(kids, nk, sizeof(*kids), op1_cmp_entry);
+    for (int i = 0; i < nk; i++) {
+        op1_print_entry(&kids[i], prefix);
+        if (recursive && kids[i].is_dir) {
+            char sub[OP1_PATH_MAX * 3];
+            snprintf(sub, sizeof(sub), "%s%s/", prefix, op1_u8(kids[i].name));
+            op1_ls_dir(kids[i].id, sub, 1);
+        }
+    }
+    op1_free_entries(kids, nk);
+}
+
+static int op1_cmd_ls(const WCHAR *path, int recursive) {
+    Op1Entry e;
+    int r = op1_resolve(path, &e);
+    if (r <= 0) return 1;
+    if (e.is_dir) op1_ls_dir(e.id, "", recursive);
+    else          op1_print_entry(&e, "");
+    op1_entry_free(&e);
+    return 0;
+}
+
+static int op1_cmd_pull(const WCHAR *path, const WCHAR *dest) {
+    Op1Entry e;
+    int r = op1_resolve(path, &e);
+    if (r <= 0) return 1;
+
+    /* cp-style: an existing folder (or a path ending in a separator) gets
+       the item placed inside it; anything else is the new name. */
+    size_t dl = wcslen(dest);
+    int trailing = dl && (dest[dl - 1] == L'\\' || dest[dl - 1] == L'/');
+    if (trailing) op1_make_local_dirs(dest);
+    DWORD a = GetFileAttributesW(dest);
+    WCHAR target[OP1_PATH_MAX];
+    if (a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_DIRECTORY))
+        swprintf(target, OP1_PATH_MAX, trailing ? L"%ls%ls" : L"%ls\\%ls", dest, e.name);
+    else
+        swprintf(target, OP1_PATH_MAX, L"%ls", dest);
+
+    int rc;
+    if (e.is_dir) {
+        WalkStats stats = {0, 0};
+        clock_t t0 = clock();
+        op1_pull_tree(&e, target, &stats);
+        printf("\n=== Done: %d pulled, %d failed  (%.2f sec) ===\n", stats.processed, stats.failed,
+               (double)(clock() - t0) / CLOCKS_PER_SEC);
+        rc = stats.failed ? 1 : 0;
+    } else {
+        rc = op1_pull_file(&e, target, 1);
+    }
+    op1_entry_free(&e);
+    return rc;
+}
+
+static int op1_cmd_push(const WCHAR *local, const WCHAR *dev_folder, int force) {
+    WCHAR full[OP1_PATH_MAX];
+    if (!GetFullPathNameW(local, OP1_PATH_MAX, full, NULL)) {
+        fprintf(stderr, "op1: bad local path: %s\n", op1_u8(local));
+        return 1;
+    }
+    size_t fl = wcslen(full);
+    while (fl > 3 && (full[fl - 1] == L'\\' || full[fl - 1] == L'/')) full[--fl] = L'\0';
+    DWORD a = GetFileAttributesW(full);
+    if (a == INVALID_FILE_ATTRIBUTES) { fprintf(stderr, "op1: not found: %s\n", op1_u8(local)); return 1; }
+    const WCHAR *base = wcsrchr(full, L'\\');
+    base = base ? base + 1 : full;
+
+    Op1Entry dst;
+    int r = op1_resolve(dev_folder, &dst);
+    if (r <= 0) return 1;
+    if (!dst.is_dir) {
+        fprintf(stderr, "op1: %s is a file, not a folder\n", op1_u8(dev_folder));
+        op1_entry_free(&dst);
+        return 1;
+    }
+
+    int rc;
+    if (a & FILE_ATTRIBUTE_DIRECTORY) {
+        WalkStats stats = {0, 0};
+        clock_t t0 = clock();
+        op1_push_tree(full, dst.id, base, force, &stats);
+        printf("\n=== Done: %d pushed, %d failed  (%.2f sec) ===\n", stats.processed, stats.failed,
+               (double)(clock() - t0) / CLOCKS_PER_SEC);
+        rc = stats.failed ? 1 : 0;
+    } else {
+        rc = op1_push_file(full, dst.id, base, force, 1);
+    }
+    op1_entry_free(&dst);
+    return rc;
+}
+
+static int op1_cmd_mkdir(const WCHAR *path, int parents) {
+    WCHAR buf[OP1_PATH_MAX];
+    WCHAR *segs[OP1_MAX_SEGS];
+    wcsncpy(buf, path, OP1_PATH_MAX - 1);
+    buf[OP1_PATH_MAX - 1] = L'\0';
+    int ns = op1_split(buf, segs);
+    if (ns <= 0) { fprintf(stderr, "op1: mkdir needs a folder path\n"); return 1; }
+
+    WCHAR *cur = op1_cotask_dup(g_op1_root);
+    int rc = 0;
+    for (int i = 0; i < ns && !rc; i++) {
+        int last = (i == ns - 1);
+        Op1Entry e;
+        int r = op1_find_child(cur, segs[i], &e);
+        if (r < 0) { rc = 1; break; }
+        if (r == 1) {
+            if (!e.is_dir) {
+                fprintf(stderr, "op1: %s is a file, not a folder\n", op1_u8(segs[i]));
+                rc = 1;
+            } else if (last && !parents) {
+                fprintf(stderr, "op1: already exists: %s\n", op1_u8(path));
+                rc = 1;
+            } else {
+                CoTaskMemFree(cur);
+                cur = e.id;
+                e.id = NULL;
+            }
+            op1_entry_free(&e);
+        } else if (!last && !parents) {
+            fprintf(stderr, "op1: parent folder missing: %s (use -p)\n", op1_u8(segs[i]));
+            rc = 1;
+        } else {
+            WCHAR *nid = NULL;
+            HRESULT hr = op1_make_folder(cur, segs[i], &nid);
+            if (FAILED(hr)) { rc = op1_folder_fail(hr); break; }
+            printf("  created %s/\n", op1_u8(segs[i]));
+            CoTaskMemFree(cur);
+            cur = nid;
+        }
+    }
+    CoTaskMemFree(cur);
+    return rc;
+}
+
+static int op1_cmd_rm(const WCHAR *path, int recursive) {
+    WCHAR parent[OP1_PATH_MAX], leaf[OP1_PATH_MAX];
+    int ns = op1_split_leaf(path, parent, leaf);
+    if (ns < 0) { fprintf(stderr, "op1: path too deep\n"); return 1; }
+
+    Op1Entry e;
+    int r = op1_resolve(path, &e);
+    if (r <= 0) return 1;
+
+    int rc = 0;
+    /* Guard: never remove the storage root or the OP-1's own top-level
+       folders (synth, drum, tapes, mixdown). */
+    if (ns == 0 || (ns == 1 && e.is_dir)) {
+        fprintf(stderr, "op1: refusing to remove %s (top-level OP-1 folder)\n", ns ? op1_u8(leaf) : "the device root");
+        rc = 1;
+    } else if (e.is_dir && !recursive) {
+        fprintf(stderr, "op1: %s is a folder (use -r)\n", op1_u8(path));
+        rc = 1;
+    } else {
+        HRESULT hr = op1_delete(e.id, recursive);
+        if (FAILED(hr)) rc = op1_fail("delete", hr);
+        else printf("  removed %s%s\n", op1_u8(path), e.is_dir ? "/" : "");
+    }
+    op1_entry_free(&e);
+    return rc;
+}
+
+static int op1_cmd_mv(const WCHAR *path, const WCHAR *new_name) {
+    if (wcschr(new_name, L'/') || wcschr(new_name, L'\\') || !new_name[0]) {
+        fprintf(stderr, "op1: mv renames in place - give a new name, not a path\n");
+        return 1;
+    }
+    WCHAR parent[OP1_PATH_MAX], leaf[OP1_PATH_MAX];
+    int ns = op1_split_leaf(path, parent, leaf);
+    if (ns <= 0 || ns == 1) {
+        fprintf(stderr, "op1: refusing to rename %s\n", ns == 1 ? "a top-level OP-1 folder" : "the device root");
+        return 1;
+    }
+
+    Op1Entry e, par, clash;
+    if (op1_resolve(path, &e) <= 0) return 1;
+    if (op1_resolve(parent, &par) <= 0) { op1_entry_free(&e); return 1; }
+    int r = op1_find_child(par.id, new_name, &clash);
+    if (r != 0) {
+        if (r == 1) {
+            fprintf(stderr, "op1: %s already exists there\n", op1_u8(new_name));
+            op1_entry_free(&clash);
+        }
+        op1_entry_free(&e);
+        op1_entry_free(&par);
+        return 1;
+    }
+
+    /* Try a real rename first, if the device says the name is writable. */
+    int rc = 1;
+    BOOL can = FALSE;
+    IPortableDeviceValues *attrs = NULL;
+    if (SUCCEEDED(IPortableDeviceProperties_GetPropertyAttributes(g_op1_props, e.id,
+                      &WPD_OBJECT_ORIGINAL_FILE_NAME, &attrs))) {
+        IPortableDeviceValues_GetBoolValue(attrs, &WPD_PROPERTY_ATTRIBUTE_CAN_WRITE, &can);
+        IPortableDeviceValues_Release(attrs);
+    }
+    if (can) {
+        IPortableDeviceValues *v = NULL, *results = NULL;
+        if (SUCCEEDED(op1_new_values(&v))) {
+            IPortableDeviceValues_SetStringValue(v, &WPD_OBJECT_ORIGINAL_FILE_NAME, new_name);
+            HRESULT hr = IPortableDeviceProperties_SetValues(g_op1_props, e.id, v, &results);
+            HRESULT key_hr = S_OK;
+            if (results) {
+                IPortableDeviceValues_GetErrorValue(results, &WPD_OBJECT_ORIGINAL_FILE_NAME, &key_hr);
+                IPortableDeviceValues_Release(results);
+            }
+            if (SUCCEEDED(hr) && SUCCEEDED(key_hr)) rc = 0;
+            IPortableDeviceValues_Release(v);
+        }
+    }
+
+    /* Fallback for files: copy through a temp file under the new name, then
+       remove the original. */
+    if (rc && !e.is_dir) {
+        WCHAR tmpdir[MAX_PATH], tmp[MAX_PATH];
+        GetTempPathW(MAX_PATH, tmpdir);
+        GetTempFileNameW(tmpdir, L"op1", 0, tmp);
+        printf("  device doesn't support rename - copying under the new name instead\n");
+        if (op1_pull_file(&e, tmp, 0) == 0 && op1_push_file(tmp, par.id, new_name, 0, 0) == 0) {
+            HRESULT hr = op1_delete(e.id, 0);
+            rc = FAILED(hr) ? op1_fail("delete original", hr) : 0;
+        }
+        _wremove(tmp);
+    } else if (rc) {
+        fprintf(stderr, "op1: the device doesn't allow renaming this folder\n");
+    }
+    if (!rc) printf("  %s -> %s\n", op1_u8(path), op1_u8(new_name));
+
+    op1_entry_free(&e);
+    op1_entry_free(&par);
+    return rc;
+}
+
+static void op1_usage(const char *prog) {
+    fprintf(stderr,
+        "Usage: %s [-d <device>] <verb> [args...]\n\n"
+        "Device paths are '/'-separated from the OP-1's root, e.g. synth/myfolder/patch.aif\n\n"
+        "  ls    [-r] [path]                list a folder (default: root); -r recursive\n"
+        "  pull  <path> [local dest]        copy a file or folder to the PC (default dest: .)\n"
+        "  push  [-f] <local> <folder>      copy a local file or folder into a device folder;\n"
+        "                                   -f overwrites files that already exist\n"
+        "  mkdir [-p] <path>                create a folder; -p creates missing parents\n"
+        "  rm    [-r] <path>                delete a file; folders need -r\n"
+        "  mv    <path> <new name>          rename a file or folder in place\n\n"
+        "  -d <device>   friendly name of the portable device (default: " OP1_DEFAULT_DEVICE ")\n",
+        prog);
+}
+
+static int cmd_op1(int argc, char *argv[]) {
+    const char *device = OP1_DEFAULT_DEVICE;
+    int explicit_name = 0, recursive = 0, parents = 0, force = 0;
+    const char *verb = NULL;
+    const char *pos[4];
+    int npos = 0;
+
+    for (int i = 1; i < argc; i++) {
+        const char *a = argv[i];
+        if (!strcmp(a, "-d") && i + 1 < argc) { device = argv[++i]; explicit_name = 1; }
+        else if (!strcmp(a, "-r")) recursive = 1;
+        else if (!strcmp(a, "-p")) parents = 1;
+        else if (!strcmp(a, "-f")) force = 1;
+        else if (a[0] == '-' && a[1]) { fprintf(stderr, "op1: unknown flag %s\n", a); return 1; }
+        else if (!verb) verb = a;
+        else if (npos < 4) pos[npos++] = a;
+        else { op1_usage(argv[0]); return 1; }
+    }
+    if (!verb) { op1_usage(argv[0]); return 1; }
+
+    int need_min, need_max;
+    if      (!strcmp(verb, "ls"))    { need_min = 0; need_max = 1; }
+    else if (!strcmp(verb, "pull"))  { need_min = 1; need_max = 2; }
+    else if (!strcmp(verb, "push"))  { need_min = 2; need_max = 2; }
+    else if (!strcmp(verb, "mkdir")) { need_min = 1; need_max = 1; }
+    else if (!strcmp(verb, "rm"))    { need_min = 1; need_max = 1; }
+    else if (!strcmp(verb, "mv"))    { need_min = 2; need_max = 2; }
+    else { fprintf(stderr, "op1: unknown verb %s\n\n", verb); op1_usage(argv[0]); return 1; }
+    if (npos < need_min || npos > need_max) { op1_usage(argv[0]); return 1; }
+
+    SetConsoleOutputCP(CP_UTF8);
+    if (op1_open(device, explicit_name)) { op1_close(); return 1; }
+
+    WCHAR *w0 = op1_wide(npos > 0 ? pos[0] : "");
+    WCHAR *w1 = op1_wide(npos > 1 ? pos[1] : ".");
+    int rc;
+    if      (!strcmp(verb, "ls"))    rc = op1_cmd_ls(w0, recursive);
+    else if (!strcmp(verb, "pull"))  rc = op1_cmd_pull(w0, w1);
+    else if (!strcmp(verb, "push"))  rc = op1_cmd_push(w0, w1, force);
+    else if (!strcmp(verb, "mkdir")) rc = op1_cmd_mkdir(w0, parents);
+    else if (!strcmp(verb, "rm"))    rc = op1_cmd_rm(w0, recursive);
+    else                             rc = op1_cmd_mv(w0, w1);
+    free(w0);
+    free(w1);
+
+    op1_close();
+    return rc;
+}
+
+#else
+
+static int cmd_op1(int argc, char *argv[]) {
+    (void)argc;
+    fprintf(stderr, "%s: only supported on Windows (uses the WPD/MTP API)\n", argv[0]);
+    return 1;
+}
+
+#endif
+
+/* =========================================================================
  * ============================  dispatcher  ================================
  * ========================================================================= */
 
@@ -4124,7 +5041,8 @@ static void print_usage(const char *prog) {
         "  sort      <patch.aif | directory>\n"
         "  tag       <patch.json [patch2.json ...] | directory>\n"
         "  wrap      <input.aif|.wav> [output.aif] | <directory>\n"
-        "  samples   <preset.json | directory> [output.js]\n",
+        "  samples   <preset.json | directory> [output.js]\n"
+        "  op1       ls | pull | push | mkdir | rm | mv   (run 'mondo op1' for details)\n",
         prog);
 }
 
@@ -4149,6 +5067,7 @@ int main(int argc, char *argv[]) {
     else if (!strcmp(sub, "tag"))       ret = cmd_tag(argc - 1, argv + 1);
     else if (!strcmp(sub, "wrap"))      ret = cmd_wrap(argc - 1, argv + 1);
     else if (!strcmp(sub, "samples"))   ret = cmd_samples(argc - 1, argv + 1);
+    else if (!strcmp(sub, "op1"))       ret = cmd_op1(argc - 1, argv + 1);
     else { argv[1] = saved; print_usage(argv[0]); return 1; }
 
     argv[1] = saved;
