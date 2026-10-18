@@ -30,3 +30,8 @@ seed.generated.sql
 tsconfig.tsbuildinfo
 .impeccable/
 /shots/
+
+# OP-1 projects (mondo project): whole-device backups, can run to gigabytes.
+# Only the folder's README is tracked.
+/projects/*
+!/projects/README.md

@@ -72,6 +72,8 @@ ${B}C tools${R}
 
 ${B}OP-1${R}  (a connected OP-1 Field over USB; Windows, via mondo op1)
   op1 <verb> [args]            ls, pull, push, mkdir, rm, mv on the device (see README: mondo op1)
+  project <verb> [args]        back up / restore the whole OP-1: list, pull, push, diff, init
+                                 (see README: mondo project; push -f mirrors the project onto the device)
 
 ${B}Probes${R}  (hardware test patches in sandbox/, gitignored)
   probe list                   the probe sets in sandbox/
@@ -415,6 +417,7 @@ main() {
         *) die "c dump <file|dir> | c samples" ;;
       esac ;;
     op1) "$(mondo_bin)" op1 "$@" ;;
+    project) "$(mondo_bin)" project "$@" ;;
     probe) cmd_probe "$@" ;;
     db) cmd_db "$@" ;;
     test)

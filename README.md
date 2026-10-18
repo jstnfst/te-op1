@@ -31,6 +31,10 @@ The site splits in two at its home page, and so does this README.
 
 From a Windows terminal, `mondo op1` does the same thing: `mondo op1 push patch.aif synth/mine`. See [`mondo op1`](#mondo-op1).
 
+### Back up and restore the whole OP-1
+
+`mondo project pull mybackup` saves everything you can change on the device (patches, slots, tapes, mixdowns) into `projects/mybackup/`, and `mondo project push mybackup -f` puts it all back. `mondo project push factory-reset -f` returns the OP-1 to its factory state. See [`mondo project`](#mondo-project).
+
 ### On the site
 
 - **Library**: search by name, or filter by engine and tag
@@ -69,6 +73,7 @@ te-op1/
   presets/             .aif patches and their .json sidecars
   collection/          patch collections: .aif, .json, and .tags per preset
   sandbox/             hardware probe sets (gitignored; ./master-control.sh probe)
+  projects/            whole-device OP-1 backups (gitignored but for its README; mondo project)
   explore/             generated boundary patches (gitignored; mondo build explore)
 ```
 
@@ -167,6 +172,8 @@ One source file (`mondo.c`), one executable, one subcommand per job. Build it wi
 | [`wrap`](#mondo-wrap) | turn an audio file into a sampler patch |
 | [`samples`](#mondo-samples) | generate `samples.js` from preset JSON |
 | [`op1`](#mondo-op1) | list, copy, and delete files on a connected OP-1 (Windows) |
+| [`project`](#mondo-project) | back up, restore, or reset the whole OP-1 as a project folder (Windows) |
+| [`tape`](#mondo-tape) | each tape's name, type, and clip count from its `tape.json` |
 
 #### `mondo dump`
 
@@ -429,6 +436,60 @@ mondo op1 rm -r synth/mine                        → deletes a folder and its c
 - The OP-1 allows only one folder level (`synth/<folder>/patch.aif`), so a deeper `mkdir` or folder `push` fails
 - Renaming a patch also changes its `"name"` field. The OP-1 rewrites the APPL JSON to match the new file name, so the bytes after a rename differ from the original
 - `-d <name>` picks a device by its friendly name. By default it matches `OP-1`, or any teenage engineering USB device (VID `2367`)
+
+#### `mondo project`
+
+Back up, restore, or reset everything you can change on a connected OP-1 Field (Windows only).
+
+**TL;DR:** `mondo project pull mybackup` to back up, `mondo project push mybackup -f` to restore, `mondo project push factory-reset -f` to start over from factory state.
+
+A **project** is a folder in `projects/` (gitignored) holding the device's whole changeable state:
+
+```
+projects/<name>/
+  drum/     slots/1-8/ and your folders, every .aif at any depth
+  synth/    the same
+  mixdown/  side_a.wav, side_b.wav
+  tapes/    <tape>/tape.json, track_1.wav ... track_4.wav
+  README.md written by mondo: what the folder is and how to restore it
+```
+
+```
+mondo project list                          projects in projects/, with file counts and sizes
+mondo project pull <name> [-f]              back up the OP-1 into projects/<name>/
+mondo project push <name> [-f]              restore projects/<name>/ onto the OP-1
+mondo project diff <name>                   what differs between the project and the OP-1
+mondo project init <name> [--from <p>] [-f] a new project copied from projects/factory-reset/ (or <p>)
+```
+
+- **`-f` applies, its absence previews.** Pulling into a new folder copies at once. Pulling into an existing project, or any push, without `-f` only lists the changes (`+` add, `~` replace, `-` delete) and exits.
+- **Push `-f` mirrors.** The OP-1 ends up exactly like the project: files and folders on the device that aren't in the project are deleted. Take a `pull` backup first if the device holds anything you want to keep.
+- **Only changes move.** Files match by path and size, so updating a backup of large tapes copies only what changed.
+- **Notes.** A project can describe itself in two ways:
+  - **On the computer only:** the generated `README.md` and any other file you add that the device can't hold (`NOTES.md`, `tapes/<tape>/notes.md`, …). These are never pulled, pushed, or deleted. Inside `drum/` and `synth/`, only audio files (`.aif`, `.aiff`, `.aifc`, `.wav`) sync.
+  - **On the device too:** the OP-1's own text files — each folder's `readme.txt` and the `you may create folders here` marker. Edit them in the project, and push writes them over the device's copies, which come with the factory text. The OP-1 lets these be rewritten but refuses to create any new non-audio file. So a hint the device doesn't have stays in the project, marked `!` in the output. A tape folder made by a push starts empty of hints, but opening it once on the OP-1 fills it in (a factory `readme.txt`, a fresh `tape.json`, empty tracks). Push again after that and its notes go across. Hints are never deleted on either side, and a pull keeps the project's text when it differs from the device's (`=` in the output).
+- **Folder deletes are never recursive**, so a folder still holding a hint or your notes stays.
+- **`factory-reset` is a capture, not a template we invented.** Factory-reset the OP-1, then run `mondo project pull factory-reset`. `init` copies that capture as the starting point for new projects, and pushing it resets the device.
+- `./master-control.sh project <verb> ...` runs the same commands.
+- `mondo project list` shows each project's tapes by type (see [`mondo tape`](#mondo-tape)).
+
+#### `mondo tape`
+
+```
+mondo tape [-v] <tape.json | tape folder | tapes folder | project name>
+```
+
+Prints each tape's name, type, and clip count. `-v` adds every field stored in `tape.json`.
+
+```
+mondo tape tape-types
+  d                    Disk Mini          0 clips   (firmware layout)
+  s                    Studio 4-Track     0 clips   (firmware layout)
+```
+
+- A tape's folder name is its name on the OP-1: naming a tape on the device renames `tapes/<name>/`.
+- `tape_type` is `0` Studio 4-Track, `1` Vintage 4-Track, `2` Porta 4-Track, `3` Disk Mini, captured from one tape of each type made on the device. The other fields (tempo, loop, mixer, metronome, sync, clips) print as stored until they're probed one setting at a time.
+- `tape.json` has two layouts: the one in the factory image (no `mixer_params`, `loop` stored as `0`) and the one the firmware writes when it creates or opens a tape (`mixer_params`, `loop` as true/false).
 
 ### Testing on the hardware
 

@@ -19,6 +19,11 @@
  *   mondo op1       ls [-r] [path] | pull <path> [dest] | push [-f] <local> <folder>
  *                   | mkdir [-p] <path> | rm [-r] <path> | mv <path> <new name>
  *                   (files on a connected OP-1 Field over MTP; Windows only)
+ *   mondo project   list | pull <name> [-f] | push <name> [-f] | diff <name>
+ *                   | init <name> [--from <project>] [-f]
+ *                   (back up / restore the whole OP-1 as projects/<name>/; Windows only)
+ *   mondo tape      [-v] <tape.json | tape folder | tapes folder | project>
+ *                   (each tape's name, type, and clips; -v every stored field)
  *
  * Build: cl mondo.c cJSON.c /Fe:mondo.exe /W3 /D_CRT_SECURE_NO_WARNINGS
  */
@@ -4128,6 +4133,7 @@ static int cmd_samples(int argc, char *argv[]) {
 #pragma comment(lib, "ole32.lib")
 #pragma comment(lib, "oleaut32.lib")
 #pragma comment(lib, "PortableDeviceGUIDs.lib")
+#pragma comment(lib, "shell32.lib")   /* mondo project init -f: SHFileOperationW */
 
 #define OP1_MAX_SEGS  32
 #define OP1_PATH_MAX  1024
@@ -5013,11 +5019,782 @@ static int cmd_op1(int argc, char *argv[]) {
     return rc;
 }
 
+/* =========================================================================
+ * ============================  mondo project  ============================
+ * (back up, restore, and reset everything you can change on the OP-1)
+ *
+ * A project is a local folder (projects/<name>/) holding the device's
+ *   drum/ and synth/, all of them         every patch: slots and your folders
+ *   mixdown/side_a.wav, side_b.wav
+ *   tapes/<tape>/tape.json, track_1..4.wav
+ * Folders count too (an empty user/ or slots/N/ is part of the state).
+ * The device's text hints - each folder's readme.txt and the "you may
+ * create folders here" marker - carry a project's notes: the OP-1 lets them
+ * be rewritten but never created, so push replaces the ones it has, keeps a
+ * project's extra ones local, and neither side ever deletes one. Any other
+ * file in a project (README.md, NOTES.md, ...) is the project's own.
+ *
+ * pull and push compare by path and size (hints by content). Without -f
+ * they only print what would change; with -f push mirrors: the device ends
+ * up exactly like the project. Deletes are never recursive.
+ * ========================================================================= */
+
+#define PROJ_DIR      L"projects"
+#define PROJ_TEMPLATE "factory-reset"
+
+typedef struct {
+    WCHAR    *rel;     /* "synth/slots/1/x.aif" (malloc) */
+    int       is_dir;
+    ULONGLONG size;
+    WCHAR    *id;      /* device object ID (CoTaskMem), device side only */
+} ProjItem;
+
+typedef struct { ProjItem *v; int n, cap; } ProjList;
+
+static const WCHAR *PROJ_ROOTS[] = { L"drum", L"synth", L"mixdown", L"tapes" };
+
+static void proj_add(ProjList *l, const WCHAR *rel, int is_dir, ULONGLONG size, const WCHAR *id) {
+    if (l->n == l->cap) {
+        l->cap = l->cap ? l->cap * 2 : 64;
+        l->v = realloc(l->v, l->cap * sizeof(*l->v));
+    }
+    ProjItem *it = &l->v[l->n++];
+    it->rel = _wcsdup(rel);
+    it->is_dir = is_dir;
+    it->size = size;
+    it->id = id ? op1_cotask_dup(id) : NULL;
+}
+
+static void proj_free(ProjList *l) {
+    for (int i = 0; i < l->n; i++) { free(l->v[i].rel); CoTaskMemFree(l->v[i].id); }
+    free(l->v);
+    l->v = NULL; l->n = l->cap = 0;
+}
+
+static int proj_cmp(const void *a, const void *b) {
+    return _wcsicmp(((const ProjItem *)a)->rel, ((const ProjItem *)b)->rel);
+}
+
+static const ProjItem *proj_find(const ProjList *l, const WCHAR *rel) {
+    ProjItem key = { (WCHAR *)rel, 0, 0, NULL };
+    return bsearch(&key, l->v, l->n, sizeof(*l->v), proj_cmp);
+}
+
+static const WCHAR *proj_leaf(const WCHAR *rel) {
+    const WCHAR *s = wcsrchr(rel, L'/');
+    return s ? s + 1 : rel;
+}
+
+/* The device's own text files: each folder's readme.txt and the "you may
+   create folders here" marker. The OP-1 lets them be rewritten but refuses
+   to create them (or any other non-audio file), so a project's notes reach
+   the device only where one already exists: replaced on push, never added
+   there, never deleted on either side. */
+static int proj_is_hint(const WCHAR *rel) {
+    const WCHAR *leaf = proj_leaf(rel);
+    return _wcsicmp(leaf, L"readme.txt") == 0 || _wcsicmp(leaf, L"you may create folders here") == 0;
+}
+
+/* What drum/ and synth/ accept (their factory readme says so) */
+static int proj_is_audio(const WCHAR *leaf) {
+    const WCHAR *dot = wcsrchr(leaf, L'.');
+    return dot && (!_wcsicmp(dot, L".aif") || !_wcsicmp(dot, L".aiff") || !_wcsicmp(dot, L".aifc") || !_wcsicmp(dot, L".wav"));
+}
+
+/* Is this path (below one of the four roots) part of a project? Anything
+   else in a project folder - its README.md, NOTES.md, tapes/<tape>/notes.md
+   - is the project's own and is never pulled, pushed, or deleted. */
+static int proj_include(const WCHAR *rel, int is_dir) {
+    WCHAR buf[OP1_PATH_MAX];
+    WCHAR *segs[OP1_MAX_SEGS];
+    wcsncpy(buf, rel, OP1_PATH_MAX - 1);
+    buf[OP1_PATH_MAX - 1] = L'\0';
+    int n = op1_split(buf, segs);
+    if (n < 2) return 0;                      /* the roots themselves always exist */
+    if (!is_dir && proj_is_hint(rel)) return 1;
+    if (!_wcsicmp(segs[0], L"drum") || !_wcsicmp(segs[0], L"synth")) return is_dir || proj_is_audio(segs[n - 1]);
+    if (!_wcsicmp(segs[0], L"mixdown"))
+        return !is_dir && n == 2 && (!_wcsicmp(segs[1], L"side_a.wav") || !_wcsicmp(segs[1], L"side_b.wav"));
+    if (!_wcsicmp(segs[0], L"tapes")) {
+        if (is_dir) return n == 2;
+        if (n != 3) return 0;
+        return !_wcsicmp(segs[2], L"tape.json") ||
+               (wcslen(segs[2]) == 11 && !_wcsnicmp(segs[2], L"track_", 6) &&
+                segs[2][6] >= L'1' && segs[2][6] <= L'4' && !_wcsicmp(segs[2] + 7, L".wav"));
+    }
+    return 0;
+}
+
+static void proj_device_walk(const WCHAR *id, const WCHAR *rel, ProjList *out, int *failed) {
+    Op1Entry *kids;
+    int nk;
+    if (FAILED(op1_children(id, &kids, &nk))) { (*failed)++; return; }
+    for (int i = 0; i < nk; i++) {
+        WCHAR child[OP1_PATH_MAX];
+        swprintf(child, OP1_PATH_MAX, L"%ls/%ls", rel, kids[i].name);
+        if (!proj_include(child, kids[i].is_dir)) continue;
+        proj_add(out, child, kids[i].is_dir, kids[i].is_dir ? 0 : kids[i].size, kids[i].id);
+        if (kids[i].is_dir) proj_device_walk(kids[i].id, child, out, failed);
+    }
+    op1_free_entries(kids, nk);
+}
+
+/* Everything a project covers, as the device has it. Root folder IDs land in
+   roots[] so later uploads can find their parents. */
+static int proj_device_inventory(ProjList *out, WCHAR *roots[4]) {
+    int failed = 0;
+    for (int r = 0; r < 4; r++) {
+        Op1Entry e;
+        roots[r] = NULL;
+        if (op1_find_child(g_op1_root, PROJ_ROOTS[r], &e) != 1 || !e.is_dir) {
+            fprintf(stderr, "project: the OP-1 has no %s/ folder\n", op1_u8(PROJ_ROOTS[r]));
+            failed++;
+            continue;
+        }
+        roots[r] = e.id; e.id = NULL;
+        op1_entry_free(&e);
+        proj_device_walk(roots[r], PROJ_ROOTS[r], out, &failed);
+    }
+    qsort(out->v, out->n, sizeof(*out->v), proj_cmp);
+    return failed;
+}
+
+static void proj_local_walk(const WCHAR *base, const WCHAR *rel, ProjList *out) {
+    WCHAR pattern[OP1_PATH_MAX];
+    swprintf(pattern, OP1_PATH_MAX, L"%ls\\%ls\\*", base, rel);
+    for (WCHAR *p = pattern; *p; p++) if (*p == L'/') *p = L'\\';
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    do {
+        if (!wcscmp(fd.cFileName, L".") || !wcscmp(fd.cFileName, L"..")) continue;
+        int is_dir = !!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY);
+        WCHAR child[OP1_PATH_MAX];
+        swprintf(child, OP1_PATH_MAX, L"%ls/%ls", rel, fd.cFileName);
+        if (!proj_include(child, is_dir)) continue;
+        proj_add(out, child, is_dir, is_dir ? 0 : ((ULONGLONG)fd.nFileSizeHigh << 32) | fd.nFileSizeLow, NULL);
+        if (is_dir) proj_local_walk(base, child, out);
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+}
+
+static void proj_local_inventory(const WCHAR *base, ProjList *out) {
+    for (int r = 0; r < 4; r++) proj_local_walk(base, PROJ_ROOTS[r], out);
+    qsort(out->v, out->n, sizeof(*out->v), proj_cmp);
+}
+
+/* What it takes to make dst look like src: adds (in src only), replaces
+   (both, but a file's size differs or one side is a folder), deletes (in dst
+   only). Each list holds pointers into src (adds/replaces) or dst (deletes).
+   Hints are never deleted. They land in skip instead: on push, one the
+   device lacks (it can't be created there); on pull, one whose text differs
+   (the project's notes win - the device's text only changes by a push). */
+typedef struct { const ProjItem **v; int n; } ProjRefs;
+typedef struct { ProjRefs add, rep, del, skip; int to_device; } ProjDiff;
+
+static void proj_ref(ProjRefs *r, const ProjItem *it, int cap) {
+    if (!r->v) r->v = malloc((cap ? cap : 1) * sizeof(*r->v));
+    r->v[r->n++] = it;
+}
+
+static void proj_local_path(const WCHAR *base, const WCHAR *rel, WCHAR *out);
+
+/* A hint edit can keep its byte count, so equal-size hints compare content:
+   the device copy is read into memory (they're a few hundred bytes). */
+static int proj_same_content(const WCHAR *dev_id, const WCHAR *local) {
+    IStream *st = NULL;
+    DWORD opt = 0;
+    if (FAILED(IPortableDeviceResources_GetStream(g_op1_res, dev_id, &WPD_RESOURCE_DEFAULT, STGM_READ, &opt, &st))) return 0;
+    FILE *f = _wfopen(local, L"rb");
+    int same = !!f;
+    BYTE a[4096], b[4096];
+    while (same) {
+        ULONG got = 0;
+        if (FAILED(IStream_Read(st, a, sizeof(a), &got))) { same = 0; break; }
+        size_t lg = fread(b, 1, got ? got : sizeof(b), f);
+        if (got == 0) { same = (lg == 0); break; }
+        if (lg != got || memcmp(a, b, got)) same = 0;
+    }
+    if (f) fclose(f);
+    IStream_Release(st);
+    return same;
+}
+
+/* src/dst are the device and the project in either order: to_device says
+   dst is the device (push, diff); localdir lets equal-size hints be read. */
+static void proj_diff(const ProjList *src, const ProjList *dst, ProjDiff *d, const WCHAR *localdir, int to_device) {
+    memset(d, 0, sizeof(*d));
+    d->to_device = to_device;
+    int cap = src->n + dst->n;
+    for (int i = 0; i < src->n; i++) {
+        const ProjItem *s = &src->v[i], *o = proj_find(dst, s->rel);
+        int hint = !s->is_dir && proj_is_hint(s->rel);
+        if (!o) { proj_ref(hint && to_device ? &d->skip : &d->add, s, cap); continue; }
+        int differs = o->is_dir != s->is_dir || (!o->is_dir && o->size != s->size);
+        if (!differs && hint) {
+            WCHAR path[OP1_PATH_MAX];
+            proj_local_path(localdir, s->rel, path);
+            differs = !proj_same_content(to_device ? o->id : s->id, path);
+        }
+        if (differs) proj_ref(hint && !to_device ? &d->skip : &d->rep, s, cap);
+    }
+    for (int i = 0; i < dst->n; i++)
+        if (!proj_find(src, dst->v[i].rel) && !(!dst->v[i].is_dir && proj_is_hint(dst->v[i].rel)))
+            proj_ref(&d->del, &dst->v[i], cap);
+}
+
+static void proj_diff_free(ProjDiff *d) { free(d->add.v); free(d->rep.v); free(d->del.v); free(d->skip.v); }
+
+static const char *proj_size(ULONGLONG n) {
+    static char bufs[4][32];
+    static int slot;
+    char *b = bufs[slot++ & 3];
+    if (n >= 1024ull * 1024) snprintf(b, 32, "%.1f MB", n / 1048576.0);
+    else if (n >= 1024) snprintf(b, 32, "%.0f KB", n / 1024.0);
+    else snprintf(b, 32, "%llu B", n);
+    return b;
+}
+
+static void proj_line(char mark, const ProjItem *it) {
+    if (it->is_dir) printf("  %c %s/\n", mark, op1_u8(it->rel));
+    else            printf("  %c %s  (%s)\n", mark, op1_u8(it->rel), proj_size(it->size));
+}
+
+/* A tape folder the OP-1 hasn't opened yet has no readme.txt; opening it on
+   the device writes one (plus a fresh tape.json and empty tracks), and the
+   next push can then put the project's notes there. */
+static void proj_skip_line(const ProjDiff *d, const ProjItem *it) {
+    if (!d->to_device)
+        printf("  = %s  (kept: the project's text differs from the OP-1's; push to put it there)\n", op1_u8(it->rel));
+    else if (!_wcsnicmp(it->rel, L"tapes/", 6))
+        printf("  ! %s  (stays in the project for now: open this tape on the OP-1 once, then push again)\n", op1_u8(it->rel));
+    else
+        printf("  ! %s  (stays in the project: the OP-1 has no file there to write it into)\n", op1_u8(it->rel));
+}
+
+/* Prints the diff; returns how many changes it holds (skips aren't changes). */
+static int proj_print_diff(const ProjDiff *d) {
+    for (int i = 0; i < d->add.n; i++) proj_line('+', d->add.v[i]);
+    for (int i = 0; i < d->rep.n; i++) proj_line('~', d->rep.v[i]);
+    for (int i = 0; i < d->del.n; i++) proj_line('-', d->del.v[i]);
+    for (int i = 0; i < d->skip.n; i++) proj_skip_line(d, d->skip.v[i]);
+    return d->add.n + d->rep.n + d->del.n;
+}
+
+static void proj_local_path(const WCHAR *base, const WCHAR *rel, WCHAR *out) {
+    swprintf(out, OP1_PATH_MAX, L"%ls\\%ls", base, rel);
+    for (WCHAR *p = out; *p; p++) if (*p == L'/') *p = L'\\';
+}
+
+/* projects/<name>, or <name> itself when it's a path */
+static void proj_dir(const char *name, WCHAR *out) {
+    WCHAR *w = op1_wide(name);
+    if (wcschr(w, L'/') || wcschr(w, L'\\')) wcsncpy(out, w, OP1_PATH_MAX - 1);
+    else swprintf(out, OP1_PATH_MAX, L"%ls\\%ls", PROJ_DIR, w);
+    out[OP1_PATH_MAX - 1] = L'\0';
+    free(w);
+}
+
+static int proj_exists(const WCHAR *dir) {
+    DWORD a = GetFileAttributesW(dir);
+    return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_DIRECTORY);
+}
+
+static void proj_write_readme(const WCHAR *dir, const WCHAR *name) {
+    WCHAR path[OP1_PATH_MAX];
+    swprintf(path, OP1_PATH_MAX, L"%ls\\README.md", dir);
+    if (GetFileAttributesW(path) != INVALID_FILE_ATTRIBUTES) return;
+    FILE *f = _wfopen(path, L"wb");
+    if (!f) return;
+    const char *n = op1_u8(name);
+    fprintf(f,
+        "# OP-1 Field project: %s\n\n"
+        "Everything you can change on an OP-1 Field - drum/, synth/, mixdown/, tapes/ - saved by `mondo project`.\n\n"
+        "- Restore it to the device: `mondo project push %s -f` (without `-f` it only lists the changes)\n"
+        "- Update it from the device: `mondo project pull %s -f`\n"
+        "- Start a new project from this one: `mondo project init <new name> --from %s`\n\n"
+        "Notes: the `readme.txt` files here (e.g. `tapes/<tape>/readme.txt`) go onto the OP-1 with a push;\n"
+        "anything else you add (`NOTES.md`, ...) stays on the computer.\n\n"
+        "More: https://github.com/jstnfst/te-op1#mondo-project\n", n, n, n, n);
+    fclose(f);
+}
+
+/* Parent folder's device ID for an upload: a root, a folder already on the
+   device, or one created earlier in this push. */
+static const WCHAR *proj_parent_id(const WCHAR *rel, WCHAR *roots[4], const ProjList *dev, const ProjList *made) {
+    WCHAR parent[OP1_PATH_MAX], leaf[OP1_PATH_MAX];
+    int n = op1_split_leaf(rel, parent, leaf);
+    if (n == 2) {
+        for (int r = 0; r < 4; r++) if (!_wcsicmp(parent, PROJ_ROOTS[r])) return roots[r];
+        return NULL;
+    }
+    const ProjItem *it = proj_find(dev, parent);
+    if (it && it->is_dir) return it->id;
+    for (int i = 0; i < made->n; i++) if (!_wcsicmp(made->v[i].rel, parent)) return made->v[i].id;
+    return NULL;
+}
+
+/* Deletes run deepest-first: reverse path order puts "a/b" before "a". */
+static int proj_cmp_del(const void *a, const void *b) {
+    return -_wcsicmp((*(const ProjItem *const *)a)->rel, (*(const ProjItem *const *)b)->rel);
+}
+
+/* ---- pull: device -> project ---- */
+static int proj_pull(const char *name, int force) {
+    WCHAR dir[OP1_PATH_MAX];
+    proj_dir(name, dir);
+    int fresh = !proj_exists(dir);
+
+    ProjList dev = {0}, loc = {0};
+    WCHAR *roots[4];
+    int failed = proj_device_inventory(&dev, roots);
+    if (!fresh) proj_local_inventory(dir, &loc);
+    ProjDiff d;
+    proj_diff(&dev, &loc, &d, dir, 0);
+
+    int rc = 0;
+    if (!fresh && !force) {
+        int n = proj_print_diff(&d);
+        if (n) printf("\n%d change(s) to make %s match the OP-1 - run again with -f to apply\n", n, op1_u8(dir));
+        else   printf("%s already matches the OP-1\n", op1_u8(dir));
+        goto done;
+    }
+
+    clock_t t0 = clock();
+    int copied = 0, deleted = 0;
+    /* the four roots aren't items (they always exist on the device), so make
+       them here; everything else comes in path order, folders before contents */
+    for (int r = 0; r < 4; r++) {
+        WCHAR root[OP1_PATH_MAX];
+        proj_local_path(dir, PROJ_ROOTS[r], root);
+        op1_make_local_dirs(root);
+    }
+    const ProjRefs *lists[2] = { &d.add, &d.rep };
+    for (int l = 0; l < 2; l++) for (int i = 0; i < lists[l]->n; i++) {
+        const ProjItem *it = lists[l]->v[i];
+        WCHAR path[OP1_PATH_MAX];
+        proj_local_path(dir, it->rel, path);
+        if (l == 1) { DeleteFileW(path); RemoveDirectoryW(path); }
+        if (it->is_dir) { op1_make_local_dirs(path); continue; }
+        Op1Entry e = { it->id, NULL, 0, it->size, 0 };
+        if (op1_pull_file(&e, path, 0) == 0) { proj_line(l ? '~' : '+', it); copied++; }
+        else failed++;
+    }
+    qsort(d.del.v, d.del.n, sizeof(*d.del.v), proj_cmp_del);
+    for (int i = 0; i < d.del.n; i++) {
+        WCHAR path[OP1_PATH_MAX];
+        proj_local_path(dir, d.del.v[i]->rel, path);
+        if (d.del.v[i]->is_dir ? RemoveDirectoryW(path) : DeleteFileW(path)) { proj_line('-', d.del.v[i]); deleted++; }
+        else if (d.del.v[i]->is_dir) printf("  = %s/  (kept: holds the project's own notes)\n", op1_u8(d.del.v[i]->rel));
+        else failed++;
+    }
+    for (int i = 0; i < d.skip.n; i++) proj_skip_line(&d, d.skip.v[i]);
+    WCHAR *wname = op1_wide(name);
+    proj_write_readme(dir, proj_leaf(wname));
+    free(wname);
+    printf("\n=== Done: %d copied, %d unchanged, %d deleted, %d kept, %d failed  (%.2f sec) -> %s ===\n",
+           copied, dev.n - d.add.n - d.rep.n - d.skip.n, deleted, d.skip.n, failed, (double)(clock() - t0) / CLOCKS_PER_SEC, op1_u8(dir));
+    rc = failed ? 1 : 0;
+
+done:
+    proj_diff_free(&d);
+    proj_free(&dev); proj_free(&loc);
+    for (int r = 0; r < 4; r++) CoTaskMemFree(roots[r]);
+    return rc;
+}
+
+/* ---- push: project -> device (mirror) ---- */
+static int proj_push(const char *name, int force) {
+    WCHAR dir[OP1_PATH_MAX];
+    proj_dir(name, dir);
+    if (!proj_exists(dir)) { fprintf(stderr, "project: no project at %s (mondo project list)\n", op1_u8(dir)); return 1; }
+
+    ProjList dev = {0}, loc = {0}, made = {0};
+    WCHAR *roots[4];
+    int failed = proj_device_inventory(&dev, roots);
+    proj_local_inventory(dir, &loc);
+    if (loc.n == 0) {
+        fprintf(stderr, "project: %s is empty - refusing to mirror it onto the OP-1\n", op1_u8(dir));
+        proj_free(&dev); proj_free(&loc);
+        for (int r = 0; r < 4; r++) CoTaskMemFree(roots[r]);
+        return 1;
+    }
+    ProjDiff d;
+    proj_diff(&loc, &dev, &d, dir, 1);
+
+    int rc = 0;
+    if (!force) {
+        int n = proj_print_diff(&d);
+        if (n) printf("\n%d change(s) to make the OP-1 match %s - run again with -f to apply\n", n, op1_u8(dir));
+        else   printf("the OP-1 already matches %s\n", op1_u8(dir));
+        goto done;
+    }
+
+    clock_t t0 = clock();
+    int copied = 0, deleted = 0;
+    const ProjRefs *lists[2] = { &d.add, &d.rep };
+    for (int l = 0; l < 2; l++) for (int i = 0; i < lists[l]->n; i++) {
+        const ProjItem *it = lists[l]->v[i];
+        const WCHAR *pid = proj_parent_id(it->rel, roots, &dev, &made);
+        if (!pid) { fprintf(stderr, "  ! %s: its folder isn't on the device\n", op1_u8(it->rel)); failed++; continue; }
+        if (l == 1) {   /* a file/folder swap: the old one goes first */
+            const ProjItem *old = proj_find(&dev, it->rel);
+            if (old && old->is_dir != it->is_dir && FAILED(op1_delete(old->id, 0))) { failed++; continue; }
+        }
+        if (it->is_dir) {
+            WCHAR *nid = NULL;
+            HRESULT hr = op1_make_folder(pid, proj_leaf(it->rel), &nid);
+            if (FAILED(hr)) { fprintf(stderr, "  ! %s/: ", op1_u8(it->rel)); op1_folder_fail(hr); failed++; continue; }
+            proj_add(&made, it->rel, 1, 0, nid);
+            CoTaskMemFree(nid);
+            proj_line('+', it);
+            continue;
+        }
+        WCHAR path[OP1_PATH_MAX];
+        proj_local_path(dir, it->rel, path);
+        if (op1_push_file(path, pid, proj_leaf(it->rel), 1, 0) == 0) { proj_line(l ? '~' : '+', it); copied++; }
+        else failed++;
+    }
+    qsort(d.del.v, d.del.n, sizeof(*d.del.v), proj_cmp_del);
+    for (int i = 0; i < d.del.n; i++) {
+        const ProjItem *it = d.del.v[i];
+        /* never recursive: a folder that still holds a factory hint stays */
+        if (SUCCEEDED(op1_delete(it->id, 0))) { proj_line('-', it); deleted++; }
+        else if (it->is_dir) printf("  = %s/  (kept: holds the device's own files)\n", op1_u8(it->rel));
+        else failed++;
+    }
+    for (int i = 0; i < d.skip.n; i++) proj_skip_line(&d, d.skip.v[i]);
+    printf("\n=== Done: %d copied, %d unchanged, %d deleted, %d kept local, %d failed  (%.2f sec) <- %s ===\n",
+           copied, loc.n - d.add.n - d.rep.n - d.skip.n, deleted, d.skip.n, failed, (double)(clock() - t0) / CLOCKS_PER_SEC, op1_u8(dir));
+    rc = failed ? 1 : 0;
+
+done:
+    proj_diff_free(&d);
+    proj_free(&dev); proj_free(&loc); proj_free(&made);
+    for (int r = 0; r < 4; r++) CoTaskMemFree(roots[r]);
+    return rc;
+}
+
+static int proj_diff_cmd(const char *name) {
+    WCHAR dir[OP1_PATH_MAX];
+    proj_dir(name, dir);
+    if (!proj_exists(dir)) { fprintf(stderr, "project: no project at %s\n", op1_u8(dir)); return 1; }
+    ProjList dev = {0}, loc = {0};
+    WCHAR *roots[4];
+    int failed = proj_device_inventory(&dev, roots);
+    proj_local_inventory(dir, &loc);
+    ProjDiff d;
+    proj_diff(&loc, &dev, &d, dir, 1);
+    /* from the project's side: + only in the project, - only on the OP-1 */
+    for (int i = 0; i < d.add.n; i++) proj_line('+', d.add.v[i]);
+    for (int i = 0; i < d.rep.n; i++) proj_line('~', d.rep.v[i]);
+    for (int i = 0; i < d.del.n; i++) proj_line('-', d.del.v[i]);
+    for (int i = 0; i < d.skip.n; i++) proj_skip_line(&d, d.skip.v[i]);
+    int n = d.add.n + d.rep.n + d.del.n;
+    if (n) printf("\n%d difference(s): + only in %s, - only on the OP-1, ~ differs\n", n, op1_u8(dir));
+    else   printf("the OP-1 and %s match (%d items)\n", op1_u8(dir), loc.n);
+    proj_diff_free(&d);
+    proj_free(&dev); proj_free(&loc);
+    for (int r = 0; r < 4; r++) CoTaskMemFree(roots[r]);
+    return failed ? 1 : 0;
+}
+
+/* ---- local-only verbs ---- */
+static int proj_copy_tree(const WCHAR *from, const WCHAR *to) {
+    CreateDirectoryW(to, NULL);
+    WCHAR pattern[OP1_PATH_MAX];
+    swprintf(pattern, OP1_PATH_MAX, L"%ls\\*", from);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return 1;
+    int rc = 0;
+    do {
+        if (!wcscmp(fd.cFileName, L".") || !wcscmp(fd.cFileName, L"..")) continue;
+        WCHAR a[OP1_PATH_MAX], b[OP1_PATH_MAX];
+        swprintf(a, OP1_PATH_MAX, L"%ls\\%ls", from, fd.cFileName);
+        swprintf(b, OP1_PATH_MAX, L"%ls\\%ls", to, fd.cFileName);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) rc |= proj_copy_tree(a, b);
+        else if (_wcsicmp(fd.cFileName, L"README.md") != 0 && !CopyFileW(a, b, FALSE)) rc = 1;
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+    return rc;
+}
+
+static int proj_init(const char *name, const char *from, int force) {
+    WCHAR dir[OP1_PATH_MAX], tpl[OP1_PATH_MAX];
+    proj_dir(name, dir);
+    proj_dir(from, tpl);
+    if (!proj_exists(tpl)) {
+        fprintf(stderr, "project: no template at %s\n"
+                        "  capture one first: factory-reset the OP-1, then mondo project pull %s\n", op1_u8(tpl), from);
+        return 1;
+    }
+    if (proj_exists(dir) && !force) {
+        fprintf(stderr, "project: %s already exists (use -f to replace it)\n", op1_u8(dir));
+        return 1;
+    }
+    if (proj_exists(dir)) {
+        /* replace: clear the old project's contents first */
+        SHFILEOPSTRUCTW op = {0};
+        WCHAR dbl[OP1_PATH_MAX + 2] = {0};
+        wcsncpy(dbl, dir, OP1_PATH_MAX);  /* double-NUL list for SHFileOperation */
+        op.wFunc = FO_DELETE; op.pFrom = dbl; op.fFlags = FOF_NO_UI;
+        if (SHFileOperationW(&op) != 0) { fprintf(stderr, "project: could not clear %s\n", op1_u8(dir)); return 1; }
+    }
+    op1_make_local_dirs(dir);
+    if (proj_copy_tree(tpl, dir)) { fprintf(stderr, "project: copy from %s failed\n", op1_u8(tpl)); return 1; }
+    WCHAR *wname = op1_wide(name);
+    proj_write_readme(dir, proj_leaf(wname));
+    free(wname);
+    printf("  created %s from %s\n  put it on the OP-1 with: mondo project push %s -f\n", op1_u8(dir), op1_u8(tpl), name);
+    return 0;
+}
+
+static void proj_tally(const WCHAR *dir, int *files, ULONGLONG *bytes) {
+    WCHAR pattern[OP1_PATH_MAX];
+    swprintf(pattern, OP1_PATH_MAX, L"%ls\\*", dir);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return;
+    do {
+        if (!wcscmp(fd.cFileName, L".") || !wcscmp(fd.cFileName, L"..")) continue;
+        WCHAR c[OP1_PATH_MAX];
+        swprintf(c, OP1_PATH_MAX, L"%ls\\%ls", dir, fd.cFileName);
+        if (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) proj_tally(c, files, bytes);
+        else { (*files)++; *bytes += ((ULONGLONG)fd.nFileSizeHigh << 32) | fd.nFileSizeLow; }
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+}
+
+/* =========================================================================
+ * ==============================  mondo tape  =============================
+ * (what's in an OP-1 tape: tapes/<name>/tape.json)
+ *
+ * A tape's folder name is its name on the device. tape.json comes in two
+ * layouts: the factory image's (no mixer_params, loop as 0) and the one the
+ * firmware writes (mixer_params[8], loop as true/false). Only tape_type is
+ * verified on hardware so far; every other field prints as stored.
+ * ========================================================================= */
+
+/* tape_type, verified 2026-10-18: one tape of each type made on the device */
+static const char *TAPE_TYPES[] = { "Studio 4-Track", "Vintage 4-Track", "Porta 4-Track", "Disk Mini" };
+static const char *g_tape_indent = "  ";   /* deeper under a project in `project list` */
+
+static char *tape_read(const WCHAR *path) {
+    FILE *f = _wfopen(path, L"rb");
+    if (!f) return NULL;
+    fseek(f, 0, SEEK_END);
+    long n = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    char *s = malloc(n + 1);
+    if (s) { s[fread(s, 1, n, f)] = '\0'; }
+    fclose(f);
+    return s;
+}
+
+static const char *tape_type_name(const cJSON *j) {
+    const cJSON *t = cJSON_GetObjectItemCaseSensitive(j, "tape_type");
+    if (!cJSON_IsNumber(t)) return "(no tape_type)";
+    int v = t->valueint;
+    static char unk[32];
+    if (v >= 0 && v < (int)(sizeof(TAPE_TYPES) / sizeof(*TAPE_TYPES))) return TAPE_TYPES[v];
+    snprintf(unk, sizeof(unk), "unknown type %d", v);
+    return unk;
+}
+
+/* One tape: a line (name, type, clips), or with `full` every stored field. */
+static int tape_show(const WCHAR *json_path, const WCHAR *name, int full) {
+    char *raw = tape_read(json_path);
+    if (!raw) { fprintf(stderr, "tape: cannot read %s\n", op1_u8(json_path)); return 1; }
+    cJSON *j = cJSON_Parse(raw);
+    free(raw);
+    if (!j) { fprintf(stderr, "tape: %s is not valid JSON\n", op1_u8(json_path)); return 1; }
+
+    const cJSON *clips = cJSON_GetObjectItemCaseSensitive(j, "clips");
+    int nclips = cJSON_IsArray(clips) ? cJSON_GetArraySize(clips) : 0;
+    int firmware = cJSON_GetObjectItemCaseSensitive(j, "mixer_params") != NULL;
+    printf("%s%-20s %-16s %3d clip%s   (%s layout)\n", g_tape_indent, op1_u8(name), tape_type_name(j),
+           nclips, nclips == 1 ? " " : "s", firmware ? "firmware" : "factory");
+    if (full) {
+        for (const cJSON *it = j->child; it; it = it->next) {
+            char *v = cJSON_PrintUnformatted(it);
+            printf("      %-22s %s\n", it->string, v ? v : "?");
+            free(v);
+        }
+    }
+    cJSON_Delete(j);
+    return 0;
+}
+
+/* Every tape below a tapes/ folder: each subfolder holding a tape.json. */
+static int tape_show_dir(const WCHAR *tapes, int full, int *count) {
+    WCHAR pattern[OP1_PATH_MAX];
+    swprintf(pattern, OP1_PATH_MAX, L"%ls\\*", tapes);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    if (h == INVALID_HANDLE_VALUE) return 0;
+    int rc = 0;
+    do {
+        if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] == L'.') continue;
+        WCHAR json[OP1_PATH_MAX];
+        swprintf(json, OP1_PATH_MAX, L"%ls\\%ls\\tape.json", tapes, fd.cFileName);
+        if (GetFileAttributesW(json) == INVALID_FILE_ATTRIBUTES) {
+            printf("%s%-20s (no tape.json yet: open it on the OP-1 once)\n", g_tape_indent, op1_u8(fd.cFileName));
+            continue;
+        }
+        rc |= tape_show(json, fd.cFileName, full);
+        (*count)++;
+    } while (FindNextFileW(h, &fd));
+    FindClose(h);
+    return rc;
+}
+
+static int cmd_tape(int argc, char *argv[]) {
+    int full = 0;
+    const char *target = NULL;
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "-v")) full = 1;
+        else if (!target) target = argv[i];
+        else target = NULL, i = argc;
+    }
+    if (!target) {
+        fprintf(stderr,
+            "Usage: %s [-v] <tape.json | tape folder | tapes folder | project>\n"
+            "  prints each tape's name, type and clip count; -v adds every stored field\n", argv[0]);
+        return 1;
+    }
+    SetConsoleOutputCP(CP_UTF8);
+    WCHAR *w = op1_wide(target);
+    WCHAR path[OP1_PATH_MAX], probe[OP1_PATH_MAX];
+    wcsncpy(path, w, OP1_PATH_MAX - 1);
+    path[OP1_PATH_MAX - 1] = L'\0';
+    free(w);
+    size_t n = wcslen(path);
+    while (n > 1 && (path[n - 1] == L'\\' || path[n - 1] == L'/')) path[--n] = L'\0';
+
+    DWORD a = GetFileAttributesW(path);
+    if (a == INVALID_FILE_ATTRIBUTES) {
+        /* a bare name: a project in projects/ */
+        swprintf(probe, OP1_PATH_MAX, L"%ls\\%ls", PROJ_DIR, path);
+        if (!proj_exists(probe)) { fprintf(stderr, "tape: not found: %s\n", target); return 1; }
+        wcscpy(path, probe);
+        a = GetFileAttributesW(path);
+    }
+    if (!(a & FILE_ATTRIBUTE_DIRECTORY)) {
+        WCHAR parent[OP1_PATH_MAX];
+        wcscpy(parent, path);
+        WCHAR *s = wcsrchr(parent, L'\\'), *s2 = wcsrchr(parent, L'/');
+        if (s2 > s) s = s2;
+        if (s) *s = L'\0';
+        const WCHAR *nm = wcsrchr(parent, L'\\');
+        const WCHAR *nm2 = wcsrchr(parent, L'/');
+        if (nm2 > nm) nm = nm2;
+        return tape_show(path, s ? (nm ? nm + 1 : parent) : L"tape", full);
+    }
+    /* a tape folder, a tapes/ folder, or a project (its tapes/) */
+    swprintf(probe, OP1_PATH_MAX, L"%ls\\tape.json", path);
+    if (GetFileAttributesW(probe) != INVALID_FILE_ATTRIBUTES) {
+        const WCHAR *nm = wcsrchr(path, L'\\'), *nm2 = wcsrchr(path, L'/');
+        if (nm2 > nm) nm = nm2;
+        return tape_show(probe, nm ? nm + 1 : path, full);
+    }
+    swprintf(probe, OP1_PATH_MAX, L"%ls\\tapes", path);
+    int count = 0;
+    int rc = tape_show_dir(proj_exists(probe) ? probe : path, full, &count);
+    if (!count) printf("  (no tapes in %s)\n", op1_u8(path));
+    return rc;
+}
+
+static int proj_list(void) {
+    WCHAR pattern[OP1_PATH_MAX];
+    swprintf(pattern, OP1_PATH_MAX, L"%ls\\*", PROJ_DIR);
+    WIN32_FIND_DATAW fd;
+    HANDLE h = FindFirstFileW(pattern, &fd);
+    int n = 0;
+    if (h != INVALID_HANDLE_VALUE) {
+        do {
+            if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) || fd.cFileName[0] == L'.') continue;
+            WCHAR c[OP1_PATH_MAX];
+            swprintf(c, OP1_PATH_MAX, L"%ls\\%ls", PROJ_DIR, fd.cFileName);
+            int files = 0; ULONGLONG bytes = 0;
+            proj_tally(c, &files, &bytes);
+            printf("  %-28s %5d files  %10s\n", op1_u8(fd.cFileName), files, proj_size(bytes));
+            WCHAR tapes[OP1_PATH_MAX];
+            swprintf(tapes, OP1_PATH_MAX, L"%ls\\tapes", c);
+            int count = 0;
+            g_tape_indent = "      tape  ";
+            tape_show_dir(tapes, 0, &count);
+            g_tape_indent = "  ";
+            n++;
+        } while (FindNextFileW(h, &fd));
+        FindClose(h);
+    }
+    if (!n) printf("  (no projects yet: mondo project pull <name>)\n");
+    return 0;
+}
+
+static void proj_usage(const char *prog) {
+    fprintf(stderr,
+        "Usage: %s [-d <device>] <verb> [args...]\n\n"
+        "A project is projects/<name>/: the OP-1's drum/, synth/, mixdown/side_a|b.wav and\n"
+        "tapes/*/{tape.json,track_1-4.wav}. Without -f, pull and push only list the changes.\n\n"
+        "  list                          projects in projects/\n"
+        "  pull <name> [-f]              back up the OP-1 into a project (-f to update an existing one)\n"
+        "  push <name> [-f]              restore a project onto the OP-1; -f mirrors it exactly\n"
+        "                                (files on the device that aren't in the project are deleted)\n"
+        "  diff <name>                   what differs between the project and the OP-1\n"
+        "  init <name> [--from <p>] [-f] a new project copied from projects/" PROJ_TEMPLATE " (or <p>)\n",
+        prog);
+}
+
+static int cmd_project(int argc, char *argv[]) {
+    const char *device = OP1_DEFAULT_DEVICE, *verb = NULL, *name = NULL, *from = PROJ_TEMPLATE;
+    int explicit_name = 0, force = 0;
+    for (int i = 1; i < argc; i++) {
+        const char *a = argv[i];
+        if (!strcmp(a, "-d") && i + 1 < argc) { device = argv[++i]; explicit_name = 1; }
+        else if (!strcmp(a, "--from") && i + 1 < argc) from = argv[++i];
+        else if (!strcmp(a, "-f")) force = 1;
+        else if (a[0] == '-' && a[1]) { fprintf(stderr, "project: unknown flag %s\n", a); return 1; }
+        else if (!verb) verb = a;
+        else if (!name) name = a;
+        else { proj_usage(argv[0]); return 1; }
+    }
+    if (!verb) { proj_usage(argv[0]); return 1; }
+    SetConsoleOutputCP(CP_UTF8);
+
+    if (!strcmp(verb, "list")) return proj_list();
+    if (!name) { proj_usage(argv[0]); return 1; }
+    if (!strcmp(verb, "init")) return proj_init(name, from, force);
+
+    int (*run)(const char *, int) = NULL;
+    if      (!strcmp(verb, "pull")) run = proj_pull;
+    else if (!strcmp(verb, "push")) run = proj_push;
+    else if (strcmp(verb, "diff")) { fprintf(stderr, "project: unknown verb %s\n\n", verb); proj_usage(argv[0]); return 1; }
+
+    if (op1_open(device, explicit_name)) { op1_close(); return 1; }
+    int rc = run ? run(name, force) : proj_diff_cmd(name);
+    op1_close();
+    return rc;
+}
+
 #else
 
 static int cmd_op1(int argc, char *argv[]) {
     (void)argc;
     fprintf(stderr, "%s: only supported on Windows (uses the WPD/MTP API)\n", argv[0]);
+    return 1;
+}
+
+static int cmd_project(int argc, char *argv[]) {
+    (void)argc;
+    fprintf(stderr, "%s: only supported on Windows (uses the WPD/MTP API)\n", argv[0]);
+    return 1;
+}
+
+static int cmd_tape(int argc, char *argv[]) {
+    (void)argc;
+    fprintf(stderr, "%s: only supported on Windows for now\n", argv[0]);
     return 1;
 }
 
@@ -5042,7 +5819,9 @@ static void print_usage(const char *prog) {
         "  tag       <patch.json [patch2.json ...] | directory>\n"
         "  wrap      <input.aif|.wav> [output.aif] | <directory>\n"
         "  samples   <preset.json | directory> [output.js]\n"
-        "  op1       ls | pull | push | mkdir | rm | mv   (run 'mondo op1' for details)\n",
+        "  op1       ls | pull | push | mkdir | rm | mv   (run 'mondo op1' for details)\n"
+        "  project   list | pull | push | diff | init     (run 'mondo project' for details)\n"
+        "  tape      [-v] <tape.json | tape folder | tapes folder | project>\n",
         prog);
 }
 
@@ -5068,6 +5847,8 @@ int main(int argc, char *argv[]) {
     else if (!strcmp(sub, "wrap"))      ret = cmd_wrap(argc - 1, argv + 1);
     else if (!strcmp(sub, "samples"))   ret = cmd_samples(argc - 1, argv + 1);
     else if (!strcmp(sub, "op1"))       ret = cmd_op1(argc - 1, argv + 1);
+    else if (!strcmp(sub, "project"))   ret = cmd_project(argc - 1, argv + 1);
+    else if (!strcmp(sub, "tape"))      ret = cmd_tape(argc - 1, argv + 1);
     else { argv[1] = saved; print_usage(argv[0]); return 1; }
 
     argv[1] = saved;
