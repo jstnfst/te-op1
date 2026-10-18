@@ -9,18 +9,37 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #15161A; --surface: #1F2127; --border: #31343C;
-  --text: #E7E5E0; --muted: #8C8A86; --header-bg: #0D0E11;
-  --orange: #FF4800; --orange-on: #160a04; --blue: #3B9EEA; --purple: #8B5CF6; --green: #22C55E;
+  --bg: oklch(0.2 0.01 262); --surface: oklch(0.222 0.012 262); --border: oklch(0.3 0.014 262);
+  --border-hover: oklch(0.39 0.016 262);
+  --text: oklch(0.922 0.007 88.645); --muted: oklch(0.634 0.006 84.575); --header-bg: oklch(0.18 0.008 262);
+  --orange: oklch(0.663 0.227 35.97); --orange-on: oklch(0.16 0.026 52.381); --blue: oklch(0.68 0.172 245.72);
+  --purple: oklch(0.72 0.16 292.717);   /* L 0.72 keeps chip text at 4.5:1 on its own tint */
+  --green: oklch(0.723 0.192 149.579);
   /* --orange is the brand color, never an error color. --danger (red) is the one
      error/failure color; --orange-ink is readable amber text on orange-tinted info notices. */
-  --danger: #F87171; --orange-ink: #E3A87E;
-  --knob-null: #4A4E57;   /* dim mark for inactive knob-dial ticks / param indices */
+  --danger: oklch(0.711 0.166 22.216); --orange-ink: oklch(0.777 0.09 56.422);
+  /* --orange-chip: the action chip's ink, the peak-chroma orange (a touch redder
+     than --orange, still well clear of --danger), so a chip glows on its tint */
+  --orange-chip: oklch(0.65 0.236 33);
+  --knob-null: oklch(0.424 0.016 262);   /* dim mark for inactive knob-dial ticks / param indices */
 
-  /* scale-type palette (mappings + patch) */
-  --c-percent: #5B8DEF; --c-centered: #A78BFA; --c-discrete: #34D399;
-  --c-selector: #F59E0B; --c-hz: #F97316; --c-tempo: #EC4899;
-  --c-inverse: #14B8A6; --c-decimal: #06B6D4;
+  /* scale-type palette (mappings + patch): each at 98% of its hue's sRGB max
+     chroma, L 0.66–0.84, hues spread so the closest pair stays >= 0.11 ΔE
+     (OKLab) apart; every chip reads at 4.5:1 on its own tint except percent,
+     kept a deep true blue at 3.9:1 */
+  --c-percent: oklch(0.66 0.178 258); --c-centered: oklch(0.73 0.185 310); --c-discrete: oklch(0.78 0.211 150);
+  --c-selector: oklch(0.78 0.159 78); --c-hz: oklch(0.72 0.185 48); --c-tempo: oklch(0.73 0.231 338);
+  --c-inverse: oklch(0.84 0.152 178); --c-decimal: oklch(0.78 0.136 216);
+}
+/* sRGB caps these at the values above; wide-gamut screens get the extra chroma
+   (scale palette at 95% of P3 max, same L and H) */
+@media (color-gamut: p3) {
+  :root {
+    --orange: oklch(0.663 0.25 35.97); --blue: oklch(0.68 0.19 245.72); --orange-chip: oklch(0.65 0.256 33);
+    --c-percent: oklch(0.66 0.187 258); --c-centered: oklch(0.73 0.197 310); --c-discrete: oklch(0.78 0.285 150);
+    --c-selector: oklch(0.78 0.178 78); --c-hz: oklch(0.72 0.212 48); --c-tempo: oklch(0.73 0.294 338);
+    --c-inverse: oklch(0.84 0.199 178); --c-decimal: oklch(0.78 0.175 216);
+  }
 }
 
 body { font-family: 'JetBrains Mono','Courier New',monospace; background: var(--bg); color: var(--text); min-height: 100vh; }
@@ -33,45 +52,45 @@ button { font-family: inherit; cursor: pointer; }
    page; sticky at minus the header row's height, the row scrolls away and
    the tab bar stays pinned (site-header.js sets the heights) */
 [data-site-header] { display: contents; }
-header.site { background: var(--header-bg); position: sticky; top: calc(-1 * var(--header-row-h, 0px)); z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
+header.site { background: var(--header-bg); position: sticky; top: calc(-1 * var(--header-row-h, 0px)); z-index: 10; box-shadow: 0 2px 16px oklch(0 0 0 / .3); }
 .header-row { display: flex; align-items: center; gap: 10px; padding: 16px 32px 10px; }
-.site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
-.site-title:hover { color: rgba(255,255,255,.8); }
-.site-sep { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.2); }
+.site-title { font-size: 18px; font-weight: 800; color: oklch(1 0 0); letter-spacing: .1em; text-decoration: none; }
+.site-title:hover { color: oklch(1 0 0 / .8); }
+.site-sep { font-size: 13px; font-weight: 300; color: oklch(1 0 0 / .2); }
 /* LIBRARY | LAB path switch: the primary nav. A hardware selector - the
    active side is a lit key (surface fill, white text, LED); orange stays
    reserved for the active sub-nav tab below it. */
-.group-switch { display: inline-flex; border: 1px solid rgba(255,255,255,.1); border-radius: 4px; padding: 2px; gap: 2px; }
+.group-switch { display: inline-flex; border: 1px solid oklch(1 0 0 / .1); border-radius: 4px; padding: 2px; gap: 2px; }
 .group-btn { display: inline-flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 700; letter-spacing: .18em;
-  color: rgba(255,255,255,.42); text-decoration: none; padding: 6px 11px 5px; border-radius: 2px;
+  color: oklch(1 0 0 / .42); text-decoration: none; padding: 6px 11px 5px; border-radius: 2px;
   transition: color .15s, background .15s; }
-.group-btn::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: rgba(255,255,255,.18);
+.group-btn::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: oklch(1 0 0 / .18);
   transition: background .15s, box-shadow .15s; }
-.group-btn:hover { color: rgba(255,255,255,.8); }
-.group-btn.active { color: #fff; background: var(--surface); }
+.group-btn:hover { color: oklch(1 0 0 / .8); }
+.group-btn.active { color: oklch(1 0 0); background: var(--surface); }
 /* each path has its own LED color, matching the landing scope:
    LIBRARY = Signal Orange, LAB = Trace Blue. A hovered LED lights in the
    same full color as the active one, so a path's color never changes; the
    label brightening already says it's hovered. */
-.group-library:hover::before, .group-library.active::before { background: var(--orange); box-shadow: 0 0 6px rgba(255,72,0,.7); }
-.group-lab:hover::before, .group-lab.active::before { background: var(--blue); box-shadow: 0 0 6px rgba(59,158,234,.75); }
+.group-library:hover::before, .group-library.active::before { background: var(--orange); box-shadow: 0 0 6px color-mix(in oklch, var(--orange) 70%, transparent); }
+.group-lab:hover::before, .group-lab.active::before { background: var(--blue); box-shadow: 0 0 6px color-mix(in oklch, var(--blue) 75%, transparent); }
 .header-spacer { margin-left: auto; }
-.fw-tag { font-size: 9px; font-weight: 400; letter-spacing: .15em; color: rgba(255,255,255,.28);
-  border: 1px solid rgba(255,255,255,.1); padding: 3px 8px 2px; border-radius: 2px; white-space: nowrap; }
-.auth-mini { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,.6); font-size: 11px; }
+.fw-tag { font-size: 9px; font-weight: 400; letter-spacing: .15em; color: oklch(1 0 0 / .28);
+  border: 1px solid oklch(1 0 0 / .1); padding: 3px 8px 2px; border-radius: 2px; white-space: nowrap; }
+.auth-mini { display: flex; align-items: center; gap: 10px; color: oklch(1 0 0 / .6); font-size: 11px; }
 .auth-mini img { width: 22px; height: 22px; border-radius: 50%; }
-.auth-mini a, .auth-mini button { color: rgba(255,255,255,.6); font-size: 11px; background: none; border: none; text-decoration: none; }
-.auth-mini a:hover, .auth-mini button:hover { color: #fff; }
+.auth-mini a, .auth-mini button { color: oklch(1 0 0 / .6); font-size: 11px; background: none; border: none; text-decoration: none; }
+.auth-mini a:hover, .auth-mini button:hover { color: oklch(1 0 0); }
 .auth-mini .mod-link { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
 .auth-mini .mod-link.active { color: var(--orange); }
 
 .page-nav[hidden] { display: none; }
-.page-nav { display: flex; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.06); gap: 2px; flex-wrap: wrap; }
-.nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: rgba(255,255,255,.32);
+.page-nav { display: flex; padding: 0 24px; border-top: 1px solid oklch(1 0 0 / .06); gap: 2px; flex-wrap: wrap; }
+.nav-btn { font-family: inherit; font-size: 10px; font-weight: 700; letter-spacing: .14em; color: oklch(1 0 0 / .32);
   background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 8px 12px 7px;
   text-decoration: none; display: inline-block; transition: color .15s, border-color .15s; }
-.nav-btn:hover { color: rgba(255,255,255,.72); }
-.nav-btn.active { color: #fff; border-bottom-color: var(--orange); }
+.nav-btn:hover { color: oklch(1 0 0 / .72); }
+.nav-btn.active { color: oklch(1 0 0); border-bottom-color: var(--orange); }
 
 /* ── MAIN (default centered column; patch/layout override locally) ── */
 main { max-width: 1100px; margin: 0 auto; padding: 28px 32px 80px; }
@@ -82,16 +101,16 @@ h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--mute
 
 /* ── SCALE-TYPE CHIPS (mappings + patch) ── */
 .scale-chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px; border-radius: 2px; white-space: nowrap; }
-.chip-percent  { background: rgba(91,141,239,.18);  color: var(--c-percent); }
-.chip-centered { background: rgba(167,139,250,.18); color: var(--c-centered); }
-.chip-discrete { background: rgba(52,211,153,.18);  color: var(--c-discrete); }
-.chip-selector { background: rgba(245,158,11,.18);  color: var(--c-selector); }
-.chip-hz       { background: rgba(249,115,22,.18);  color: var(--c-hz); }
-.chip-tempo    { background: rgba(236,72,153,.18);  color: var(--c-tempo); }
-.chip-inverse  { background: rgba(20,184,166,.18);  color: var(--c-inverse); }
-.chip-decimal  { background: rgba(6,182,212,.18);   color: var(--c-decimal); }
+.chip-percent  { background: color-mix(in oklch, var(--c-percent) 18%, transparent);  color: var(--c-percent); }
+.chip-centered { background: color-mix(in oklch, var(--c-centered) 18%, transparent); color: var(--c-centered); }
+.chip-discrete { background: color-mix(in oklch, var(--c-discrete) 18%, transparent);  color: var(--c-discrete); }
+.chip-selector { background: color-mix(in oklch, var(--c-selector) 18%, transparent);  color: var(--c-selector); }
+.chip-hz       { background: color-mix(in oklch, var(--c-hz) 18%, transparent);  color: var(--c-hz); }
+.chip-tempo    { background: color-mix(in oklch, var(--c-tempo) 18%, transparent);  color: var(--c-tempo); }
+.chip-inverse  { background: color-mix(in oklch, var(--c-inverse) 18%, transparent);  color: var(--c-inverse); }
+.chip-decimal  { background: color-mix(in oklch, var(--c-decimal) 18%, transparent);   color: var(--c-decimal); }
 /* firmware-managed constants: the same hatch the knob layout draws them with */
-.chip-fixed    { background: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 2px, transparent 2px 4px); color: var(--muted); }
+.chip-fixed    { background: repeating-linear-gradient(135deg, oklch(1 0 0 / .08) 0 2px, transparent 2px 4px); color: var(--muted); }
 
 /* ── FOOTER ── */
 footer.site { text-align: center; padding: 32px; font-size: 11px; font-weight: 300; color: var(--muted); letter-spacing: .04em; }

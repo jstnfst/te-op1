@@ -8,26 +8,32 @@ main.landing { max-width: none; padding: 0; }
 
 /* ── HERO ── */
 /* The hero's colors, read by the background shader (HeroShader.tsx): the
-   ground it glows on, and three inks it blends by depth - all from the
-   scale-type palette, so the hero speaks the same color language as the Lab.
+   ground it glows on, and three inks it blends by depth - Percent Blue, then
+   Signal Orange, then blue again, so blue carries the tunnel and the orange
+   passes through it as the one hot signal.
    --hero-glow is the glow's strength over the ground (0..1). */
 .hero {
   --hero-ground: var(--bg);
   --hero-ink-1: var(--c-percent);
-  --hero-ink-2: var(--c-centered);
-  --hero-ink-3: var(--c-decimal);
+  --hero-ink-2: var(--orange);
+  --hero-ink-3: var(--c-percent);
   --hero-glow: .42;
+  /* the top veil: a near-black edge lifting to a blue band behind the eyebrow */
+  --hero-veil-edge: oklch(0.16 0.03 258);
+  --hero-veil: oklch(0.25 0.065 258);
   position: relative; overflow: hidden; padding: 40px 32px 40px; border-bottom: 1px solid var(--border);
   background: var(--hero-ground); }
 .hero > .hero-shader { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block;
   opacity: 0; transition: opacity .6s; }
 .hero > .hero-shader.ready { opacity: 1; }
-/* darken the shader behind the eyebrow at the top, and fade it into the page
-   at the hero's foot; the fork panels sit in the lower half, so the shader
-   still shows through their glass */
+/* a blue-slate veil over the shader at the top, darkest at the edge and
+   lifting to a cool blue band behind the eyebrow (Percent Blue's hue), then
+   gone; at the hero's foot the shader fades into the page. The fork panels
+   sit in the lower half, so the shader still shows through their glass */
 .hero::after { content: ""; position: absolute; inset: 0; pointer-events: none;
   background:
-    linear-gradient(to bottom, color-mix(in srgb, var(--bg) 92%, transparent) 0, color-mix(in srgb, var(--bg) 70%, transparent) 64px, transparent 132px),
+    linear-gradient(to bottom in oklab, color-mix(in oklab, var(--hero-veil-edge) 96%, transparent) 0,
+      color-mix(in oklab, var(--hero-veil) 78%, transparent) 64px, color-mix(in oklab, var(--hero-veil) 40%, transparent) 112px, transparent 160px),
     linear-gradient(to bottom, transparent 55%, var(--bg) 100%); }
 .hero > * { position: relative; z-index: 1; }
 
@@ -41,58 +47,58 @@ main.landing { max-width: none; padding: 0; }
 
 /* ── SCOPE ── a self-contained instrument screen (same language as the patch
    page's ADSR scope: white ink on black, one orange trace). */
-.scope { min-width: 0; background: var(--header-bg); border: 1px solid #000; border-radius: 8px; padding: 12px 14px 12px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04); }
+.scope { min-width: 0; background: var(--header-bg); border: 1px solid oklch(0 0 0); border-radius: 8px; padding: 12px 14px 12px;
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / .04); }
 .scope-bar { display: flex; align-items: center; justify-content: flex-end; margin-bottom: 8px; }
 /* one LED per path, lit while that fork panel is under the pointer (data-side
    set by Scope.tsx). Library = Signal Orange, Lab = Trace Blue - same pair as
    the header's LIBRARY | LAB switch. */
 .scope-leds { display: inline-flex; gap: 12px; }
 .scope-led { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; font-weight: 700; letter-spacing: .2em;
-  text-transform: uppercase; color: rgba(255,255,255,.32); transition: color .2s; }
-.scope-led::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.16);
+  text-transform: uppercase; color: oklch(1 0 0 / .32); transition: color .2s; }
+.scope-led::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: oklch(1 0 0 / .16);
   transition: background .2s, box-shadow .2s; }
 a.scope-led { text-decoration: none; }
-a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
-.scope[data-side="library"] .led-library { color: rgba(255,255,255,.75); }
-.scope[data-side="library"] .led-library::before { background: var(--orange); box-shadow: 0 0 8px rgba(255,72,0,.8); }
-.scope[data-side="lab"] .led-lab { color: rgba(255,255,255,.75); }
-.scope[data-side="lab"] .led-lab::before { background: var(--blue); box-shadow: 0 0 8px rgba(59,158,234,.85); }
-.scope-screen { display: block; width: 100%; aspect-ratio: 600 / 220; border-radius: 4px; background: #08090b; }
-.scope-grid line { stroke: rgba(255,255,255,.07); stroke-width: 1; vector-effect: non-scaling-stroke; }
-.scope-axis { stroke: rgba(255,255,255,.14); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
+a.scope-led:hover, a.scope-led:focus-visible { color: oklch(1 0 0); }
+.scope[data-side="library"] .led-library { color: oklch(1 0 0 / .75); }
+.scope[data-side="library"] .led-library::before { background: var(--orange); box-shadow: 0 0 8px color-mix(in oklch, var(--orange) 80%, transparent); }
+.scope[data-side="lab"] .led-lab { color: oklch(1 0 0 / .75); }
+.scope[data-side="lab"] .led-lab::before { background: var(--blue); box-shadow: 0 0 8px color-mix(in oklch, var(--blue) 85%, transparent); }
+.scope-screen { display: block; width: 100%; aspect-ratio: 600 / 220; border-radius: 4px; background: oklch(0.15 0.006 262); }
+.scope-grid line { stroke: oklch(1 0 0 / .07); stroke-width: 1; vector-effect: non-scaling-stroke; }
+.scope-axis { stroke: oklch(1 0 0 / .14); stroke-width: 1; stroke-dasharray: 3 4; vector-effect: non-scaling-stroke; }
 .scope-trace { fill: none; stroke: var(--orange); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 /* faint field behind the lit trace: every engine's wave (Library view) or
    every layout entry's parameter array (Lab view), set in Scope.tsx */
-.scope-ghost { fill: none; stroke: rgba(255,255,255,.075); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.scope-ghost.lab { stroke: rgba(255,255,255,.14); }
+.scope-ghost { fill: none; stroke: oklch(1 0 0 / .075); stroke-width: 1; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.scope-ghost.lab { stroke: oklch(1 0 0 / .14); }
 /* Lab view read-head: the array slot being read */
-.scope-head { fill: rgba(255,72,0,.09); }
+.scope-head { fill: color-mix(in oklch, var(--orange) 9%, transparent); }
 .scope-screen-wrap { position: relative; }
 /* Lab view slot strip, laid over the bottom of the screen, one cell per array
    index (Scope.tsx fades it in with the morph and fills the text) */
 .scope-slots { position: absolute; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr));
   pointer-events: none; }
 .scope-slots .slot { min-width: 0; padding: 0 5px 5px; display: flex; flex-direction: column; gap: 1px;
-  font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: rgba(255,255,255,.45); transition: color .15s; }
-.scope-slots .slot i { font-style: normal; font-weight: 700; color: rgba(255,255,255,.28); }
+  font-size: 8px; letter-spacing: .1em; text-transform: uppercase; color: oklch(1 0 0 / .45); transition: color .15s; }
+.scope-slots .slot i { font-style: normal; font-weight: 700; color: oklch(1 0 0 / .28); }
 .scope-slots .slot span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scope-slots .slot b { font-size: 10px; font-weight: 700; letter-spacing: 0; color: rgba(255,255,255,.8); font-variant-numeric: tabular-nums;
+.scope-slots .slot b { font-size: 10px; font-weight: 700; letter-spacing: 0; color: oklch(1 0 0 / .8); font-variant-numeric: tabular-nums;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scope-slots .slot.off { color: rgba(255,255,255,.2); }
-.scope-slots .slot.off b { color: rgba(255,255,255,.2); }
-.scope-slots .slot.on, .scope-slots .slot.on b { color: #fff; }
+.scope-slots .slot.off { color: oklch(1 0 0 / .2); }
+.scope-slots .slot.off b { color: oklch(1 0 0 / .2); }
+.scope-slots .slot.on, .scope-slots .slot.on b { color: oklch(1 0 0); }
 .scope-slots .slot.on i { color: var(--orange); }
 .scope-glow { fill: none; stroke: var(--orange); stroke-width: 7; opacity: .16; filter: blur(3px); vector-effect: non-scaling-stroke; }
 /* one line, always: long values (the Lab dial's knob names) truncate with an
    ellipsis instead of wrapping, so the scope never changes height mid-hover */
 .scope-readout { display: flex; gap: 22px; flex-wrap: nowrap; margin-top: 10px; min-width: 0; }
-.scope-readout .ro { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: rgba(255,255,255,.5);
+.scope-readout .ro { font-size: 9px; letter-spacing: .14em; text-transform: uppercase; color: oklch(1 0 0 / .5);
   min-width: 86px; flex: 0 1 auto; overflow: hidden; white-space: nowrap; }
 .scope-readout .ro:first-child { flex-shrink: 0; }
 .scope-readout .ro[hidden] { display: none; }
 .scope-readout .ro b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.scope-readout .ro b { display: block; font-size: 11px; color: #fff; font-weight: 700; letter-spacing: .02em; margin-top: 2px;
+.scope-readout .ro b { display: block; font-size: 11px; color: oklch(1 0 0); font-weight: 700; letter-spacing: .02em; margin-top: 2px;
   text-transform: none; font-variant-numeric: tabular-nums; }
 
 /* ── FORK ── the two paths */
@@ -103,17 +109,17 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .fork-panel { position: relative; overflow: hidden; display: flex; flex-direction: column; gap: 18px;
   padding: 22px 24px 20px; border-radius: 8px; color: var(--text); text-decoration: none;
   background: color-mix(in srgb, var(--surface) 55%, transparent);
-  border: 1px solid rgba(255,255,255,.08);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+  border: 1px solid oklch(1 0 0 / .08);
+  box-shadow: inset 0 1px 0 oklch(1 0 0 / .06);
   -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
   transition: background-color .3s, border-color .3s, transform .3s cubic-bezier(.25,1,.5,1), box-shadow .3s; }
 .fork-panel::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; pointer-events: none;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55) 50%, transparent);
+  background: linear-gradient(90deg, transparent, oklch(1 0 0 / .55) 50%, transparent);
   opacity: 0; transform: scaleX(.3); transition: opacity .35s, transform .5s cubic-bezier(.25,1,.5,1); }
 .fork-panel > * { position: relative; }
 .fork-panel:hover, .fork-panel:focus-visible {
-  background: color-mix(in srgb, var(--surface) 68%, transparent); border-color: rgba(255,255,255,.14);
-  transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 10px 30px rgba(0,0,0,.45); }
+  background: color-mix(in srgb, var(--surface) 68%, transparent); border-color: oklch(1 0 0 / .14);
+  transform: translateY(-2px); box-shadow: inset 0 1px 0 oklch(1 0 0 / .08), 0 10px 30px oklch(0 0 0 / .45); }
 .fork-panel:hover::before, .fork-panel:focus-visible::before { opacity: 1; transform: scaleX(1); }
 /* no backdrop blur: fall back to the solid surface so text stays legible */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -158,7 +164,7 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .env { display: block; width: 100%; height: auto; }
 .env-base { stroke: var(--border); stroke-width: 1; }
 .env-cursor { opacity: 0; transition: opacity .15s; }
-.env-cursor line { stroke: rgba(255,255,255,.3); stroke-width: 1; stroke-dasharray: 2 2; }
+.env-cursor line { stroke: oklch(1 0 0 / .3); stroke-width: 1; stroke-dasharray: 2 2; }
 .env-cursor circle { fill: var(--text); }
 .fork-panel:hover .env-cursor { opacity: 1; }
 .env-line { fill: none; stroke: var(--text); stroke-width: 2; stroke-linejoin: round; stroke-dasharray: 1; stroke-dashoffset: 0; transition: stroke .2s; }
@@ -182,7 +188,7 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .lab-tile { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 18px; text-decoration: none; color: var(--text);
   background: var(--surface); border: 1px solid var(--border); border-radius: 6px;
   transition: box-shadow .18s, transform .18s, border-color .18s; }
-.lab-tile:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474b54; }
+.lab-tile:hover { box-shadow: 0 6px 24px oklch(0 0 0 / .5); transform: translateY(-2px); border-color: var(--border-hover); }
 /* Mappings tile: its scale-color rainbow (Home.tsx rainbowStyle) tints the
    surface while hovered, masked down to the picked scale's band */
 .lab-tile.rainbow { position: relative; overflow: hidden; }
@@ -206,7 +212,7 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .knob-dot { transition: transform .35s cubic-bezier(.22,1,.36,1); }
 /* the Layout page's group filter in miniature: the frame's group lit, then its engine */
 .tile-filter { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
-.tile-filter span { color: rgba(255,255,255,.28); transition: color .2s; }
+.tile-filter span { color: oklch(1 0 0 / .28); transition: color .2s; }
 .tile-filter span.on { color: var(--orange); }
 .tile-filter b { margin-left: auto; font-weight: 700; color: var(--text); letter-spacing: .1em; text-transform: none; }
 

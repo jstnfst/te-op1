@@ -15,15 +15,15 @@
     /* Theme tokens + header/nav/footer chrome + scale chips live in /site.css */
     :root {
       /* JSON token colors (tuned for the dark editor) */
-      --tok-key: #E0973D; --tok-str: #6FCB7F; --tok-num: #6AA8FF;
-      --tok-bool: #C58BF5; --tok-punct: #6B6E74;
+      --tok-key: oklch(0.734 0.135 68.101); --tok-str: oklch(0.766 0.14 148.076); --tok-num: oklch(0.727 0.143 257.059);
+      --tok-bool: oklch(0.734 0.159 308.165); --tok-punct: oklch(0.538 0.01 264.484);
       /* Oscilloscope scope card - a white-on-near-black instrument screen.
          Its ink is white at graded opacity; full-strength ink = readout values. */
-      --scope-edge: #000;                       /* 1px black rim */
-      --scope-ink: #fff;                         /* readout values (AA: 19:1) */
-      --scope-label: rgba(255,255,255,.58);      /* section title (AA: 6.85:1) */
-      --scope-sub: rgba(255,255,255,.5);         /* subtitle + readout captions (AA: 5.36:1) */
-      --scope-grid: rgba(255,255,255,.07);       /* envelope grid lines (decorative) */
+      --scope-edge: oklch(0 0 0);                       /* 1px black rim */
+      --scope-ink: oklch(1 0 0);                         /* readout values (AA: 19:1) */
+      --scope-label: oklch(1 0 0 / .58);      /* section title (AA: 6.85:1) */
+      --scope-sub: oklch(1 0 0 / .5);         /* subtitle + readout captions (AA: 5.36:1) */
+      --scope-grid: oklch(1 0 0 / .07);       /* envelope grid lines (decorative) */
     }
 
     /* ── MAIN ── (full-width workspace, unlike the centered reference pages) */
@@ -34,11 +34,11 @@
     .intro p { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.7; max-width: 680px; }
     .intro code { font-family: inherit; background: var(--border); padding: 1px 5px; border-radius: 2px; font-size: 11px; color: var(--text); }
     .patch-notice { margin-bottom: 18px; padding: 12px 16px; font-size: 12px; font-weight: 300; line-height: 1.6;
-      color: var(--orange-ink); background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
+      color: var(--orange-ink); background: color-mix(in oklch, var(--orange) 8%, transparent); border: 1px solid color-mix(in oklch, var(--orange) 22%, transparent); border-radius: 6px; }
     .patch-notice a { color: var(--orange); font-weight: 700; text-decoration: none; }
     .patch-notice a:hover { text-decoration: underline; }
     .file-msg { font-size: 11px; font-weight: 300; line-height: 1.5; }
-    .file-msg.note { margin: 4px 0 2px; padding: 10px 12px; color: var(--orange-ink); background: rgba(255,72,0,.08); border: 1px solid rgba(255,72,0,.22); border-radius: 6px; }
+    .file-msg.note { margin: 4px 0 2px; padding: 10px 12px; color: var(--orange-ink); background: color-mix(in oklch, var(--orange) 8%, transparent); border: 1px solid color-mix(in oklch, var(--orange) 22%, transparent); border-radius: 6px; }
     .file-msg.err { margin: 4px 0 2px; color: var(--danger); }
     .panel.drag { outline: 2px dashed var(--orange); outline-offset: 4px; }
     details.raw-json { margin-top: 14px; border-top: 1px solid var(--border); padding-top: 12px; }
@@ -142,8 +142,8 @@
     .picker-login { font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-decoration: none; border-bottom: 1px solid var(--border); }
     .picker-login:hover { color: var(--text); border-bottom-color: var(--text); }
     #packSel, #userSel { max-width: 220px; }
-    .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: #131418; }
-    .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px rgba(255,72,0,.25); }
+    .editor-wrap { position: relative; height: 460px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; background: oklch(0.192 0.008 274.469); }
+    .editor-wrap.drag { border-color: var(--orange); box-shadow: inset 0 0 0 2px color-mix(in oklch, var(--orange) 25%, transparent); }
     .code-layer {
       position: absolute; inset: 0; margin: 0; border: 0;
       font-family: 'JetBrains Mono','Courier New',monospace; font-size: 12.5px; line-height: 19px;
@@ -156,7 +156,7 @@
        the textarea, so the highlight drifts right. Inherit the editor font. */
     #jsonHighlight code { font: inherit; }
     #jsonInput { z-index: 2; resize: none; background: transparent; color: transparent; caret-color: var(--orange); outline: none; }
-    #jsonInput::selection { background: rgba(255,72,0,.18); }
+    #jsonInput::selection { background: color-mix(in oklch, var(--orange) 18%, transparent); }
     .tok-key { color: var(--tok-key); } .tok-str { color: var(--tok-str); }
     .tok-num { color: var(--tok-num); } .tok-bool { color: var(--tok-bool); }
     .tok-punct { color: var(--tok-punct); }
@@ -174,9 +174,9 @@
     .scope-sub { font-size: 9px; font-weight: 300; color: var(--scope-sub); letter-spacing: .05em; }
     .scope-svg { width: 100%; aspect-ratio: 560 / 200; display: block; touch-action: none; }
     .env-grid { stroke: var(--scope-grid); stroke-width: 1; }
-    .env-fill { fill: rgba(255,72,0,.12); stroke: none; }
+    .env-fill { fill: color-mix(in oklch, var(--orange) 12%, transparent); stroke: none; }
     .env-line { fill: none; stroke: var(--orange); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
-      filter: drop-shadow(0 0 5px rgba(255,72,0,.6)); }
+      filter: drop-shadow(0 0 5px color-mix(in oklch, var(--orange) 60%, transparent)); }
     .env-glow { animation: envpulse 2.6s ease-in-out infinite; }
     @keyframes envpulse { 0%,100% { opacity: 1; } 50% { opacity: .82; } }
     .handle { fill: var(--header-bg); stroke: var(--orange); stroke-width: 2.5; cursor: grab; transition: r .12s; }
@@ -291,8 +291,8 @@
     .toolbar-status.err { color: var(--danger); }
 
     /* ── PASTE BUTTONS ── */
-    .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
-    .paste-btn:hover { background: rgba(59,158,234,.24); }
+    .paste-btn { display: none; font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: color-mix(in oklch, var(--blue) 12%, transparent); border: 1px solid color-mix(in oklch, var(--blue) 25%, transparent); border-radius: 4px; padding: 2px 7px; cursor: pointer; white-space: nowrap; }
+    .paste-btn:hover { background: color-mix(in oklch, var(--blue) 24%, transparent); }
     .has-clipboard .paste-btn { display: inline-flex; align-items: center; }
     /* scope-head paste-btn stays in flow at all times so it doesn't change the row height */
     .scope-head .paste-btn { display: inline-flex; align-items: center; visibility: hidden; pointer-events: none; }
@@ -311,7 +311,7 @@
     .has-clipboard .paste-btn[data-paste="dyna"] { display: none; }
     .has-dbox-clip .paste-btn[data-paste="dyna"] { display: inline-flex; align-items: center; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
-    .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: rgba(59,158,234,.12); border: 1px solid rgba(59,158,234,.25); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
+    .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: color-mix(in oklch, var(--blue) 12%, transparent); border: 1px solid color-mix(in oklch, var(--blue) 25%, transparent); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
     .clip-panel > summary .clip-active-chip { visibility: hidden; pointer-events: none; }
     .clip-panel > summary.has-chip .clip-active-chip { visibility: visible; pointer-events: auto; }
@@ -334,8 +334,8 @@
     .clip-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; max-height: 136px; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
     /* Single-row card: name (flexes + ellipsizes) · synth/fx/lfo chips · time · delete. */
     .clip-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: var(--surface); }
-    .clip-item:hover { border-color: #474b54; }
-    .clip-item.active { border-color: var(--blue); background: rgba(59,158,234,.07); }
+    .clip-item:hover { border-color: var(--border-hover); }
+    .clip-item.active { border-color: var(--blue); background: color-mix(in oklch, var(--blue) 7%, transparent); }
     .clip-item-name { font-size: 11px; font-weight: 700; color: var(--text); flex: 0 0 120px; width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .clip-item-del { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 24px; padding: 0;
       color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: color .15s, border-color .15s; }
@@ -356,7 +356,7 @@
     /* chips may shrink and wrap onto more lines; the add box + buttons stay together */
     .tag-chips { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px; flex: 0 1 auto; min-width: 0; }
     .tag-chips:empty { display: none; }
-    .tag-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px 2px 7px; border-radius: 2px; background: rgba(59,158,234,.18); color: var(--blue); }
+    .tag-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; padding: 2px 6px 2px 7px; border-radius: 2px; background: color-mix(in oklch, var(--blue) 18%, transparent); color: var(--blue); }
     .tag-chip button { background: none; border: none; cursor: pointer; color: inherit; font-size: 12px; line-height: 1; padding: 0; opacity: .6; font-family: inherit; }
     .tag-chip button:hover { opacity: 1; }
     .tag-add-row { display: flex; align-items: center; gap: 6px; flex-wrap: nowrap; flex-shrink: 0; }
@@ -365,7 +365,7 @@
     .tag-add-row input[type=text]:focus { outline: 1px solid var(--blue); border-color: var(--blue); }
     .tag-save-status { font-size: 10px; color: var(--muted); margin-left: 2px; }
     /* tags edited but not saved yet: Save tags lights up, "Unsaved" beside it */
-    .btn.unsaved { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
+    .btn.unsaved { color: var(--orange); border-color: var(--orange); background: color-mix(in oklch, var(--orange) 10%, transparent); }
     .tag-save-status.unsaved { color: var(--orange-ink); }
   </style>
 </head>
@@ -1070,7 +1070,7 @@ function knobSVG(frac, detents, active) {
     <path d="${karc(cx, cy, r, K_START, K_START + K_SWEEP)}" fill="none" stroke="var(--border)" stroke-width="6" stroke-linecap="round"/>
     <path d="${karc(cx, cy, r, K_START, ang)}" fill="none" stroke="var(--c, var(--orange))" stroke-width="6" stroke-linecap="round"/>
     ${ticks}
-    <line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>
+    <line x1="${ix.toFixed(1)}" y1="${iy.toFixed(1)}" x2="${px.toFixed(1)}" y2="${py.toFixed(1)}" stroke="oklch(1 0 0)" stroke-width="2.5" stroke-linecap="round"/>
   </svg>`;
 }
 function engFor(grp) {

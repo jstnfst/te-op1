@@ -7,8 +7,8 @@ import { useEffect, useRef } from "react"
  *
  * Colors are not in the shader. The hero sets them as CSS custom properties
  * (landing.css: --hero-ground, --hero-ink-1..3, --hero-glow), drawn from the
- * site's scale-type palette, and they're read here at mount; the shader only
- * blends them by depth.
+ * site's palette (Percent Blue and Signal Orange), and they're read here at
+ * mount; the shader only blends them by depth.
  *
  * It plays on its own (the one exception to the Pointer-Gated Motion Rule,
  * see DESIGN.md): u_time is seconds since playback started. The clock only
@@ -64,19 +64,16 @@ void main() {
 // pixel at full device resolution would be a waste
 const SCALE = 0.5
 
+// any CSS color (the palette is oklch) -> sRGB 0..1: paint one pixel on a 2D
+// canvas and read it back, so the browser does the conversion and gamut clip
 function parseColor(v: string): [number, number, number] {
-  const s = v.trim()
-  const hex = s.match(/^#([0-9a-f]{6})$/i)
-  if (hex) {
-    const n = parseInt(hex[1], 16)
-    return [(n >> 16) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255]
-  }
-  const rgb = s.match(/rgba?\(([^)]+)\)/)
-  if (rgb) {
-    const [r, g, b] = rgb[1].split(/[ ,]+/).map(Number)
-    return [r / 255, g / 255, b / 255]
-  }
-  return [0, 0, 0]
+  const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true })
+  if (!ctx) return [0, 0, 0]
+  ctx.canvas.width = ctx.canvas.height = 1
+  ctx.fillStyle = v.trim() || "#000"
+  ctx.fillRect(0, 0, 1, 1)
+  const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data
+  return [r / 255, g / 255, b / 255]
 }
 
 export function HeroShader({ host }: { host: React.RefObject<HTMLElement | null> }) {

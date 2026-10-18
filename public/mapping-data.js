@@ -6,14 +6,14 @@
    ==================================================================== */
 // ── SCALE TYPE DEFINITIONS ──────────────────────────────
 window.OP1_SCALES = {
-  percent:   { label: '%',             desc: 'Linear 0–100% across a full knob turn',           color: '#5B8DEF' },
-  centered:  { label: 'centered %',    desc: 'Bipolar, centered at 0; can be negative raw',    color: '#A78BFA' },
-  discrete:  { label: 'discrete',      desc: 'Stepped integer display (0–N or 1–N)',            color: '#34D399' },
-  selector:  { label: 'selector',      desc: 'Named discrete options (context-dependent)',      color: '#F59E0B' },
-  hz:        { label: 'hz',            desc: 'Frequency in Hz',                                 color: '#F97316' },
-  tempo:     { label: 'tempo dial',    desc: 'LFO speed dial: 8 down to 1, then 1/2 to 0',       color: '#EC4899' },
-  decimal:   { label: 'decimal',       desc: 'Continuous decimal scale between two bounds',    color: '#06B6D4' },
-  fixed:     { label: 'fixed',         desc: 'Firmware-managed constant; not knob-editable',   color: '#4A4E57' },
+  percent:   { label: '%',             desc: 'Linear 0–100% across a full knob turn',           color: 'var(--c-percent)' },
+  centered:  { label: 'centered %',    desc: 'Bipolar, centered at 0; can be negative raw',    color: 'var(--c-centered)' },
+  discrete:  { label: 'discrete',      desc: 'Stepped integer display (0–N or 1–N)',            color: 'var(--c-discrete)' },
+  selector:  { label: 'selector',      desc: 'Named discrete options (context-dependent)',      color: 'var(--c-selector)' },
+  hz:        { label: 'hz',            desc: 'Frequency in Hz',                                 color: 'var(--c-hz)' },
+  tempo:     { label: 'tempo dial',    desc: 'LFO speed dial: 8 down to 1, then 1/2 to 0',       color: 'var(--c-tempo)' },
+  decimal:   { label: 'decimal',       desc: 'Continuous decimal scale between two bounds',    color: 'var(--c-decimal)' },
+  fixed:     { label: 'fixed',         desc: 'Firmware-managed constant; not knob-editable',   color: 'var(--knob-null)' },
 };
 
 // ── PARAMETER DATA ──────────────────────────────────────

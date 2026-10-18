@@ -2,12 +2,12 @@
 name: OP-1 Field Reference
 description: A dark, monospace, instrument-grade reference and patch library for the OP-1 Field.
 colors:
-  bg: "#15161A"
-  surface: "#1F2127"
-  border: "#31343C"
+  bg: "oklch(0.2 0.01 262)"
+  surface: "oklch(0.222 0.012 262)"
+  border: "oklch(0.3 0.014 262)"
   text: "#E7E5E0"
   muted: "#8C8A86"
-  header-bg: "#0D0E11"
+  header-bg: "oklch(0.18 0.008 262)"
   signal-orange: "#FF4800"
   orange-on: "#160a04"
   blue: "#3B9EEA"
@@ -15,17 +15,19 @@ colors:
   green: "#22C55E"
   danger: "#F87171"
   orange-ink: "#E3A87E"
-  knob-null: "#4A4E57"
+  knob-null: "oklch(0.424 0.016 262)"
+  hero-veil-edge: "oklch(0.16 0.03 258)"
+  hero-veil: "oklch(0.25 0.065 258)"
   scope-edge: "#000000"
   scope-ink: "#FFFFFF"
-  c-percent: "#5B8DEF"
-  c-centered: "#A78BFA"
-  c-discrete: "#34D399"
-  c-selector: "#F59E0B"
-  c-hz: "#F97316"
-  c-tempo: "#EC4899"
-  c-inverse: "#14B8A6"
-  c-decimal: "#06B6D4"
+  c-percent: "oklch(0.66 0.178 258)"
+  c-centered: "oklch(0.73 0.185 310)"
+  c-discrete: "oklch(0.78 0.211 150)"
+  c-selector: "oklch(0.78 0.159 78)"
+  c-hz: "oklch(0.72 0.185 48)"
+  c-tempo: "oklch(0.73 0.231 338)"
+  c-inverse: "oklch(0.84 0.152 178)"
+  c-decimal: "oklch(0.78 0.136 216)"
 typography:
   display:
     fontFamily: "JetBrains Mono, Courier New, monospace"
@@ -165,15 +167,17 @@ classification palette reserved exclusively for value-mapping data.
 Eight colors that classify how a raw parameter value maps to its displayed value.
 These appear **only** as small chips and data accents in the mappings/patch views,
 never as UI chrome:
-- **Percent Blue** (#5B8DEF), **Centered Violet** (#A78BFA), **Discrete Green**
-  (#34D399), **Selector Amber** (#F59E0B), **Hz Orange** (#F97316), **Tempo Pink**
-  (#EC4899), **Inverse Teal** (#14B8A6), **Decimal Cyan** (#06B6D4).
+- **Percent Blue** (oklch 0.66 0.178 258), **Centered Violet** (oklch 0.73 0.185 310), **Discrete Green**
+  (oklch 0.78 0.211 150), **Selector Amber** (oklch 0.78 0.159 78), **Hz Orange** (oklch 0.72 0.185 48), **Tempo Pink**
+  (oklch 0.73 0.231 338), **Inverse Teal** (oklch 0.84 0.152 178), **Decimal Cyan** (oklch 0.78 0.136 216). Each sits at 98% of its hue's sRGB max chroma (95% of P3 max on wide-gamut screens) with hues spread so no two read alike; the Mappings tile rainbow blends them in oklab.
 
 ### Neutral
-- **Panel Black** (#15161A): The body field - the oscilloscope ground.
-- **Header Black** (#0D0E11): Sticky header and floating bars; one step darker than the field.
-- **Surface Graphite** (#1F2127): Cards, inputs, raised controls.
-- **Hairline** (#31343C): Borders, dividers, dashed dropzones.
+- **Panel Black** (oklch 0.2 0.01 262): The body field - the oscilloscope ground.
+- **Header Black** (oklch 0.18 0.008 262): Sticky header and floating bars; one step darker than the field.
+- **Hero Veil** (oklch 0.16 0.03 258 → oklch 0.25 0.065 258): The blue-slate wash over the hero shader's top edge, darkest at the edge and lifting to a cool band behind the eyebrow. Hero only.
+- **Surface Graphite** (oklch 0.222 0.012 262): Cards, inputs, raised controls.
+- **Hairline** (oklch 0.3 0.014 262): Borders, dividers, dashed dropzones.
+- The neutral ramp holds one hue (262, the cool blue of Percent Blue and the Hero Veil) with chroma rising slightly by step. Panel offsets stay small (header to field to surface about 0.02 L apart), so depth reads as a whisper and borders carry the separation.
 - **Readout White** (#E7E5E0): Primary text - warm off-white, never pure #FFF on body.
 - **Muted Gray** (#8C8A86): Secondary/label text. Sits near the AA floor by design.
 - **Knob Null** (#4A4E57): Dim mark for inactive knob-dial ticks and param indices. Shared in `site.css`.
@@ -268,8 +272,9 @@ as physical parts, not decorated rectangles.
   Hover brightens (filter brightness 1.08). One primary per context.
 
 ### Chips
-- **Action chip:** Translucent Signal Orange (rgba(255,72,0,.18)) bg, orange text,
-  2px radius, 8px uppercase. Marks engine/category.
+- **Action chip:** Chip Orange (`--orange-chip`, oklch 0.65 0.236 33: the
+  peak-chroma orange, a touch redder than Signal Orange) text on a 30% tint of
+  itself, 2px radius, 8px uppercase. Marks engine/category.
 - **Tag chip:** Same shape in Trace Blue (rgba(91,141,239,.18)) for derived tags.
 - **Scale-type chips:** Eight variants, each a translucent tint of its
   classification color over the matching text color. Data only - never chrome.
@@ -404,9 +409,9 @@ exception to the rule above: it plays on its own (`u_time` = seconds since
 playback started), pausing while off screen or in a hidden tab, and
 `prefers-reduced-motion` holds its first frame. Its
 colors are custom properties on `.hero` (`--hero-ground`, `--hero-ink-1..3`,
-`--hero-glow`), taken from the scale-type palette (%, centered %, decimal) so
-the landing speaks the Lab's color language; the shader only blends them by
-depth. The hero fades it out to `--bg` before the fork panels. Without WebGL2
+`--hero-glow`): Percent Blue, Signal Orange, Percent Blue, so blue carries the
+tunnel and orange passes through as the one hot signal; the shader only blends
+them by depth. The hero fades it out to `--bg` before the fork panels. Without WebGL2
 the hero is plain `--bg`.
 
 ## 7. Do's and Don'ts

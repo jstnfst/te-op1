@@ -53,17 +53,19 @@ function useScrub(n: number) {
    ALL). The rainbow never moves and always shows whole: at full strength
    under ALL, and with a picked scale its band stays full while the rest
    dips to RAINBOW_DIP. */
-const RAINBOW_DIP = "rgba(0,0,0,.3)" // mask alpha for the colors not picked
+const RAINBOW_DIP = "oklch(0 0 0 / .3)" // mask alpha for the colors not picked
 const ZONES = SCALE_TYPES.length + 1
 const scaleColor = (t: string) => (t === "fixed" ? "var(--knob-null)" : `var(--c-${t})`)
-const RAINBOW = "linear-gradient(90deg, " + SCALE_TYPES.map(([t], k) =>
+// blended in oklab: neighbors meet straight across, with no detour through
+// hues that belong to other scale types (oklch's hue arc would add them)
+const RAINBOW = "linear-gradient(90deg in oklab, " + SCALE_TYPES.map(([t], k) =>
   `${scaleColor(t)} ${(((k + 1.5) / ZONES) * 100).toFixed(1)}%`).join(", ") + ")"
 function rainbowStyle(i: number): CSSProperties {
   if (i === 0) return { "--rainbow": RAINBOW } as CSSProperties
   const a = (i / ZONES) * 100, b = ((i + 1) / ZONES) * 100
   return {
     "--rainbow": RAINBOW,
-    "--rainbow-mask": `linear-gradient(90deg, ${RAINBOW_DIP} ${(a - 3).toFixed(1)}%, #000 ${a.toFixed(1)}%, #000 ${b.toFixed(1)}%, ${RAINBOW_DIP} ${(b + 3).toFixed(1)}%)`,
+    "--rainbow-mask": `linear-gradient(90deg, ${RAINBOW_DIP} ${(a - 3).toFixed(1)}%, oklch(0 0 0) ${a.toFixed(1)}%, oklch(0 0 0) ${b.toFixed(1)}%, ${RAINBOW_DIP} ${(b + 3).toFixed(1)}%)`,
   } as CSSProperties
 }
 
