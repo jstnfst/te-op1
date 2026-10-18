@@ -7,16 +7,44 @@ import { Scope, envLevel, ENV_STAGES, type ScopeHandle, type Side } from "../lan
 import { HeroShader } from "../landing/HeroShader"
 import "../landing/landing.css"
 
-// Real samples of what each Lab tool holds, previewed in the "Inside the lab" tiles.
-// fm's four knobs as named on the Layout page (public/params.html PARAMS).
-const FM_KNOBS = ["FM AMOUNT", "FREQUENCY", "TOPOLOGY", "DETUNE"]
-// The inspector's bundled "fm - sirius_signals" sample preset (public/patch.html).
-const SAMPLE_PRESET: Array<[string, string]> = [["name", "sirius_signals"], ["type", "fm"], ["fx", "nitro"], ["lfo", "random"], ["octave", "4"]]
+// Real samples of what each Lab tool holds, previewed in the "Inside the lab"
+// tiles. Like the hero's fork panels, pointer X across a tile picks a frame
+// (the far left is ALL), and a click opens the page on that pick.
 
+// Layout: the page's group filter, ALL first, each frame one real engine's
+// first four knobs (public/layout-params.js, what the Layout page renders).
+// [label, Layout page group (#hash), engine shown]
+const LAYOUT_FRAMES: Array<[string, string, string]> = [
+  ["all", "", "synth.fm"], ["synth", "synth", "synth.cluster"], ["envelope", "env", "adsr"], ["fx", "fx", "fx.delay"], ["lfo", "lfo", "lfo.element"],
+]
+const knobNames = (key: string) => (window.OP1_LAYOUT?.[key] ?? []).filter((n): n is string => !!n).slice(0, 4)
+
+// Mappings: all eight scale types; frame 0 lights them all, then one each.
 const SCALE_TYPES: Array<[string, string]> = [
   ["percent", "%"], ["centered", "centered %"], ["discrete", "discrete"], ["selector", "selector"],
-  ["hz", "hz"], ["tempo", "tempo dial"], ["decimal", "decimal"],
+  ["hz", "hz"], ["tempo", "tempo dial"], ["decimal", "decimal"], ["fixed", "fixed"],
 ]
+
+// Inspector: the editor's init patch first (public/patch.html initPatch), then
+// the library's popular patches; a click opens the one shown.
+const INIT_READOUT: Array<[string, string]> = [["name", "init"], ["type", "digital"], ["fx", "delay"], ["lfo", "element"], ["octave", "0"]]
+const readout = (p: PatchSummary): Array<[string, string]> =>
+  [["name", p.name], ["type", p.type], ["fx", p.fx_type ?? "-"], ["lfo", p.lfo_type ?? "-"], ["octave", String(p.octave ?? 0)]]
+
+/** Pointer X across a tile picks one of `n` frames, left to right; leaving
+ * puts it back on frame 0. Touch and keyboard get frame 0 (ALL / init). */
+function useScrub(n: number) {
+  const [i, setI] = useState(0)
+  const bind = {
+    onPointerMove: (e: PointerEvent<HTMLElement>) => {
+      if (e.pointerType === "touch" || n < 1) return
+      const r = e.currentTarget.getBoundingClientRect()
+      setI(Math.min(n - 1, Math.floor(Math.max(0, (e.clientX - r.left) / r.width) * n)))
+    },
+    onPointerLeave: () => setI(0),
+  }
+  return { i, bind }
+}
 
 /** The Library knob's detents: no filter, then every engine. */
 const DIAL = ["all", ...TYPES]
@@ -71,19 +99,23 @@ function EnvGlyph({ pos, label }: { pos: number; label: string }) {
   )
 }
 
-function Trending() {
+/** The library's most-liked patches: the Trending grid, and the Inspector tile's hover cycle. */
+function usePopular() {
   const [items, setItems] = useState<PatchSummary[] | null>(null)
   useEffect(() => {
     apiGet<{ items: PatchSummary[] }>("/api/patches?sort=likes")
       .then((d) => setItems(d.items.slice(0, 8)))
       .catch(() => setItems([]))
   }, [])
+  return items
+}
 
+function Trending({ items }: { items: PatchSummary[] | null }) {
   return (
     <section className="land-section">
       <div className="land-section-head">
         <h2>Popular in the library</h2>
-        <Link className="land-more" to="/library?sort=likes">See all →</Link>
+        <Link className="land-more" to="/library?sort=likes">See all</Link>
       </div>
       {items === null ? (
         <p className="muted">Loading…</p>
@@ -136,6 +168,13 @@ function useCounts() {
 export default function Home() {
   const scope = useRef<ScopeHandle>(null)
   const counts = useCounts()
+  const popular = usePopular()
+  const layoutTile = useScrub(LAYOUT_FRAMES.length)
+  const scaleTile = useScrub(SCALE_TYPES.length + 1)
+  const inspectTile = useScrub(1 + (popular?.length ?? 0))
+  const layoutHash = LAYOUT_FRAMES[layoutTile.i][1]
+  const scalePick = scaleTile.i > 0 ? SCALE_TYPES[scaleTile.i - 1][0] : ""
+  const inspected = inspectTile.i > 0 ? popular?.[inspectTile.i - 1] : undefined
   const [dial, setDial] = useState(0)
   const [envPos, setEnvPos] = useState(0.5)
   const navigate = useNavigate()
@@ -232,7 +271,7 @@ export default function Home() {
               </div>
               <KnobGlyph index={dial} />
             </div>
-            <span className="fork-cta">{libraryCta} <span aria-hidden="true">→</span></span>
+            <span className="fork-cta">{libraryCta}</span>
           </Link>
 
           {/* a plain link: the Layout page is static; /lab stays in the SPA */}
@@ -257,42 +296,55 @@ export default function Home() {
               </div>
               <EnvGlyph pos={envPos} label={labKey ?? "overview"} />
             </div>
-            <span className="fork-cta">{labCta} <span aria-hidden="true">→</span></span>
+            <span className="fork-cta">{labCta}</span>
           </a>
         </div>
       </section>
 
       <div className="land-body">
-        <Trending />
+        <Trending items={popular} />
 
         <section className="land-section">
           <div className="land-section-head">
             <h2>Inside the lab</h2>
-            <Link className="land-more" to="/lab">Open the lab →</Link>
+            <Link className="land-more" to="/lab">Open the lab</Link>
           </div>
           <div className="lab-tiles">
-            <a className="lab-tile" href="/lab/layout">
-              <div className="lab-tile-head"><span className="lab-tile-name">Layout</span><span className="lab-tile-go" aria-hidden="true">→</span></div>
+            <a className="lab-tile" href={"/lab/layout" + (layoutHash ? "#" + layoutHash : "")} {...layoutTile.bind}>
+              <div className="lab-tile-head"><span className="lab-tile-name">Layout</span></div>
               <p className="lab-tile-desc">What every knob does, on every synth, FX, and LFO engine</p>
-              <div className="lab-tile-preview knob-row" aria-label="Example: the fm engine's knobs">
-                <span className="lab-tile-caption">fm</span>
-                {FM_KNOBS.map((k, i) => (
-                  <span className="knob-cell" key={k}><i className="knob-dot" style={{ transform: `rotate(${-90 + i * 55}deg)` }} />{k}</span>
+              {(() => {
+                const [group, , key] = LAYOUT_FRAMES[layoutTile.i]
+                return (
+                  <div className="lab-tile-preview knob-row" aria-label={`Example: the ${key} knobs`}>
+                    <span className="lab-tile-caption tile-filter">
+                      {LAYOUT_FRAMES.map(([g]) => <span key={g} className={g === group ? "on" : undefined}>{g}</span>)}
+                      <b>{key}</b>
+                    </span>
+                    {knobNames(key).map((k, i) => (
+                      <span className="knob-cell" key={i}>
+                        <i className="knob-dot" style={{ transform: `rotate(${-90 + i * 55 + layoutTile.i * 38}deg)` }} />{k}
+                      </span>
+                    ))}
+                  </div>
+                )
+              })()}
+            </a>
+            <a className="lab-tile" href={"/lab/mappings" + (scalePick ? "#" + scalePick : "")} {...scaleTile.bind}>
+              <div className="lab-tile-head"><span className="lab-tile-name">Mappings</span></div>
+              <p className="lab-tile-desc">How a raw value becomes the number on screen, by scale type</p>
+              {/* frame 0 is ALL (every chip lit), then one scale type per frame */}
+              <div className={"lab-tile-preview scale-row" + (scaleTile.i > 0 ? " picking" : "")} aria-label="Scale types">
+                {SCALE_TYPES.map(([k, label], n) => (
+                  <span key={k} className={`scale-chip chip-${k}` + (scaleTile.i === n + 1 ? " on" : "")}>{label}</span>
                 ))}
               </div>
             </a>
-            <a className="lab-tile" href="/lab/mappings">
-              <div className="lab-tile-head"><span className="lab-tile-name">Mappings</span><span className="lab-tile-go" aria-hidden="true">→</span></div>
-              <p className="lab-tile-desc">How a raw value becomes the number on screen, by scale type</p>
-              <div className="lab-tile-preview scale-row" aria-label="Scale types">
-                {SCALE_TYPES.map(([k, label]) => <span key={k} className={`scale-chip chip-${k}`}>{label}</span>)}
-              </div>
-            </a>
-            <a className="lab-tile" href="/lab/inspector">
-              <div className="lab-tile-head"><span className="lab-tile-name">Inspector</span><span className="lab-tile-go" aria-hidden="true">→</span></div>
+            <a className="lab-tile" href={inspected ? `/library/editor?id=${inspected.id}` : "/library/editor?new"} {...inspectTile.bind}>
+              <div className="lab-tile-head"><span className="lab-tile-name">Inspector</span></div>
               <p className="lab-tile-desc">Open any preset and read back its envelope, knobs, FX, and LFO</p>
-              <dl className="lab-tile-preview preset-ro" aria-label="Example: a sample preset">
-                {SAMPLE_PRESET.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
+              <dl className="lab-tile-preview preset-ro" aria-label={inspected ? `A popular patch: ${inspected.name}` : "The init patch"}>
+                {(inspected ? readout(inspected) : INIT_READOUT).map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{v}</dd></div>)}
               </dl>
             </a>
           </div>

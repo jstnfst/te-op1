@@ -42,6 +42,7 @@
       { label: "UPLOAD",  href: "/library/upload", section: "upload" }
     ],
     lab: [
+      { label: "OVERVIEW",  href: "/lab",           section: "lab" },
       { label: "LAYOUT",    href: "/lab/layout",    section: "layout" },
       { label: "MAPPINGS",  href: "/lab/mappings",  section: "mappings" },
       { label: "INSPECTOR", href: "/lab/inspector", section: "inspector" },
@@ -221,13 +222,25 @@
     if (a) writeHint(null);
   });
 
-  // Expose the sticky header's height so page-level sticky bars (the
-  // selection toolbar) can sit just under it. Re-measured on resize, and
-  // whenever the header itself changes size (sub-nav wrapping, auth slot).
+  // The header scrolls with the page until its tab bar (.page-nav) reaches
+  // the top, then the tab bar stays pinned there (site.css: sticky at minus
+  // the header row's height); pages without a tab bar scroll it away whole.
+  //   --header-row-h    the row that scrolls away (title, LIBRARY | LAB, auth)
+  //   --site-header-h   what stays pinned: page-level sticky bars (the list
+  //                     toolbar, the Lab panel) sit just under it
+  //   --site-header-full  the whole header, for layouts sized to the first screen
+  // Re-measured on resize and whenever the header changes size (sub-nav
+  // wrapping, the auth slot filling in).
   function trackHeaderHeight() {
     var h = document.querySelector("header.site");
-    if (!h) return;
-    var set = function () { document.documentElement.style.setProperty("--site-header-h", h.offsetHeight + "px"); };
+    var row = h && h.querySelector(".header-row");
+    if (!h || !row) return;
+    var root = document.documentElement.style;
+    var set = function () {
+      root.setProperty("--header-row-h", row.offsetHeight + "px");
+      root.setProperty("--site-header-h", (h.offsetHeight - row.offsetHeight) + "px");
+      root.setProperty("--site-header-full", h.offsetHeight + "px");
+    };
     set();
     if (window.ResizeObserver) new ResizeObserver(set).observe(h);
     else window.addEventListener("resize", set);

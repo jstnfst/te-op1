@@ -68,6 +68,7 @@ te-op1/
   oracle/              exports saved on the hardware: the ground truth, never regenerated
   presets/             .aif patches and their .json sidecars
   collection/          patch collections: .aif, .json, and .tags per preset
+  sandbox/             hardware probe sets (gitignored; ./master-control.sh probe)
   explore/             generated boundary patches (gitignored; mondo build explore)
 ```
 
@@ -83,16 +84,7 @@ The stack is Vite + React on Cloudflare Pages, with Pages Functions for the API 
 
 ### The preset format
 
-The Lab pages render this live from `public/layout-params.js` (which parameter sits at each array index), `public/mapping-data.js` (how a raw value displays), and `public/knob-model.js` (knob travel). Those three files are the source of truth. The sections below summarize them.
-
-#### Coverage
-
-32 layout entries: 15 synth engines, 9 FX, 6 LFO, the global ADSR, and the dbox dynamic envelope.
-
-**synth**: amp, cluster, dbox, digital, dimension, dna, drwave, dsynth, fm, phase, pulse, sampler, string, vocoder, voltage  
-**fx**: cwo, delay, grid, mother, nitro, phone, punch, spring, terminal  
-**lfo**: element, midi, random, tremolo, value, velocity  
-**adsr**: attack, decay, sustain, release, play mode, portamento, bend range, volume
+What each knob is on every engine, and how its raw value turns into the number on the screen, lives on the site: [Layout](https://te-op1.pages.dev/lab/layout) for every engine's eight array slots, [Mappings](https://te-op1.pages.dev/lab/mappings) for raw-to-display values, and the [Inspector](https://te-op1.pages.dev/lab/inspector) to read back any `.aif`. The data behind them is `public/layout-params.js`, `public/mapping-data.js`, and `public/knob-model.js`; edit those, not a copy. This section only covers the container and the JSON shape.
 
 #### File structure
 
@@ -127,10 +119,7 @@ at 22050 Hz (~1.310 s), which matches hardware-exported patches.
 
 #### JSON schema
 
-Most numeric parameters are **16-bit integers in the range 0–32767**
-(0.0–1.0 normalized). Exception: `centered %` parameters (e.g. AMOUNT in
-`lfo.element`, VOLUME LEVEL in `lfo.tremolo`) use a signed range with minimum
-**-32767**.
+Every array value is a **16-bit integer**: most run 0–32767, some are signed (Mappings says which).
 
 ```jsonc
 {
@@ -158,119 +147,7 @@ Most numeric parameters are **16-bit integers in the range 0–32767**
 > keys correctly. Required order:
 > `adsr, fx_active, fx_params, fx_type, knobs, lfo_active, lfo_params, lfo_type, mtime, name, octave, synth_version, type`
 
-**ADSR**
-
-Always 8 values - global keyboard settings, shared across all patches:
-
-`0` ATTACK · `1` DECAY · `2` SUSTAIN · `3` RELEASE  
-`4` PLAY MODE · `5` PORTAMENTO · `6` BEND RANGE · `7` VOLUME
-
-PLAY MODE is a selector: poly (2048) / mono (6140) / legato (9209) / unison (14336).  
-BEND RANGE is a selector: 1 st (2048) / 2 st (5117) / 4 st (9209) / 7 st (13301) / oct (18432).  
-VOLUME is discrete 1–100; raw = `floor(N × 32767 / 100)`.
-
-#### Knob layouts
-
-`mondo dump` reads names from `op1-params.json`. The site reads them from `public/layout-params.js`, and the raw-to-display mappings are on the Lab's Mappings page.
-
-Most types use 4 active params (indices 0–3). Exceptions: `synth.dsynth`
-and `synth.sampler` use all 8; `lfo.midi` uses all 8; `lfo.random` and
-`lfo.value` use 5; `lfo.tremolo` uses indices 0–3 and 7.
-
-##### Synth
-
-**`amp`**: `0` VOLUME · `1` COMPRESSOR · `2` TONE · `3` DRIVE
-
-**`cluster`**: `0` WAVE NUMBER · `1` WAVE ENV · `2` SPREAD · `3` UNITOR
-
-**`dbox`** (drum box): uses `drum_version: 2` instead of `synth_version`, and has no `adsr` field. Unique JSON keys:
-
-| Key | Type | Description |
-|-----|------|-------------|
-| `dbox_data` | `int[24][8]` | Per-pad parameter values (24 pads × 8 params each) |
-| `dyna_env`  | `int[8]`     | Dynamic envelope (see below) |
-| `pan`       | `int[24]`    | Per-pad pan position (optional) |
-| `pan_ab`    | `bool[24]`   | Per-pad stereo A/B flag (optional) |
-| `attack`    | `int[24]`    | Per-pad attack (optional; 0 in oracle) |
-| `fademode`  | `null`       | Fade mode (optional) |
-| `stereo`    | `bool`       | Stereo flag (optional) |
-
-`dyna_env` - 4 active params (indices 4–7 unused):
-
-| Index | Name | Min | Max |
-|-------|------|-----|-----|
-| 0 | ATTACK  | -32768 | 32767 |
-| 1 | GAIN    | 0      | 8192  |
-| 2 | RELEASE | -32768 | 32767 |
-| 3 | SMOOTH  | 0      | 32767 |
-
-Knob parameters are identical to `dsynth`:  
-`0` ENVELOPE CROSSFADER · `1` WAVEFORM 1 · `2` ENVELOPE 1 · `3` CROSS MODULATION  
-`4` FREQUENCY · `5` WAVEFORM 2 · `6` ENVELOPE 2 · `7` CUTOFF
-
-lfo.element PARAMETER selector for dbox differs from other 8-param synths:
-`knob 0: 1024 · knob 1: 2464 · knob 2: 4384 · knob 3: 6304 · knob 4: 8224 · knob 5: 10624 · knob 6: 12544 · knob 7: 14464`
-
-**`digital`**: `0` WAVE SHAPER · `1` OCTAVE · `2` DETUNE+RINGMOD · `3` DIGITALNESS
-
-**`dimension`**: `0` WAVEFORM · `1` STEREO · `2` FILTER CUTOFF FREQ · `3` RESONANCE
-
-**`dna`**: `0` FILTER · `1` WAVE NUMBER · `2` WAVE MODIFIER · `3` NOISE
-
-**`drwave`**: `0` WAVE TYPE AND LENGTH · `1` FILTER · `2` PHASE · `3` CHORUS
-
-**`dsynth`**: `0` ENVELOPE CROSSFADER · `1` WAVEFORM 1 · `2` ENVELOPE 1 · `3` CROSS MODULATION ·
-`4` FREQUENCY · `5` WAVEFORM 2 · `6` ENVELOPE 2 · `7` CUTOFF
-
-**`fm`**: `0` FM AMOUNT · `1` FREQUENCY · `2` TOPOLOGY · `3` DETUNE
-
-**`phase`**: `0` PHASE SHIFT · `1` DISTORTION AMOUNT · `2` PHASE FILTER · `3` PHASE TILT
-
-**`pulse`**: `0` FILTER · `1` AMPLITUDE · `2` PULSE TWO · `3` MODULATION
-
-**`sampler`**: `0` START · `1` LOOP IN · `2` LOOP OUT · `3` END ·
-`4` DIRECTION · `5` FINE TUNE · `6` LOOP FADE · `7` GAIN
-
-**`string`**: `0` TENSION · `1` DECAY · `2` DETUNE · `3` IMPULSE TYPE
-
-**`vocoder`**: `0` WAVEFORM · `1` FORMANT · `2` BANDS · `3` MIX
-
-**`voltage`**: `0` AMPERE MODULATION · `1` GROUND NOISE · `2` PHASE FILTER · `3` VOLTAGE DETUNE
-
-##### FX
-
-**`cwo`**: `0` FREQUENCY · `1` DELAY · `2` FEEDBACK · `3` SIDEBAND
-
-**`delay`**: `0` RANGE · `1` SPEED · `2` FEEDBACK · `3` LEVEL
-
-**`grid`**: `0` X SIZE · `1` Y SIZE · `2` Z FEEDBACK · `3` MIX
-
-**`mother`**: `0` DISTANCE · `1` GATE · `2` COLOR · `3` MIX
-
-**`nitro`**: `0` FREQUENCY LOWS · `1` FILTER FOLLOW · `2` FEEDBACK · `3` FREQUENCY HIGHS
-
-**`phone`**: `0` TONE · `1` GSM · `2` BAUD · `3` TELEMATIC
-
-**`punch`**: `0` FREQUENCY · `1` PUNCH · `2` ROUNDS · `3` POWER
-
-**`spring`**: `0` TONE · `1` TURNS · `2` DAMPING · `3` MIX
-
-**`terminal`**: `0` FREQUENCY · `1` BITS · `2` MODEL · `3` MIX
-
-##### LFO
-
-**`element`**: `0` SOURCE · `1` AMOUNT · `2` DESTINATION · `3` PARAMETER
-
-**`midi`**: `0` PARAMETER 1 · `1` PARAMETER 2 · `2` PARAMETER 3 · `3` PARAMETER 4 ·
-`4` DESTINATION 1 · `5` DESTINATION 2 · `6` DESTINATION 3 · `7` DESTINATION 4
-
-**`random`**: `0` SPEED · `1` AMOUNT · `2` DESTINATION · `3` ENVELOPE · `4` PARAMETER
-
-**`tremolo`**: `0` SPEED · `1` PITCH AMOUNT · `2` VOLUME LEVEL · `3` PITCH ENVELOPE · `7` LFO SHAPE
-
-**`value`**: `0` SPEED · `1` AMOUNT · `2` DESTINATION · `3` PARAMETER · `4` LFO SHAPE
-
-**`velocity`**: `0` AMP · `1` VOLUME AMOUNT · `2` DESTINATION · `3` PARAMETER
+**dbox** (drum box) presets differ: `drum_version: 2` in place of `synth_version`, no `adsr`, and per-pad arrays instead - `dbox_data` (24 pads × 8 values), `dyna_env` (8), and the optional `pan`, `pan_ab`, `attack`, `fademode`, `stereo`.
 
 ### `mondo`: the C toolkit
 
@@ -520,7 +397,7 @@ List, copy, create, rename, and delete files on a connected OP-1 Field (Windows 
 
 **TL;DR:** `mondo op1 ls -r synth` to look around, `mondo op1 pull synth presets\op1` to back up, `mondo op1 push mypatch.aif synth/myfolder` to load a patch.
 
-The OP-1 Field connects over **MTP**, not USB mass storage. Explorer lists it under *This PC*, but it never gets a drive letter, so `copy`, `xcopy`, and plain `fopen` can't reach it. `mondo op1` uses the Windows Portable Devices API instead.
+The OP-1 Field connects over **MTP**, not USB mass storage. Explorer lists it under *This PC*, but it never gets a drive letter, so `copy`, `xcopy`, and plain `fopen` can't reach it. `mondo op1` uses the Windows Portable Devices API instead. `./master-control.sh op1 <verb> ...` runs the same commands.
 
 ```
 mondo op1 [-d <device>] ls    [-r] [path]
@@ -553,14 +430,26 @@ mondo op1 rm -r synth/mine                        → deletes a folder and its c
 - Renaming a patch also changes its `"name"` field. The OP-1 rewrites the APPL JSON to match the new file name, so the bytes after a rename differ from the original
 - `-d <name>` picks a device by its friendly name. By default it matches `OP-1`, or any teenage engineering USB device (VID `2367`)
 
-### Oracle workflow
+### Testing on the hardware
 
-`oracle/` stores reference exports - patch files saved directly from the
-OP-1 Field with known knob positions. These are the ground truth for parameter values.
+Two folders hold patches made for, or saved by, the OP-1 itself.
 
-**Rules:**
-- Never regenerate oracle files from JSON. `mondo build` will refuse to overwrite them.
-- To capture a new oracle: set knobs on hardware → export preset → copy `.aif` to `oracle/` →
-  run `mondo dump oracle\<file>.aif` → inspect the JSON sidecar for raw values.
-- Naming convention: `<synth>-<fx>-<lfo>-<tag>.aif` where tag is `0000` (all-min),
-  `ffff` (all-max), or a short descriptor.
+**`sandbox/`: probe sets** (gitignored, yours to make and throw away). A probe set is a folder of patches that differ in one array slot, so loading them one by one on the device shows what that slot does at each raw value. `master-control.sh` runs the whole loop (Windows, with the OP-1 connected):
+
+```bash
+# one patch per value of lfo_params[2], from a base preset, built to .aif
+./master-control.sh probe sweep presets/x.json lfo_params 2 1024,2144,4160,7168 rd
+./master-control.sh probe push rd     # onto the OP-1 as synth/_rd/
+#   ...load each on the device and read the screen; save any you change...
+./master-control.sh probe pull rd     # what the device saved -> sandbox/rd/from-device/, dumped to JSON
+./master-control.sh probe clean rd    # remove synth/_rd/ from the OP-1
+./master-control.sh probe list        # the sets you have
+```
+
+Each patch is named `<set> i<index> <value>` (e.g. `rd i2 1024`) so it reads on the device's screen. `probe build <set>` rebuilds a set after you edit its `.json` files by hand. The pulled copies are how firmware quirks show up: the random LFO's DESTINATION, for one, doesn't survive a save on the device.
+
+**`oracle/`: ground truth** (tracked in git, never generated). Reference exports saved directly from the OP-1 Field with known knob positions.
+
+- Never regenerate oracle files from JSON. `mondo build` refuses to overwrite them.
+- To capture one: set the knobs on the hardware → save the preset → copy the `.aif` into `oracle/` (`./master-control.sh op1 pull synth/<folder>/<file>.aif oracle/`) → `mondo dump oracle\<file>.aif` and read the raw values from the JSON sidecar.
+- Naming: `<synth>-<fx>-<lfo>-<tag>.aif`, where tag is `0000` (all-min), `ffff` (all-max), or a short descriptor.

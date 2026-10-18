@@ -201,13 +201,13 @@ export default function Lab() {
         <ul className="lab-toolrows">
           <li><a href={shown ? `/lab/layout#${shown.e.key}` : "/lab/layout"}>
             <span className="lab-tool-n">01</span><b>Knob layout</b>
-            <span>Every engine as a card: the named parameter behind each array index</span><i aria-hidden="true">→</i></a></li>
+            <span>Every engine as a card: the named parameter behind each array index</span></a></li>
           <li><a href={shown ? `/lab/mappings#${shown.e.key}` : "/lab/mappings"}>
             <span className="lab-tool-n">02</span><b>Value mappings</b>
-            <span>The full table: every slot's scale type, sample points, and range notes</span><i aria-hidden="true">→</i></a></li>
+            <span>The full table: every slot's scale type, sample points, and range notes</span></a></li>
           <li><a href="/lab/inspector">
             <span className="lab-tool-n">03</span><b>Patch inspector</b>
-            <span>Load any preset and read it back: ADSR, knobs, FX, LFO, and the raw values behind them</span><i aria-hidden="true">→</i></a></li>
+            <span>Load any preset and read it back: ADSR, knobs, FX, LFO, and the raw values behind them</span></a></li>
         </ul>
       </section>
 
@@ -342,8 +342,8 @@ function SlotPanel({ panelRef, engine, slot, preview, onSlot }: PanelProps) {
       {slot.name && <p className="fpanel-info">{slot.info}</p>}
 
       <div className="fpanel-links">
-        <a href={`/lab/layout#${engine.key}`}>Layout card →</a>
-        <a href={`/lab/mappings#${engine.key}`}>Mapping rows →</a>
+        <a href={`/lab/layout#${engine.key}`}>Layout card</a>
+        <a href={`/lab/mappings#${engine.key}`}>Mapping rows</a>
       </div>
     </aside>
   )

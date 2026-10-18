@@ -167,7 +167,7 @@ function ReportForm({ kind, setKind, onCreated }: { kind: Kind; setKind: (k: Kin
       {err && <p className="error" style={{ marginTop: 10 }}>{err}</p>}
       {ok && (
         <p className="ok" style={{ marginTop: 10 }}>
-          Filed on GitHub - <a href={ok} target="_blank" rel="noreferrer" style={{ color: "inherit", fontWeight: 700 }}>view issue →</a>
+          Filed on GitHub - <a href={ok} target="_blank" rel="noreferrer" style={{ color: "inherit", fontWeight: 700 }}>View issue</a>
         </p>
       )}
     </>

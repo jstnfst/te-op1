@@ -70,6 +70,19 @@ ${B}C tools${R}
   c dump <file.aif|dir>        print presets as JSON (default dir: presets/)
   c samples                    regenerate samples.js from collection/
 
+${B}OP-1${R}  (a connected OP-1 Field over USB; Windows, via mondo op1)
+  op1 <verb> [args]            ls, pull, push, mkdir, rm, mv on the device (see README: mondo op1)
+
+${B}Probes${R}  (hardware test patches in sandbox/, gitignored)
+  probe list                   the probe sets in sandbox/
+  probe sweep <base.json> <array> <index> <v1,v2,...> <name>
+                               one patch per value of one slot, built to .aif in sandbox/<name>/
+  probe build <name>           rebuild sandbox/<name>/*.json into .aif
+  probe push <name>            copy the set to the OP-1 as synth/_<name>/
+  probe pull <name>            copy synth/_<name>/ back (as the device saved it) into
+                               sandbox/<name>/from-device/ and dump it to JSON
+  probe clean <name>           delete synth/_<name>/ from the OP-1
+
 ${B}Database${R}  (local D1 unless --remote)
   db migrate [--remote]        apply migrations/
   db seed [--remote]           import samples.js into patches
@@ -242,6 +255,65 @@ mondo_bin() {
   else die "mondo isn't built: ./master-control.sh build c"; fi
 }
 
+# ── probes: hardware test patches ───────────────────────────
+# A probe set is a folder of patches in sandbox/ (gitignored) that differ in
+# one array slot: built to .aif, copied to the OP-1, and read off its screen.
+# Pulling the set back shows what the device itself saved. Exports that
+# become ground truth go into oracle/ by hand; nothing here writes there.
+probe_dir() {
+  [ -n "${1:-}" ] || die "which probe set? ./master-control.sh probe list"
+  [ -d "sandbox/$1" ] || die "no probe set sandbox/$1 (./master-control.sh probe list)"
+}
+# Only the set's own .json files: mondo build <dir> recurses and overwrites,
+# which would rebuild the device's exports in from-device/.
+probe_build() {
+  probe_dir "$1"
+  local bin f n=0; bin=$(mondo_bin)
+  for f in "sandbox/$1"/*.json; do
+    [ -e "$f" ] || continue
+    rm -f "${f%.json}.aif"
+    "$bin" build "$f" >/dev/null || die "mondo build failed: $f"
+    n=$((n+1))
+  done
+  ok "built $n patch(es) in sandbox/$1"
+}
+cmd_probe() {
+  local sub=${1:-list}; shift || true
+  local bin
+  case "$sub" in
+    list)
+      if [ -d sandbox ] && [ -n "$(ls -A sandbox 2>/dev/null)" ]; then
+        local d; for d in sandbox/*/; do printf '  %-24s %s patch(es)\n' "$(basename "$d")" "$(ls "$d" | grep -c '\.aif$')"; done
+      else echo "  (no probe sets yet: ./master-control.sh probe sweep ...)"; fi ;;
+    sweep)
+      [ $# -ge 5 ] || die "probe sweep <base.json> <array> <index> <v1,v2,...> <name>"
+      node scripts/mc/probe-sweep.mjs "$@"
+      probe_build "$5" ;;
+    build) probe_build "${1:-}" ;;
+    push)
+      probe_dir "${1:-}"; bin=$(mondo_bin)
+      "$bin" op1 mkdir -p "synth/_$1" >/dev/null
+      local f n=0
+      for f in "sandbox/$1"/*.aif; do
+        [ -e "$f" ] || continue
+        "$bin" op1 push -f "$f" "synth/_$1" >/dev/null || die "push failed: $f"
+        n=$((n+1))
+      done
+      ok "pushed $n patch(es) to synth/_$1 on the OP-1" ;;
+    pull)
+      probe_dir "${1:-}"; bin=$(mondo_bin)
+      rm -rf "sandbox/$1/from-device"
+      "$bin" op1 pull "synth/_$1" "sandbox/$1/from-device" >/dev/null || die "pull failed (is synth/_$1 on the device?)"
+      local f n=0
+      for f in "sandbox/$1/from-device"/*.aif; do [ -e "$f" ] || continue; "$bin" dump "$f" >/dev/null; n=$((n+1)); done
+      ok "pulled $n patch(es) into sandbox/$1/from-device (with .json sidecars)" ;;
+    clean)
+      [ -n "${1:-}" ] || die "probe clean <name>"
+      "$(mondo_bin)" op1 rm -r "synth/_$1" ;;
+    *) die "probe list | sweep | build | push | pull | clean" ;;
+  esac
+}
+
 # ── database ────────────────────────────────────────────────
 cmd_db() {
   local sub=${1:-}; shift || true
@@ -342,6 +414,8 @@ main() {
         samples) "$(mondo_bin)" samples collection samples.js ;;
         *) die "c dump <file|dir> | c samples" ;;
       esac ;;
+    op1) "$(mondo_bin)" op1 "$@" ;;
+    probe) cmd_probe "$@" ;;
     db) cmd_db "$@" ;;
     test)
       case "${1:-}" in

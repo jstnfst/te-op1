@@ -511,7 +511,7 @@
       <summary>Advanced &middot; Raw JSON</summary>
       <p class="raw-hint">Patches are stored as a small JSON blob to keep them tiny. Curious how the
         <code>.aif</code> format was reverse-engineered? See the project on
-        <a href="https://github.com/jstnfst/te-op1">GitHub &rarr;</a></p>
+        <a href="https://github.com/jstnfst/te-op1">GitHub</a></p>
       <div class="editor-wrap" id="editorWrap">
         <pre class="code-layer" id="jsonHighlight" aria-hidden="true"><code></code></pre>
         <textarea class="code-layer" id="jsonInput" spellcheck="false" autocomplete="off"
@@ -1569,6 +1569,8 @@ const LIBRARY_MODE = location.pathname.indexOf('/library/editor') === 0 || /[?&]
 const packSel = document.getElementById('packSel');
 var _packItems = [];   // what the Patch picker currently lists
 const NEW_PATCH = 'new';   // Patch picker value for "+ New patch" (the init patch)
+// /library/editor?new: start on the init patch instead of opening your first one
+const OPEN_NEW = new URLSearchParams(location.search).has('new');
 var _onInit = false;       // the init patch is open, untouched by any other load
 
 /** Open the init patch as an unsaved new patch: Save new stores it. At
@@ -1593,6 +1595,7 @@ function syncLibraryUrl() {
   u.pathname = '/library/editor';   // canonical editor URL, even if opened as /patch.html?id=
   if (packSel.value) u.searchParams.set('pack', packSel.value); else u.searchParams.delete('pack');
   if (_communityPatchId != null) u.searchParams.set('id', String(_communityPatchId)); else u.searchParams.delete('id');
+  u.searchParams.delete('new');   // a one-time start choice, not something to reopen
   history.replaceState(history.state, '', u.pathname + u.search + u.hash);
 }
 function fillPatchPicker(items) {
@@ -1628,7 +1631,7 @@ function loadPatchList(openFirst) {
       fillPatchPicker(items);
       // nothing of yours to open: offer the samples as a place to start
       document.getElementById('samplePicker').hidden = !!items.length || _communityPatchId != null;
-      if (openFirst && items.length && _communityPatchId == null) loadCommunityPatch(items[0].id).then(syncLibraryUrl);
+      if (openFirst && items.length && _communityPatchId == null && !OPEN_NEW) loadCommunityPatch(items[0].id).then(syncLibraryUrl);
     })
     .catch(() => fillPatchPicker([]));
 }
@@ -1997,7 +2000,7 @@ function loadCommunityPatch(id) {
     })
     .catch(function (err) {
       if (err && err.auth) {
-        notice('Sign in to open community patches. <a href="/login">Log in &rarr;</a> The viewer below still works with your own JSON.');
+        notice('Sign in to open community patches. <a href="/login">Log in</a>. The viewer below still works with your own JSON.');
       }
       /* otherwise leave the default sample loaded */
     });

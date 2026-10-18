@@ -10,7 +10,7 @@ main.stage { max-width: none; padding: 0; }
   --hero-ink-2: var(--c-centered);
   --hero-ink-3: var(--c-decimal);
   --hero-glow: .42;
-  position: relative; overflow: hidden; min-height: calc(100vh - var(--site-header-h, 88px));
+  position: relative; overflow: hidden; min-height: calc(100vh - var(--site-header-full, 88px));
   display: flex; align-items: center; padding: 56px 32px 64px; background: var(--hero-ground);
   border-bottom: 1px solid var(--border); }
 .login-stage > .hero-shader { position: absolute; inset: 0; z-index: 0; width: 100%; height: 100%; display: block;
@@ -45,7 +45,7 @@ main.stage { max-width: none; padding: 0; }
 .login-card-head { font-size: 10px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
 .login-card .error { margin-bottom: 12px; }
 .login-providers { list-style: none; display: flex; flex-direction: column; gap: 8px; }
-.login-provider { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 14px;
+.login-provider { position: relative; display: grid; grid-template-columns: 34px minmax(0, 1fr); align-items: center; gap: 14px;
   padding: 12px 14px; border-radius: 6px; color: var(--text); text-decoration: none; overflow: hidden;
   background: color-mix(in srgb, var(--bg) 55%, transparent); border: 1px solid rgba(255,255,255,.07);
   transition: background-color .25s, border-color .25s; }
@@ -61,8 +61,6 @@ main.stage { max-width: none; padding: 0; }
 .login-provider:hover .login-key, .login-provider:focus-visible .login-key { background: var(--orange); border-color: var(--orange); color: var(--orange-on); }
 .login-provider-name { display: flex; flex-direction: column; gap: 2px; font-size: 13px; font-weight: 700; letter-spacing: .02em; }
 .login-provider-name small { font-size: 10px; font-weight: 300; letter-spacing: .02em; color: var(--muted); }
-.login-go { color: var(--muted); transition: transform .2s, color .2s; }
-.login-provider:hover .login-go, .login-provider:focus-visible .login-go { color: var(--text); transform: translateX(3px); }
 
 .login-side .dev-login { margin-top: 16px; max-width: none; background: color-mix(in srgb, var(--bg) 60%, transparent); }
 
@@ -76,5 +74,5 @@ main.stage { max-width: none; padding: 0; }
   .login-perks li > span:last-child { grid-column: 2; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .login-stage > .hero-shader, .login-provider, .login-provider::before, .login-key, .login-go { transition: none; }
+  .login-stage > .hero-shader, .login-provider, .login-provider::before, .login-key { transition: none; }
 }

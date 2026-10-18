@@ -85,7 +85,6 @@ export default function Login() {
                       {label}
                       {id === "github" && <small>Also unlocks Issues</small>}
                     </span>
-                    <span className="login-go" aria-hidden="true">→</span>
                   </a>
                 </li>
               ))}

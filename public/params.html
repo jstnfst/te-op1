@@ -300,7 +300,7 @@
         <div class="card-head"><div class="card-type"><span class="pre">${e.pre}</span>${e.name}</div><span class="card-count">${n} / 8</span></div>
         <div class="knob-strip">${e.slots.map(knob).join('')}</div>
         <ul class="param-list" aria-label="${e.key} parameters">${rows.join('')}</ul>
-        <div class="card-foot"><a href="/lab/mappings#${encodeURIComponent(e.key)}">VALUE MAPPINGS →</a></div>
+        <div class="card-foot"><a href="/lab/mappings#${encodeURIComponent(e.key)}">VALUE MAPPINGS</a></div>
       </article>`;
   }
 
@@ -340,6 +340,9 @@
     document.querySelectorAll('.card.targeted').forEach(c => c.classList.remove('targeted'));
     const key = decodeURIComponent(location.hash.slice(1));
     if (!key) return;
+    // a group (the landing page's Layout tile): filter to it, top of the list
+    const groupBtn = filters.querySelector(`.f-btn[data-g="${CSS.escape(key)}"]`);
+    if (groupBtn) { groupBtn.click(); return; }
     let card = document.getElementById(key);
     if (!card && PARAMS[key]) {
       // a group filter is hiding it: go back to ALL first

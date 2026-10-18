@@ -105,7 +105,7 @@ export default function Upload() {
         <p className="muted" style={{ margin: "10px 0" }}>
           Patches are stored as a small JSON blob. Curious how the
           <code> .aif</code> format was reverse-engineered? See the project on{" "}
-          <a href="https://github.com/jstnfst/te-op1">GitHub →</a>
+          <a href="https://github.com/jstnfst/te-op1">GitHub</a>
         </p>
         <textarea
           value={text}
@@ -122,7 +122,7 @@ export default function Upload() {
       {msg.ok && (
         <p className="ok" style={{ marginTop: 12 }}>
           {msg.ok}{" "}
-          {publishedId && <a href={`/library/editor?id=${publishedId}`} style={{ color: "inherit", fontWeight: 700 }}>View patch →</a>}
+          {publishedId && <a href={`/library/editor?id=${publishedId}`} style={{ color: "inherit", fontWeight: 700 }}>View patch</a>}
         </p>
       )}
       {msg.err && <p className="error" style={{ marginTop: 12 }}>{msg.err}</p>}

@@ -322,10 +322,12 @@
   }
 
   // Deep link: /lab/mappings#fx.spring shows only that engine's rows (the Lab
-  // home's format map links here). Any filter button brings the rest back.
+  // home's format map links here), /lab/mappings#percent one scale type (the
+  // landing page's Mappings tile). Any filter button brings the rest back.
   function showHash() {
     const key = decodeURIComponent(location.hash.slice(1));
-    setFilter(key && DATA.some(([e]) => e === key) ? key : 'all', true);
+    const known = key && (DATA.some(([e]) => e === key) || (SCALE_META[key] && counts[key]));
+    setFilter(known ? key : 'all', true);
   }
   window.addEventListener('hashchange', showHash);
   showHash();

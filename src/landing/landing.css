@@ -134,9 +134,7 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .fork-title { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; margin-bottom: 10px; }
 .fork-desc { font-size: 13px; font-weight: 300; line-height: 1.7; color: var(--muted); max-width: 44ch; }
 .fork-cta { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); transition: color .2s; }
-.fork-cta span { display: inline-block; transition: transform .2s; }
 .fork-panel:hover .fork-cta, .fork-panel:focus-visible .fork-cta { color: var(--text); }
-.fork-panel:hover .fork-cta span, .fork-panel:focus-visible .fork-cta span { transform: translateX(4px); }
 
 /* glyphs: each plays once on hover/focus, then holds */
 .fork-glyph { flex-shrink: 0; width: 92px; height: auto; }
@@ -187,8 +185,6 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .lab-tile:hover { box-shadow: 0 6px 24px rgba(0,0,0,.5); transform: translateY(-2px); border-color: #474b54; }
 .lab-tile-head { display: flex; align-items: baseline; justify-content: space-between; }
 .lab-tile-name { font-size: 16px; font-weight: 700; }
-.lab-tile-go { font-size: 13px; color: var(--muted); transition: transform .18s, color .18s; }
-.lab-tile:hover .lab-tile-go { color: var(--text); transform: translateX(3px); }
 .lab-tile-desc { font-size: 12px; font-weight: 300; line-height: 1.6; color: var(--muted); }
 .lab-tile-preview { margin-top: 6px; padding-top: 12px; align-self: start; border-top: 1px solid var(--border); }
 .lab-tile-caption { font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); grid-column: 1 / -1; }
@@ -199,8 +195,17 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
 .knob-dot { position: relative; display: block; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--border); background: var(--bg); }
 .knob-dot::after { content: ""; position: absolute; left: 50%; top: 50%; width: 6px; height: 2px; margin-top: -1px;
   background: var(--text); transform-origin: 0 50%; }
+.knob-dot { transition: transform .35s cubic-bezier(.22,1,.36,1); }
+/* the Layout page's group filter in miniature: the frame's group lit, then its engine */
+.tile-filter { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.tile-filter span { color: rgba(255,255,255,.28); transition: color .2s; }
+.tile-filter span.on { color: var(--orange); }
+.tile-filter b { margin-left: auto; font-weight: 700; color: var(--text); letter-spacing: .1em; text-transform: none; }
 
 .scale-row { display: flex; flex-wrap: wrap; gap: 6px; }
+/* stepping through the scale types: the picked chip stays lit, the rest dim */
+.scale-row .scale-chip { transition: opacity .2s; }
+.scale-row.picking .scale-chip:not(.on) { opacity: .28; }
 
 .preset-ro { display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr)); gap: 8px 10px; }
 .preset-ro dt { font-size: 9px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: var(--muted); }
@@ -229,7 +234,8 @@ a.scope-led:hover, a.scope-led:focus-visible { color: #fff; }
   .fork-panel:hover { transform: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fork-panel, .fork-panel::before, .fork-cta span, .knob-pointer, .scope-led, .scope-led::before, .lab-tile, .lab-tile-go, .hero > .hero-shader { transition: none; }
+  .fork-panel, .fork-panel::before, .knob-pointer, .scope-led, .scope-led::before, .lab-tile, .hero > .hero-shader,
+  .knob-dot, .tile-filter span, .scale-row .scale-chip { transition: none; }
   .lab-tile:hover { transform: none; }
   .fork-panel:hover, .fork-panel:focus-visible { transform: none; }
   .fork-panel:hover .env-line, .fork-panel:focus-visible .env-line { animation: none; }

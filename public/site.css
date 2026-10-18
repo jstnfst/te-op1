@@ -29,7 +29,11 @@ button { font-family: inherit; cursor: pointer; }
 :focus-visible { outline: 2px solid var(--orange); outline-offset: 2px; }
 
 /* ── HEADER ── */
-header.site { background: var(--header-bg); position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
+/* the placeholder adds no box, so the header can stick against the whole
+   page; sticky at minus the header row's height, the row scrolls away and
+   the tab bar stays pinned (site-header.js sets the heights) */
+[data-site-header] { display: contents; }
+header.site { background: var(--header-bg); position: sticky; top: calc(-1 * var(--header-row-h, 0px)); z-index: 10; box-shadow: 0 2px 16px rgba(0,0,0,.3); }
 .header-row { display: flex; align-items: center; gap: 10px; padding: 16px 32px 10px; }
 .site-title { font-size: 18px; font-weight: 800; color: #fff; letter-spacing: .1em; text-decoration: none; }
 .site-title:hover { color: rgba(255,255,255,.8); }
@@ -86,6 +90,8 @@ h2 { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--mute
 .chip-tempo    { background: rgba(236,72,153,.18);  color: var(--c-tempo); }
 .chip-inverse  { background: rgba(20,184,166,.18);  color: var(--c-inverse); }
 .chip-decimal  { background: rgba(6,182,212,.18);   color: var(--c-decimal); }
+/* firmware-managed constants: the same hatch the knob layout draws them with */
+.chip-fixed    { background: repeating-linear-gradient(135deg, rgba(255,255,255,.08) 0 2px, transparent 2px 4px); color: var(--muted); }
 
 /* ── FOOTER ── */
 footer.site { text-align: center; padding: 32px; font-size: 11px; font-weight: 300; color: var(--muted); letter-spacing: .04em; }
