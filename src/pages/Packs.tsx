@@ -3,9 +3,9 @@ import { Link } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiSend, type Pack } from "../api"
 import { Collapsible } from "../collapsible"
-import { LikeButton, DownloadCount } from "../like"
+import { LikeButton, Popularity, useLike } from "../like"
 import { loginPath } from "../paths"
-import { useViewToggle, ViewToggle } from "../patchLists"
+import { DeleteButton, useViewToggle, ViewToggle, VisibilityButton } from "../patchLists"
 import { useLongList } from "../useLongList"
 import { LongList } from "../LongList"
 
@@ -19,6 +19,13 @@ function PackChip({ p, community }: { p: Pack; community?: boolean }) {
   return <span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>{p.is_public ? "public" : "private"}</span>
 }
 
+/** An owner's controls on their own pack rows/cards. */
+export interface PackOwner {
+  onToggle: () => void
+  onDelete: () => void
+  busy?: boolean
+}
+
 export interface PackItemProps {
   p: Pack
   view: View
@@ -27,31 +34,48 @@ export interface PackItemProps {
   onLiked?: (liked: boolean) => void
   /** Community listing: every pack is public, so mark the viewer's own instead of visibility. */
   community?: boolean
+  /** Your own packs: visibility toggle (in place of the chip) and delete. */
+  owner?: PackOwner
 }
 
 /** List view's columns. The first says whose pack it is: on the community
  * list, "you" or the author; on your own lists, public or private. */
 export const packColumns = (community?: boolean) => ({
   kind: "pack",
-  labels: [community ? "Owner" : "Visibility", "Pack", "Patches", "Downloads", "Likes"],
+  labels: [community ? "Owner" : "Visibility", "Pack", "Patches", "Popularity", "Actions"],
 })
 
+/** A pack's glyph: a stack of patch cards. */
+const PackGlyph = () => (
+  <span className="engine-art" aria-hidden="true">
+    <svg viewBox="0 0 120 72" className="engine-svg" stroke="currentColor" strokeWidth="2" strokeLinecap="round" fill="none">
+      <rect x="38" y="10" width="52" height="34" rx="3" opacity=".4" />
+      <rect x="32" y="18" width="52" height="34" rx="3" opacity=".7" />
+      <rect x="26" y="26" width="52" height="34" rx="3" className="ac" />
+    </svg>
+  </span>
+)
+
 /** One pack as a grid card or list row (LongList renderItem). */
-export function PackItem({ p, view, showAuthor, onLiked, community }: PackItemProps) {
+export function PackItem({ p, view, showAuthor, onLiked, community, owner }: PackItemProps) {
   const author = showAuthor && p.author && !(community && p.is_mine) ? p.author : null
-  const like = <LikeButton type="pack" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked} />
+  const like = useLike("pack", p.id, p.like_count, p.liked_by_me, onLiked)
+  const vis = owner && <VisibilityButton isPublic={!!p.is_public} onToggle={owner.onToggle} busy={owner.busy} />
+  const del = owner && <DeleteButton label="Delete pack" onDelete={owner.onDelete} />
   if (view === "grid") {
     return (
-      <Link className="card" to={`/library/packs/${p.id}`}>
-        <div className="card-eyebrow">
-          <PackChip p={p} community={community} />
-          <span>{patchCount(p.item_count)}</span>
-          {author ? <span>by {author}</span> : null}
+      <Link className="card patch-card" to={`/library/packs/${p.id}`}>
+        <div className="card-head">
+          <PackGlyph />
+          <span className="card-engine">{patchCount(p.item_count)}</span>
+          {!owner && <PackChip p={p} community={community} />}
         </div>
         <div className="card-title">{p.name}</div>
-        <div className="row card-actions">
-          <DownloadCount n={p.download_count} />
-          {like}
+        {author ? <div className="card-by">by {author}</div> : null}
+        <div className="card-stats"><Popularity inline downloads={p.download_count} like={like} /></div>
+        <div className="card-actions">
+          <LikeButton like={like} />
+          {owner && <span className="card-actions-end">{vis}{del}</span>}
         </div>
       </Link>
     )
@@ -59,7 +83,8 @@ export function PackItem({ p, view, showAuthor, onLiked, community }: PackItemPr
   return (
     <Link className="list-row" to={`/library/packs/${p.id}`}>
       <span className="list-type">
-        {community && !p.is_mine
+        {owner ? vis
+          : community && !p.is_mine
           ? <span className="list-owner">{p.author ?? ""}</span>
           : <PackChip p={p} community={community} />}
       </span>
@@ -68,8 +93,8 @@ export function PackItem({ p, view, showAuthor, onLiked, community }: PackItemPr
         {!community && author ? <span className="list-byline">by {author}</span> : null}
       </span>
       <span className="list-count">{patchCount(p.item_count)}</span>
-      <span className="list-dls"><DownloadCount n={p.download_count} /></span>
-      <div className="list-actions">{like}</div>
+      <span className="list-dls"><Popularity downloads={p.download_count} like={like} /></span>
+      <div className="list-actions"><LikeButton like={like} />{del}</div>
     </Link>
   )
 }
@@ -90,6 +115,22 @@ export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolea
     try { await apiSend("/api/packs", "POST", { name: n }); setName(""); list.reload() }
     catch (e) { setErr((e as Error).message) }
   }
+
+  const [toggling, setToggling] = useState<number | null>(null)
+  async function toggle(p: Pack) {
+    const np = !p.is_public
+    setToggling(p.id)
+    try {
+      await apiSend(`/api/packs/${p.id}`, "PATCH", { is_public: np })
+      list.patch(p.id, (x) => ({ ...x, is_public: np ? 1 : 0 }))
+    } catch (e) { setErr((e as Error).message) }
+    finally { setToggling(null) }
+  }
+  async function del(id: number) {
+    try { await apiSend(`/api/packs/${id}`, "DELETE"); list.reload() }
+    catch (e) { setErr((e as Error).message) }
+  }
+  const ownerOf = (p: Pack): PackOwner => ({ onToggle: () => toggle(p), onDelete: () => del(p.id), busy: toggling === p.id })
 
   const count = list.total
   return (
@@ -122,7 +163,7 @@ export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolea
         pageParam={pageParam}
         empty={<p className="muted">No packs yet</p>}
         columns={packColumns()}
-        renderItem={(p) => <PackItem p={p} view={view} showAuthor={false} />}
+        renderItem={(p) => <PackItem p={p} view={view} showAuthor={false} owner={ownerOf(p)} />}
       />
     </Collapsible>
   )

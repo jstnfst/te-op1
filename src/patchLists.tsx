@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { useAuth } from "./auth"
 import { apiGet, apiSend, type PatchSummary } from "./api"
 import { SelectionToolbar, type Selection, type SelBind } from "./packs"
 import { Collapsible } from "./collapsible"
-import { LikeButton, DownloadCount } from "./like"
+import { LikeButton, Popularity, useLike } from "./like"
+import { EyeIcon, IconAction, KnobIcon, TrashIcon } from "./icons"
 import { useLongList } from "./useLongList"
 import { LongList } from "./LongList"
 
@@ -72,11 +73,23 @@ interface ModActions {
 }
 
 function ModButtons({ mod }: { mod: ModActions }) {
+  return <IconAction icon={<EyeIcon open />} active label="Make private (moderation)" onAction={mod.onPrivate} disabled={mod.busy} />
+}
+
+/** An owner's visibility toggle: open eye = public. Going public asks first
+ * (others can download it at once); going private is one press. */
+export function VisibilityButton({ isPublic, onToggle, busy, className }: {
+  isPublic: boolean; onToggle: () => void; busy?: boolean; className?: string
+}) {
   return (
-    <button className="btn" onClick={mod.onPrivate} disabled={mod.busy}>
-      {mod.busy ? "Working…" : "Make private"}
-    </button>
+    <IconAction icon={<EyeIcon open={isPublic} />} active={isPublic} className={className}
+      label={isPublic ? "Public · make private" : "Private · make public"}
+      confirm={!isPublic} tone="primary" onAction={onToggle} disabled={busy} />
   )
+}
+
+export function DeleteButton({ label = "Delete", onDelete, className }: { label?: string; onDelete: () => void; className?: string }) {
+  return <IconAction icon={<TrashIcon />} label={label} confirm onAction={onDelete} className={className} />
 }
 
 export interface RowProps {
@@ -113,24 +126,32 @@ const tagChips = (tags: string[], onTagClick?: (t: string) => void) => tags.map(
   <span key={t} className={"chip tag" + (onTagClick ? " chip-filter" : "")} onClick={onTagClick && (() => onTagClick(t))} title={onTagClick ? `Filter by ${t}` : undefined}>{t}</span>
 ))
 
+/** The engine's line drawing (public/engine-art.js, shared with the patch editor). */
+const artCache: Record<string, string> = {}
+export function EngineArt({ type }: { type: string }) {
+  const html = artCache[type] ??= window.OP1_ENGINE_ART?.(type) ?? ""
+  return <span className="engine-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: html }} />
+}
+
 export function GridCard({ p, selected, sel, onTagClick, mod, chip, extra, onLiked }: RowProps) {
+  const like = useLike("patch", p.id, p.like_count, p.liked_by_me, onLiked && ((liked) => onLiked(liked)))
   return (
-    <div className={"card" + (sel ? " selectable" : "") + (selected ? " selected" : "")} {...sel?.card}>
-      <div className="card-eyebrow">
-        {sel && <span className="card-check">{checkbox(p, sel)}</span>}
-        <span className="chip">{p.type}</span>
+    <div className={"card patch-card" + (sel ? " selectable" : "") + (selected ? " selected" : "")} {...sel?.card}>
+      <div className="card-head">
+        <EngineArt type={p.type} />
+        <span className="card-engine">{p.type}</span>
         {chip}
-        {p.author ? <span>by {p.author}</span> : null}
+        {sel && <span className="card-check">{checkbox(p, sel)}</span>}
       </div>
       <div className="card-title">{p.name}</div>
-      <div className="card-tags">{tagChips(p.tags.split(",").filter(Boolean).slice(0, 6), onTagClick)}</div>
-      <div className="row card-actions">
-        <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
+      {p.author ? <div className="card-by">by {p.author}</div> : null}
+      <div className="card-tags">{tagChips(p.tags.split(",").filter(Boolean), onTagClick)}</div>
+      <div className="card-stats"><Popularity inline downloads={p.download_count} like={like} /></div>
+      <div className="card-actions">
+        <a className="btn icon-btn" href={`/library/editor?id=${p.id}`} aria-label={`Open ${p.name} in the editor`} title="Open in editor"><KnobIcon /></a>
         <DownloadButton p={p} />
-        <DownloadCount n={p.download_count} />
-        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
-        {mod && <ModButtons mod={mod} />}
-        {extra}
+        <LikeButton like={like} />
+        {(mod || extra) && <span className="card-actions-end">{mod && <ModButtons mod={mod} />}{extra}</span>}
       </div>
     </div>
   )
@@ -139,10 +160,11 @@ export function GridCard({ p, selected, sel, onTagClick, mod, chip, extra, onLik
 /** List view's columns (header labels, one per cell of ListRow). */
 export const PATCH_COLUMNS = {
   kind: "patch",
-  labels: [<i className="list-head-box" title="Select" aria-label="Select" />, "Synth", "Preset", "Tags", "Downloads", "Actions"],
+  labels: [<i className="list-head-box" title="Select" aria-label="Select" />, "Synth", "Preset", "Tags", "Popularity", "Actions"],
 }
 
 export function ListRow({ p, selected, sel, onTagClick, mod, chip, extra, onLiked }: RowProps) {
+  const like = useLike("patch", p.id, p.like_count, p.liked_by_me, onLiked && ((liked) => onLiked(liked)))
   return (
     <div className={"list-row" + (sel ? " selectable" : "") + (selected ? " selected" : "")} {...sel?.card}>
       <span className="card-check list-check">{sel && checkbox(p, sel)}</span>
@@ -153,9 +175,9 @@ export function ListRow({ p, selected, sel, onTagClick, mod, chip, extra, onLike
         {p.author ? <span className="list-byline">by {p.author}</span> : null}
       </span>
       <div className="list-tags">{tagChips(p.tags.split(",").filter(Boolean).slice(0, 4), onTagClick)}</div>
-      <span className="list-dls"><DownloadCount n={p.download_count} /></span>
+      <span className="list-dls"><Popularity downloads={p.download_count} like={like} /></span>
       <div className="list-actions">
-        <LikeButton type="patch" id={p.id} likeCount={p.like_count} likedByMe={p.liked_by_me} onToggled={onLiked && ((liked) => onLiked(liked))} />
+        <LikeButton like={like} />
         <a className="btn" href={`/library/editor?id=${p.id}`}>Open</a>
         <DownloadButton p={p} className="list-dl" />
         {mod && <ModButtons mod={mod} />}
@@ -173,31 +195,14 @@ export const PatchItem = ({ view, ...props }: RowProps & { view: View }) =>
 
 export function MyPatches({ selection }: { selection: Selection }) {
   const [err, setErr] = useState("")
-  const [pendingDel, setPendingDel] = useState<number | null>(null)
-  const [pendingPublic, setPendingPublic] = useState<number | null>(null)
   const [toggling, setToggling] = useState<number | null>(null)
-  const delTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const publicTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [view, setView] = useViewToggle("te-op1-patches-mine-view")
   const list = useLongList<PatchSummary>({
     key: "mine",
     url: (page, asof) => `/api/me/patches?page=${page}${asof ? `&asof=${asof}` : ""}`,
   })
 
-  useEffect(() => () => {
-    if (delTimer.current) clearTimeout(delTimer.current)
-    if (publicTimer.current) clearTimeout(publicTimer.current)
-  }, [])
-
   async function del(id: number) {
-    if (pendingDel !== id) {
-      if (delTimer.current) clearTimeout(delTimer.current)
-      setPendingDel(id)
-      delTimer.current = setTimeout(() => setPendingDel(null), 2000)
-      return
-    }
-    if (delTimer.current) clearTimeout(delTimer.current)
-    setPendingDel(null)
     try {
       await apiSend(`/api/patches/${id}`, "DELETE")
       if (selection.has(id)) selection.pick(id)
@@ -208,15 +213,6 @@ export function MyPatches({ selection }: { selection: Selection }) {
   }
 
   async function toggle(p: PatchSummary) {
-    // "Make public" is irreversible - require a second tap
-    if (!p.is_public && pendingPublic !== p.id) {
-      if (publicTimer.current) clearTimeout(publicTimer.current)
-      setPendingPublic(p.id)
-      publicTimer.current = setTimeout(() => setPendingPublic(null), 3000)
-      return
-    }
-    if (publicTimer.current) clearTimeout(publicTimer.current)
-    setPendingPublic(null)
     const np = !p.is_public
     setToggling(p.id)
     try {
@@ -230,7 +226,7 @@ export function MyPatches({ selection }: { selection: Selection }) {
   }
 
   const order = list.loadedIds()
-  const ext = view === "list" ? " list-act-ext" : ""
+  const ext = view === "list" ? "list-act-ext" : ""
 
   return (
     <Collapsible storageKey="te-op1-patches-mine-open" summary={`My patches${list.total === null ? "" : ` (${list.total})`}`}>
@@ -252,14 +248,9 @@ export function MyPatches({ selection }: { selection: Selection }) {
             p={{ ...p, author: null }}
             selected={selection.has(p.id)}
             sel={selection.bind(p.id, order)}
-            chip={<span className={"chip " + (p.is_public ? "vis-public" : "vis-private")}>{p.is_public ? "public" : "private"}</span>}
             extra={<>
-              <button className={"btn" + ext + (pendingPublic === p.id ? " primary" : "")} onClick={() => toggle(p)} disabled={toggling === p.id}>
-                {pendingPublic === p.id ? "Make public?" : p.is_public ? "Make private" : "Make public"}
-              </button>
-              <button className={"btn" + ext + (pendingDel === p.id ? " danger" : "")} onClick={() => del(p.id)}>
-                {pendingDel === p.id ? "Confirm?" : "Delete"}
-              </button>
+              <VisibilityButton isPublic={!!p.is_public} onToggle={() => toggle(p)} busy={toggling === p.id} className={ext} />
+              <DeleteButton onDelete={() => del(p.id)} className={ext} />
             </>}
           />
         )}

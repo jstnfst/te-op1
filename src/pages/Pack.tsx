@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from "react"
 import { Link, useParams } from "react-router-dom"
 import { useAuth } from "../auth"
 import { apiGet, apiSend, type PatchSummary } from "../api"
-import { LikeButton, DownloadCount } from "../like"
+import { LikeButton, Popularity, useLike } from "../like"
+import { IconAction, TrashIcon } from "../icons"
 import { loginPath } from "../paths"
 import { useSelection, SelectionToolbar } from "../packs"
-import { PATCH_COLUMNS, PatchItem, ViewToggle, useViewToggle } from "../patchLists"
+import { DeleteButton, PATCH_COLUMNS, PatchItem, ViewToggle, VisibilityButton, useViewToggle } from "../patchLists"
 import { useLongList } from "../useLongList"
 import { LongList } from "../LongList"
 
@@ -65,16 +66,12 @@ export default function Pack() {
   const [pack, setPack] = useState<PackDetail | null>(null)
   const [err, setErr] = useState("")
   const [busy, setBusy] = useState(true)
-  const [pendingDel, setPendingDel] = useState(false)
-  const [pendingPublic, setPendingPublic] = useState(false)
   const [toggling, setToggling] = useState(false)
-  const [pendingRemove, setPendingRemove] = useState<number | null>(null)
-  const delTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selection = useSelection()
   const [view, setView] = useViewToggle("te-op1-pack-view")
   const [removing, setRemoving] = useState("")
   const items = useLongList<PatchSummary>({ key: `pack-${id}`, url: (page) => `/api/packs/${id}/items?page=${page}` })
+  const like = useLike("pack", Number(id), pack?.like_count, pack?.liked_by_me)
 
   // Only the first load shows the page-level "Loading…"; later refreshes (after
   // a remove or visibility change) update in place so the list keeps its place.
@@ -84,10 +81,6 @@ export default function Pack() {
     finally { setBusy(false) }
   }
   useEffect(() => { setBusy(true); load() }, [id])
-  useEffect(() => () => {
-    if (delTimer.current) clearTimeout(delTimer.current)
-    if (removeTimer.current) clearTimeout(removeTimer.current)
-  }, [])
 
   if (busy) return <p className="muted">Loading…</p>
   if (err && !pack) {
@@ -104,14 +97,6 @@ export default function Pack() {
   const refresh = () => { items.reload(); load() }
 
   async function remove(patchId: number) {
-    if (pendingRemove !== patchId) {
-      if (removeTimer.current) clearTimeout(removeTimer.current)
-      setPendingRemove(patchId)
-      removeTimer.current = setTimeout(() => setPendingRemove(null), 2000)
-      return
-    }
-    if (removeTimer.current) clearTimeout(removeTimer.current)
-    setPendingRemove(null)
     try {
       await apiSend(`/api/packs/${pack!.id}/items`, "DELETE", { patch_id: patchId })
       if (selection.has(patchId)) selection.pick(patchId)
@@ -140,11 +125,6 @@ export default function Pack() {
 
   async function togglePublic() {
     const makingPublic = !pack!.is_public
-    if (makingPublic && !pendingPublic) {
-      setPendingPublic(true)
-      return
-    }
-    setPendingPublic(false)
     setToggling(true)
     try {
       await apiSend(`/api/packs/${pack!.id}`, "PATCH", { is_public: makingPublic })
@@ -157,14 +137,6 @@ export default function Pack() {
   }
 
   async function del() {
-    if (!pendingDel) {
-      if (delTimer.current) clearTimeout(delTimer.current)
-      setPendingDel(true)
-      delTimer.current = setTimeout(() => setPendingDel(false), 2000)
-      return
-    }
-    if (delTimer.current) clearTimeout(delTimer.current)
-    setPendingDel(false)
     try {
       await apiSend(`/api/packs/${pack!.id}`, "DELETE")
       window.location.href = "/library/packs"
@@ -181,30 +153,20 @@ export default function Pack() {
   const shareUrl = `${location.origin}/library/packs/${pack.id}`
   return (
     <>
-      {pack.author && <p className="pack-author">by {pack.author}</p>}
+      <p className="pack-author">
+        {pack.author && <span>by {pack.author}</span>}
+        <Popularity inline downloads={pack.download_count} like={like} />
+      </p>
       <h1 className="hero-title">{pack.name}</h1>
       {err && <p className="error">{err}</p>}
       <div className="row pack-actions">
         <a className="btn primary" href={`/api/packs/${pack.id}/download`}>Download pack .zip</a>
-        <DownloadCount n={pack.download_count} />
-        {user && <LikeButton type="pack" id={pack.id} likeCount={pack.like_count} likedByMe={pack.liked_by_me} />}
-        {canToggleVisibility && (
-          <button
-            className={"btn" + (pendingPublic ? " primary" : "")}
-            onClick={togglePublic}
-            disabled={toggling}
-          >
-            {pendingPublic ? "Make public?" : pack.is_public ? "Make private" : "Make public"}
-          </button>
-        )}
         {pack.is_owner && (items.total ?? pack.item_count) > 0 && (
           <a className="btn" href={`/library/editor?pack=${pack.id}`}>Edit in patch editor</a>
         )}
-        {pack.is_owner && (
-          <button className={"btn" + (pendingDel ? " danger" : "")} onClick={del}>
-            {pendingDel ? "Confirm?" : "Delete pack"}
-          </button>
-        )}
+        {user && <LikeButton like={like} />}
+        {canToggleVisibility && <VisibilityButton isPublic={!!pack.is_public} onToggle={togglePublic} busy={toggling} />}
+        {pack.is_owner && <DeleteButton label="Delete pack" onDelete={del} />}
       </div>
       {pack.is_public ? (
         <div className="share-row">
@@ -253,9 +215,7 @@ export default function Pack() {
             selected={selection.has(p.id)}
             sel={selection.bind(p.id, order)}
             extra={pack.is_owner && (
-              <button className={"btn" + (pendingRemove === p.id ? " danger" : "")} onClick={() => remove(p.id)}>
-                {pendingRemove === p.id ? "Confirm?" : "Remove"}
-              </button>
+              <IconAction icon={<TrashIcon />} label="Remove from pack" confirm onAction={() => remove(p.id)} />
             )}
           />
         )}

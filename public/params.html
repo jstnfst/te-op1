@@ -26,12 +26,6 @@
     .s-decimal  { --c: var(--c-decimal); }
     .s-unknown  { --c: var(--muted); }
 
-    /* ── FILTER ROW (page-specific, sits under the shared nav) ── */
-    .filter-nav { display: flex; flex-wrap: wrap; padding: 0 24px; border-top: 1px solid rgba(255,255,255,.04); background: var(--header-bg); }
-    .f-btn { font-family: inherit; font-size: 10px; font-weight: 400; letter-spacing: .12em; color: rgba(255,255,255,.28); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; padding: 7px 12px 6px; transition: color .15s, border-color .15s; }
-    .f-btn:hover { color: rgba(255,255,255,.65); }
-    .f-btn.active { color: rgba(255,255,255,.85); border-bottom-color: rgba(255,255,255,.3); }
-    .f-btn .n { font-weight: 300; opacity: .5; margin-left: 4px; }
 
     /* ── MAIN ── */
     main { max-width: 1200px; margin: 0 auto; padding: 28px 32px 80px; }
@@ -46,9 +40,17 @@
     .stats dt { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
     .stats dd { font-size: 30px; font-weight: 800; letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
 
-    /* ── LEGEND (scale types; a key highlights its slots on every card) ── */
-    .legend { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 8px; }
-    .legend-title { font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); margin-right: 6px; }
+    /* ── FILTER PANEL: one panel, two rows. GROUP picks which cards show;
+         SCALE highlights a scale type's knobs, its counts following the
+         chosen group. ── */
+    .filter-panel { display: flex; flex-direction: column; gap: 10px; padding: 12px 14px; margin-bottom: 8px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+    .filter-line { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+    .filter-line + .filter-line { padding-top: 10px; border-top: 1px solid var(--border); }
+    .legend-title { width: 56px; flex-shrink: 0; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+    .key.f-btn { --c: var(--text); }
+    .key.f-btn[aria-pressed="true"] { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
+    button.key:disabled { opacity: .35; cursor: default; color: var(--muted); }
     .key { display: inline-flex; align-items: center; gap: 7px; font-family: inherit; font-size: 10px; font-weight: 700;
       letter-spacing: .1em; text-transform: uppercase; color: var(--muted); background: none;
       border: 1px solid var(--border); border-radius: 4px; padding: 5px 9px 4px; transition: color .15s, border-color .15s; }
@@ -59,7 +61,6 @@
     .key.static { border-color: transparent; padding-left: 4px; }
     .key i.fixed { background: repeating-linear-gradient(135deg, var(--knob-null) 0 2px, transparent 2px 4px); }
     .key i.unused { background: none; border: 1px dashed var(--knob-null); }
-    .legend-hint { font-size: 11px; font-weight: 300; color: var(--muted); margin-bottom: 8px; }
 
     /* ── GROUPS ── */
     .group { margin-top: 28px; }
@@ -133,7 +134,6 @@
 </head>
 <body data-section="layout">
 <div data-site-header></div>
-<div class="filter-nav" aria-label="Filter by group" id="filters"></div>
 
 <main>
   <section class="intro">
@@ -150,8 +150,10 @@
     <dl class="stats" id="stats"></dl>
   </section>
 
-  <div class="legend" id="legend" aria-label="Scale types"></div>
-  <p class="legend-hint">Pick a scale type to highlight its knobs on every card</p>
+  <div class="filter-panel">
+    <div class="filter-line" role="group" aria-label="Filter by group"><span class="legend-title">Group</span><span class="filter-line" id="filters"></span></div>
+    <div class="filter-line" id="legend" role="group" aria-label="Highlight a scale type"></div>
+  </div>
 
   <div id="groups"></div>
 </main>
@@ -215,24 +217,42 @@
     [STATS.engines, 'engines'], [STATS.namedSlots, 'named slots'], [STATS.scaleTypes, 'scale types'],
   ].map(([n, l]) => `<div><dt>${l}</dt><dd>${n}</dd></div>`).join('');
 
-  // ── filter row ──
+  // ── group filter ──
   const filters = document.getElementById('filters');
   [['all', 'All', ENGINES.length], ...GROUPS.map(([g, l]) => [g, l, ENGINES.filter(e => e.group === g).length])]
     .forEach(([g, l, n]) => {
       const b = document.createElement('button');
-      b.className = 'f-btn' + (g === 'all' ? ' active' : '');
+      b.className = 'key f-btn';
       b.dataset.g = g;
-      b.innerHTML = `${l.toUpperCase()}<span class="n">${n}</span>`;
+      b.setAttribute('aria-pressed', String(g === 'all'));
+      b.innerHTML = `${l}<span class="n">${n}</span>`;
       filters.appendChild(b);
     });
 
-  // ── legend: most common scale first ──
+  // named slots per scale type within a group ('all' = the shared stats)
+  function scaleCountFor(group) {
+    if (group === 'all') return scaleCount;
+    const n = {};
+    ENGINES.filter(e => e.group === group).forEach(e => e.slots.forEach(s => {
+      if (s && s.name && s.scale !== 'unknown') n[s.scale] = (n[s.scale] || 0) + 1;
+    }));
+    return n;
+  }
+
+  // ── scale legend: most common scale first (order fixed by the overall
+  //    counts, so keys don't jump around as the group changes) ──
   let hl = null;
   const legend = document.getElementById('legend');
-  legend.innerHTML = '<span class="legend-title">Scale</span>' +
-    Object.keys(scaleCount).filter(t => t !== 'unknown').sort((a, b) => scaleCount[b] - scaleCount[a])
-      .map(t => `<button class="key s-${t}" data-t="${t}" aria-pressed="false"><i></i>${SCALES[t].label}<span class="n">${scaleCount[t]}</span></button>`).join('') +
-    '<span class="key static"><i class="fixed"></i>fixed</span><span class="key static"><i class="unused"></i>unused</span>';
+  const SCALE_ORDER = Object.keys(scaleCount).filter(t => t !== 'unknown').sort((a, b) => scaleCount[b] - scaleCount[a]);
+  function renderLegend(group) {
+    const n = scaleCountFor(group);
+    if (hl && !n[hl]) hl = null;
+    legend.innerHTML = '<span class="legend-title">Scale</span>' +
+      SCALE_ORDER.map(t => `<button class="key s-${t}" data-t="${t}" aria-pressed="${t === hl}"${n[t] ? '' : ' disabled'}>` +
+        `<i></i>${SCALES[t].label}<span class="n">${n[t] || 0}</span></button>`).join('') +
+      '<span class="key static"><i class="fixed"></i>fixed</span><span class="key static"><i class="unused"></i>unused</span>';
+  }
+  renderLegend('all');
   legend.addEventListener('click', ev => {
     const b = ev.target.closest('button.key');
     if (!b) return;
@@ -296,7 +316,8 @@
   filters.addEventListener('click', ev => {
     const btn = ev.target.closest('.f-btn');
     if (!btn) return;
-    filters.querySelectorAll('.f-btn').forEach(b => b.classList.toggle('active', b === btn));
+    filters.querySelectorAll('.f-btn').forEach(b => b.setAttribute('aria-pressed', String(b === btn)));
+    renderLegend(btn.dataset.g);
     render(btn.dataset.g);
   });
 

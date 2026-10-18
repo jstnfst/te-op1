@@ -25,6 +25,8 @@ declare global {
       isSelector(eng: string, idx: number): boolean
       isContinuous(eng: string, idx: number): boolean
     }
+    /** public/engine-art.js: an engine's line drawing as an <svg> string. */
+    OP1_ENGINE_ART?: (type: string) => string
     /** public/op1-stats.js: coverage numbers shared by the Lab, Layout, and Mappings pages. */
     OP1_STATS?: {
       engines: number

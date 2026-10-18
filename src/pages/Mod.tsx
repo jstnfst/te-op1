@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Link } from "react-router-dom"
 import { apiGet, apiSend } from "../api"
+import { DeleteButton, VisibilityButton } from "../patchLists"
 
 interface ModUser {
   id: number
@@ -42,8 +43,8 @@ interface Overview {
   packs: ModPack[]
 }
 
-/** Second-tap confirmation, same convention as MyPatches: first tap arms the
- * button (danger styling), a second tap within the window commits. */
+/** Second-tap confirmation for Ban: first tap arms the button (danger
+ * styling), a second tap within the window commits. */
 function useConfirm() {
   const [armed, setArmed] = useState<string | null>(null)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -106,7 +107,6 @@ export default function Mod() {
 
   function del(kind: "patches" | "packs", id: number) {
     const key = `${kind}-${id}-del`
-    if (!confirm(key)) return
     act(key, async () => {
       await apiSend(`/api/${kind}/${id}`, "DELETE")
       setData((d) => d && { ...d, [kind]: d[kind].filter((x) => x.id !== id) } as Overview)
@@ -185,20 +185,8 @@ export default function Mod() {
                         <div className="list-actions">
                           {/* Delete (not Make private) hides on mobile: the
                               reversible takedown stays reachable everywhere. */}
-                          <button
-                            className="btn"
-                            onClick={() => takePrivate("patches", p.id)}
-                            disabled={busy === privKey || busy === delKey}
-                          >
-                            {busy === privKey ? "Working…" : "Make private"}
-                          </button>
-                          <button
-                            className={"btn list-act-ext" + (armed === delKey ? " danger" : "")}
-                            onClick={() => del("patches", p.id)}
-                            disabled={busy === privKey || busy === delKey}
-                          >
-                            {armed === delKey ? "Confirm?" : busy === delKey ? "Working…" : "Delete"}
-                          </button>
+                          <VisibilityButton isPublic onToggle={() => takePrivate("patches", p.id)} busy={busy === privKey || busy === delKey} />
+                          <DeleteButton onDelete={() => del("patches", p.id)} className="list-act-ext" />
                         </div>
                       </div>
                     )
@@ -225,20 +213,8 @@ export default function Mod() {
                         <span className="list-author">{k.author ? `by ${k.author}` : "no owner"}</span>
                         <span className="mod-meta">{k.item_count} {k.item_count === 1 ? "item" : "items"} · {k.download_count} dl · {day(k.created_at)}</span>
                         <div className="list-actions">
-                          <button
-                            className="btn"
-                            onClick={() => takePrivate("packs", k.id)}
-                            disabled={busy === privKey || busy === delKey}
-                          >
-                            {busy === privKey ? "Working…" : "Make private"}
-                          </button>
-                          <button
-                            className={"btn list-act-ext" + (armed === delKey ? " danger" : "")}
-                            onClick={() => del("packs", k.id)}
-                            disabled={busy === privKey || busy === delKey}
-                          >
-                            {armed === delKey ? "Confirm?" : busy === delKey ? "Working…" : "Delete"}
-                          </button>
+                          <VisibilityButton isPublic onToggle={() => takePrivate("packs", k.id)} busy={busy === privKey || busy === delKey} />
+                          <DeleteButton onDelete={() => del("packs", k.id)} className="list-act-ext" />
                         </div>
                       </div>
                     )

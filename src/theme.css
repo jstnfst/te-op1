@@ -91,6 +91,27 @@ input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; 
 .card-tags { display: flex; flex-wrap: nowrap; overflow: hidden; gap: 4px; margin-top: 6px; min-height: var(--chip-row, 14px); }
 .card-tags > .chip { flex-shrink: 0; }
 .card-actions { margin-top: 12px; }
+
+/* patch + pack cards (patchLists GridCard, Packs PackItem): the engine's
+   glyph heads the card, every tag shows (wrapping), the counts sit on their
+   own line, and the footer holds buttons only, pinned to the card's bottom
+   so a row of cards keeps one footer line. */
+.card.patch-card { display: flex; flex-direction: column; }
+.card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; min-height: 28px; }
+.engine-art { display: block; width: 46px; height: 28px; flex-shrink: 0; color: var(--muted); transition: color .18s; }
+.engine-art .engine-svg { display: block; width: 100%; height: 100%; }
+.engine-svg .ac { stroke: var(--orange); }
+.card:hover .engine-art, .card.selected .engine-art { color: var(--text); }
+.card-engine { font-size: 10px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); white-space: nowrap; }
+.card-head .chip { margin-right: 0; }
+.card-head .card-check { margin-left: auto; }
+.patch-card .card-title { margin-bottom: 2px; }
+.card-by { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.patch-card .card-tags { flex-wrap: wrap; overflow: visible; margin-top: 10px; min-height: 0; }
+.patch-card .card-tags:empty { display: none; }
+.card-stats { margin-top: auto; padding-top: 14px; }
+.patch-card .card-actions { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+.card-actions-end { display: flex; gap: 6px; margin-left: auto; }
 .chip { display: inline-block; font-size: 8px; font-weight: 700; letter-spacing: .1em; padding: 2px 6px 1px;
   border-radius: 2px; text-transform: uppercase; background: rgba(255,72,0,.18); color: var(--orange); margin-right: 4px; }
 .chip.tag { background: rgba(91,141,239,.18); color: var(--blue); }
@@ -115,6 +136,18 @@ input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; 
 .btn.danger { background: rgba(248,113,113,.12); color: var(--danger); border-color: var(--danger); }
 .btn.danger:hover { background: rgba(248,113,113,.22); }
 .btn:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+/* a toggled-on icon (a public eye) */
+.btn.icon-btn.on { color: var(--green); }
+
+/* IconAction (icons.tsx): "Confirm?" floats over its icon button, right
+   aligned, so arming it never reflows the row; opaque so the icon underneath
+   doesn't show through */
+.icon-action { position: relative; display: inline-flex; flex-shrink: 0; }
+.btn.confirm-pop { position: absolute; top: 0; right: 0; height: 100%; z-index: 6; white-space: nowrap;
+  box-shadow: 0 6px 20px rgba(0,0,0,.5); animation: pop-in .14s cubic-bezier(.22,1,.36,1); }
+.btn.confirm-pop.danger { background: linear-gradient(rgba(248,113,113,.2), rgba(248,113,113,.2)), var(--surface); }
+@keyframes pop-in { from { opacity: 0; transform: scale(.94); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .btn.confirm-pop { animation: none; } }
 /* a disabled primary goes neutral: orange marks the live action, not an unavailable one */
 .btn.primary:disabled { background: var(--surface); color: var(--muted); border-color: var(--border); filter: none; }
 .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
@@ -272,10 +305,8 @@ a.list-row { text-decoration: none; color: inherit; }
 .list-head-box { display: block; width: 14px; height: 14px; border: 1px solid var(--muted); border-radius: 2px; }
 
 /* pack detail */
-.pack-author { font-size: 12px; font-weight: 300; color: var(--muted); margin-bottom: 4px; }
+.pack-author { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; font-size: 12px; font-weight: 300; color: var(--muted); margin-bottom: 4px; }
 .pack-actions { margin: 12px 0; }
-/* the compact like button takes the full row height beside full-size buttons */
-.pack-actions .btn.like { align-self: stretch; }
 
 /* share link + copy (Pack.tsx CopyLink) */
 .share-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 12px; }
@@ -312,7 +343,7 @@ a.list-row { text-decoration: none; color: inherit; }
   /* Compact action-panel tier: buttons drop a size so a card's actions fit
      one row instead of wrapping into a stack of chunky rows. */
   .btn { padding: 7px 9px; font-size: 10px; letter-spacing: .04em; gap: 5px; }
-  .btn.like { padding: 6px 8px; min-width: 48px; }
+  .btn.icon-btn { padding: 7px 8px; }
   .row { gap: 6px; }
   .card-actions { margin-top: 10px; }
   .card { padding: 14px 14px 12px; }
@@ -325,10 +356,9 @@ a.list-row { text-decoration: none; color: inherit; }
   .seltool-actions { margin-left: 0; }
 }
 
-/* like button (patches + packs) */
-/* fixed minimum widths so a like/download count appearing or growing doesn't
-   shift the controls beside it (list rows right-align their actions) */
-.btn.like { padding: 6px 10px; gap: 5px; flex-shrink: 0; min-width: 56px; justify-content: center; font-variant-numeric: tabular-nums; }
+/* like button (patches + packs): a square icon button like the others; its
+   count lives in the Popularity cell */
+.btn.like { flex-shrink: 0; }
 .btn.like svg { flex-shrink: 0; }
 .btn.like.active { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
 .btn.like.active svg { animation: like-pop .22s cubic-bezier(.22,1,.36,1); }
@@ -337,10 +367,14 @@ a.list-row { text-decoration: none; color: inherit; }
   .btn.like.active svg { animation: none; }
 }
 
-/* download count (patches + packs), read-only, sits next to the like button */
-.dl-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--muted); flex-shrink: 0;
-  min-width: 40px; font-variant-numeric: tabular-nums; }
+/* download + favorite counts, read-only (like.tsx Popularity): stacked in a
+   list's Popularity column, side by side on cards */
+.dl-count { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); flex-shrink: 0;
+  font-variant-numeric: tabular-nums; }
 .dl-count svg { flex-shrink: 0; }
+.fav-count.mine { color: var(--orange); }
+.popularity { display: inline-flex; flex-direction: column; gap: 2px; line-height: 1.2; }
+.popularity.inline { flex-direction: row; gap: 14px; }
 
 /* browse sort control shares the filter-row input look */
 select.sort-select { flex-shrink: 0; }

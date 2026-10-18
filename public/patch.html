@@ -45,6 +45,14 @@
     details.raw-json > summary { cursor: pointer; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
     details.raw-json > summary:hover { color: var(--text); }
     details.raw-json[open] > summary { margin-bottom: 10px; }
+    /* ── HELP (bottom of the page, folded) ── */
+    .help-list { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 10px 20px; max-width: 860px; margin: 4px 0 6px; }
+    .help-list dt { font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--text); padding-top: 2px; }
+    .help-list dd { font-size: 12px; font-weight: 300; color: var(--muted); line-height: 1.65; margin: 0; }
+    .help-list b { font-weight: 700; color: var(--text); }
+    .help-list code { background: var(--border); padding: 1px 4px; border-radius: 2px; }
+    .help-list kbd { font-family: inherit; font-size: 10px; padding: 0 4px; border: 1px solid var(--border); border-radius: 2px; color: var(--text); }
+    @media (max-width: 640px) { .help-list { grid-template-columns: 1fr; gap: 2px; } .help-list dd { margin-bottom: 10px; } }
     .raw-hint { font-size: 11px; font-weight: 300; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
     .raw-hint code { background: var(--border); padding: 1px 4px; border-radius: 2px; }
     .raw-hint a { color: var(--orange); text-decoration: none; font-weight: 700; }
@@ -189,8 +197,7 @@
     .s-hz       { --c: var(--c-hz); }
     .s-tempo    { --c: var(--c-tempo); }
     .s-decimal  { --c: var(--c-decimal); }
-    .scale-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 18px; padding-top: 12px;
-      border-top: 1px solid var(--border); font-size: 10px; color: var(--muted); }
+    .scale-legend { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 10px; color: var(--muted); }
     .scale-legend b { font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
     .scale-legend span { display: inline-flex; align-items: center; gap: 6px; letter-spacing: .06em; }
     .scale-legend i { width: 10px; height: 10px; border-radius: 2px; background: var(--c); }
@@ -260,7 +267,7 @@
       .handle { r: 11; }
       .handle:hover, .handle:focus-visible { r: 13; }
       .clip-item { padding: 11px 12px; }
-      .clip-item-del { font-size: 20px; padding: 0 4px; }
+      .clip-item-del { width: 28px; height: 28px; }
       .tag-chip button { font-size: 15px; }
       .toggle input, .clip-item input[type=checkbox] { width: 18px; height: 18px; }
     }
@@ -318,14 +325,17 @@
     .clip-panel[open] .clip-caret { transform: rotate(90deg); }
     .clip-count { color: var(--muted); }
     .clip-hint { margin-top: 10px; font-size: 10px; font-weight: 300; color: var(--muted); }
-    .clip-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+    /* scrolls past three and a half items, so the cut-off one says "more below" */
+    .clip-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; max-height: 136px; overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
     /* Single-row card: name (flexes + ellipsizes) · synth/fx/lfo chips · time · delete. */
     .clip-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--border); border-radius: 4px; cursor: pointer; background: var(--surface); }
     .clip-item:hover { border-color: #474b54; }
     .clip-item.active { border-color: var(--blue); background: rgba(59,158,234,.07); }
     .clip-item-name { font-size: 11px; font-weight: 700; color: var(--text); flex: 0 0 120px; width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .clip-item-del { background: none; border: none; cursor: pointer; color: var(--muted); font-size: 15px; line-height: 1; padding: 0; flex-shrink: 0; }
-    .clip-item-del:hover { color: var(--text); }
+    .clip-item-del { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; width: 24px; height: 24px; padding: 0;
+      color: var(--muted); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; cursor: pointer; transition: color .15s, border-color .15s; }
+    .clip-item-del svg { width: 12px; height: 12px; }
+    .clip-item-del:hover { color: var(--danger); border-color: var(--danger); }
     .clip-eng { display: inline-flex; align-items: baseline; gap: 4px; flex-shrink: 1; min-width: 0; font-size: 9px;
       background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 2px 6px; }
     .clip-eng-k { flex-shrink: 0; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
@@ -358,12 +368,13 @@
   <section class="intro">
     <h1>Patch editor</h1>
     <p id="introLab">Explore a preset live. The controls and the raw JSON stay in sync.</p>
-    <p id="introLib" hidden>With a pack picked, Save new puts the copy in that pack.</p>
+    <p id="introLib" hidden>Edit a patch with the controls or the raw JSON.</p>
     <p id="introAnon" hidden>Shape a patch and download the <code>.aif</code>. Log in to save your edits.</p>
   </section>
   <script src="/layout-params.js"></script>
   <script src="/mapping-data.js"></script>
   <script src="/knob-model.js"></script>
+  <script src="/engine-art.js"></script>
   <script>
     // Library vs Lab intro, decided before first paint (same rule as LIBRARY_MODE
     // below and the site header); the signed-out variant swaps in once auth answers
@@ -464,6 +475,30 @@
     <section class="viz" id="viz" aria-label="Patch visualization"></section>
 
     <!-- BOTTOM: raw JSON in a full-width advanced panel above the footer -->
+    <details class="raw-json editor-help" id="editorHelp">
+      <summary>Help</summary>
+      <dl class="help-list">
+        <dt>Open</dt>
+        <dd>Pick a pack and a patch at the top, a sample, or <b>Open file</b>. You can also drop an <code>.aif</code> or <code>.json</code> on the top panel.</dd>
+        <dt>New patch</dt>
+        <dd><b>+ New patch</b> in the Patch menu starts from a blank init patch. <b>Save new</b> stores it in your library.</dd>
+        <dt>Save</dt>
+        <dd><b>Update</b> overwrites a patch you own. <b>Save new</b> stores a copy instead, and works on anyone's patch.</dd>
+        <dt>Packs</dt>
+        <dd>With a pack picked, <b>Save new</b> also adds the copy to that pack. That's how you rework a patch, even someone else's, and keep it in your pack.</dd>
+        <dt>Copy &amp; paste</dt>
+        <dd><b>Copy</b> puts the whole patch on the clipboard, which keeps your last 10 copies in this browser. Pick one there, then press <b>Paste</b> on a section to take just that section, or <b>Paste all</b> to take every section and keep this patch's name. On drum patches, <b>Copy pad</b> copies a single pad.</dd>
+        <dt>Tags</dt>
+        <dd>On your own patches, add up to 7 tags and press <b>Save tags</b>.</dd>
+        <dt>Knobs</dt>
+        <dd>Drag or scroll a knob, or type its raw value; selectors list their named options. On the envelope, drag the points or nudge them with the arrow keys. <kbd>Ctrl</kbd>+<kbd>Z</kbd> undoes, <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Z</kbd> redoes.</dd>
+        <dt>Knob color</dt>
+        <dd class="scale-legend" id="scaleLegend" aria-label="Knob colors"></dd>
+        <dt>Download</dt>
+        <dd>The download button builds a device-loadable <code>.aif</code>. Sampler patches carry a placeholder tone, since sample audio isn't stored.</dd>
+      </dl>
+    </details>
+
     <details class="raw-json" id="rawJson">
       <summary>Advanced &middot; Raw JSON</summary>
       <p class="raw-hint">Patches are stored as a small JSON blob to keep them tiny. Curious how the
@@ -501,22 +536,6 @@ const LOOKUP = window.OP1_KNOB.LOOKUP;
 const getRange = window.OP1_KNOB.range;
 
 /* ── Sample presets (baked in) ───────────────────────────── */
-/*
-const SAMPLES = {
-  'cluster - cluster pad': {"adsr":[1600,10688,32767,14272,2048,4160,4000,4000],"fx_active":false,"fx_params":[4132,13409,2048,16392,8000,8000,8000,8000],"fx_type":"delay","knobs":[15616,30271,12288,309,0,0,0,0],"lfo_active":false,"lfo_params":[7168,32767,1024,11040,0,0,0,0],"lfo_type":"element","mtime":1782342081.0,"name":"cluster pad","octave":0,"synth_version":2,"type":"cluster"},
-  'dbox - drum kit': {"dbox_data":[[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[-24320,0,0,0,0,0,0,0],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607],[0,0,2917,974,7167,0,2592,4607]],"drum_version":2,"dyna_env":[-32768,0,-32768,0,0,0,0,0],"fx_active":false,"fx_params":[0,0,0,0,0,0,0,0],"fx_type":"cwo","lfo_active":false,"lfo_params":[1024,-32767,1024,2464,0,0,0,0],"lfo_type":"element","mtime":1782233500,"name":"drum kit","octave":0,"type":"dbox"},
-  'digital - digital': {"adsr":[2112,8128,0,7232,2048,6464,4000,4000],"fx_active":true,"fx_params":[8000,11447,10660,18368,0,0,0,0],"fx_type":"delay","knobs":[31743,7424,-25088,0,0,0,0,0],"lfo_active":true,"lfo_params":[5808,-21615,4480,15360,0,0,0,0],"lfo_type":"element","name":"digital","octave":0,"synth_version":2,"type":"digital"},
-  'dimension - kaini': {"adsr":[64,5440,22016,4672,6144,5440,18432,21093],"fx_active":true,"fx_params":[17059,0,17704,15325,0,0,0,0],"fx_type":"mother","knobs":[9309,0,10560,26609,0,0,0,0],"lfo_active":true,"lfo_params":[7680,2617,2816,10560,0,0,0,0],"lfo_type":"value","mtime":1657634875.0,"name":"kaini","octave":0,"synth_version":3,"type":"dimension"},
-  'dna - 20130528_1601': {"adsr":[64,64,21504,7616,2048,6432,4000,4000],"fx_active":true,"fx_params":[5184,17408,7095,9856,0,0,0,0],"fx_type":"nitro","knobs":[-14131,10608,0,30720,0,0,0,0],"lfo_active":true,"lfo_params":[1024,19744,4928,15360,0,0,0,0],"lfo_type":"element","name":"20130528_1601","octave":1,"synth_version":1,"type":"dna"},
-  'drwave - 8bit water level': {"adsr":[2112,4544,0,15296,2048,4544,4000,4000],"fx_active":false,"fx_params":[5620,0,10500,11392,0,0,0,0],"fx_type":"nitro","knobs":[16409,204,8167,0,32767,0,0,0],"lfo_active":true,"lfo_params":[23168,1604,4534,14068,0,0,0,0],"lfo_type":"tremolo","name":"8bit water level dr wave","octave":1,"synth_version":2,"type":"drwave"},
-  'dsynth - 20181230_0340': {"adsr":[8768,16320,10240,4160,8192,8896,4000,4000],"fx_active":true,"fx_params":[8000,10624,8328,10168,0,0,0,0],"fx_type":"delay","knobs":[5576,0,32767,32767,23255,0,0,15743],"lfo_active":true,"lfo_params":[4912,8265,2000,2000,0,0,0,0],"lfo_type":"element","name":"20181230_0340","octave":2,"synth_version":2,"type":"dsynth"},
-  'fm - 20180804_0241': {"adsr":[64,9664,0,2112,4077,64,4000,4000],"fx_active":true,"fx_params":[12720,10668,2000,12801,8000,8000,8000,8000],"fx_type":"spring","knobs":[25600,28505,12800,0,15000,0,100,1500],"lfo_active":true,"lfo_params":[19914,1953,0,10742,0,0,0,0],"lfo_type":"tremolo","name":"20180804_0241","octave":0,"synth_version":2,"type":"fm"},
-  'phase - blade_bubbles': {"adsr":[2959,8104,31066,206,2048,3591,4000,4000],"fx_active":true,"fx_params":[667,256,29784,10744,0,0,0,0],"fx_type":"cwo","knobs":[9291,18038,17567,30729,0,0,0,0],"lfo_active":true,"lfo_params":[1783,29728,1517,31953,0,0,0,0],"lfo_type":"random","name":"blade_bubbles","octave":-4,"synth_version":2,"type":"phase"},
-  'pulse - 20200216_1415': {"adsr":[12224,16320,0,64,2048,64,4000,4000],"fx_active":true,"fx_params":[7168,15360,22527,13312,0,0,0,0],"fx_type":"cwo","knobs":[19328,13904,7584,-8192,0,0,0,0],"lfo_active":true,"lfo_params":[0,12825,9744,4320,0,0,0,0],"lfo_type":"value","name":"20200216_1415","octave":-1,"synth_version":2,"type":"pulse"},
-  'string - acguitar': {"adsr":[3648,64,32767,3008,4000,6464,4000,4000],"fx_active":true,"fx_params":[4608,7493,4497,8494,8000,8000,8000,8000],"fx_type":"delay","knobs":[3648,4192,8192,11328,0,0,0,0],"lfo_active":true,"lfo_params":[6120,15184,1648,12960,0,0,0,0],"lfo_type":"value","name":"acguitar","octave":0,"synth_version":1,"type":"string"},
-  'voltage - arp1lead': {"adsr":[4672,9664,7168,7744,5120,64,4000,4000],"fx_active":true,"fx_params":[3136,-15360,13545,10048,0,0,0,0],"fx_type":"nitro","knobs":[6336,0,22527,0,0,0,0,0],"lfo_active":true,"lfo_params":[10728,6952,10208,13984,0,0,0,0],"lfo_type":"value","name":"arp1lead","octave":0,"synth_version":2,"type":"voltage"},
-};
-*/
 const SAMPLES = {
   'cluster - angoisse-5115': {"adsr":[16320,6650,32767,15808,3997,4000,4000,4000],"fx_active":true,"fx_params":[0,0,1600,32767,0,0,0,0],"fx_type":"cwo","knobs":[17408,30719,24064,3,0,0,0,0],"lfo_active":true,"lfo_params":[22927,9120,1184,16457,0,0,0,0],"lfo_type":"random","name":"angoisse-5115","octave":0,"synth_version":2,"type":"cluster"},
   'cluster - arpangel': {"adsr":[2112,6592,24064,9792,2048,64,18432,16384],"fx_active":true,"fx_params":[17000,0,4712,17000,0,0,0,0],"fx_type":"mother","knobs":[10240,6136,8608,564,0,0,0,0],"lfo_active":true,"lfo_params":[6656,16723,2000,9216,0,0,0,0],"lfo_type":"value","mtime":1745489750.0,"name":"arpangel","octave":1,"synth_version":3,"type":"cluster"},
@@ -751,69 +770,8 @@ const isDbox = () => state.type === 'dbox' || 'drum_version' in state;
 const nearestSample = window.OP1_KNOB.nearest;
 const fmtValue = window.OP1_KNOB.display;
 function fillPct(eng, idx, raw) { return window.OP1_KNOB.frac(eng, idx, raw) * 100; }
-/* ── Engine illustrations (generated SVG) ────────────────── */
-function poly(fn, x0, x1, mid, amp, steps) {
-  const pts = [];
-  for (let i = 0; i <= steps; i++) { const t = i / steps; pts.push((x0 + (x1 - x0) * t).toFixed(1) + ',' + (mid - amp * fn(t)).toFixed(1)); }
-  return pts.join(' ');
-}
-const sine = c => t => Math.sin(t * Math.PI * 2 * c);
-function engineArt(type) {
-  const W = 120, H = 72;
-  let inner = '';
-  switch (type) {
-    case 'fm':
-      inner = `<circle cx="34" cy="36" r="13" fill="none"/><circle cx="86" cy="36" r="13" fill="none" class="ac"/>
-        <line x1="47" y1="36" x2="73" y2="36" class="ac"/><path d="M68 31 l6 5 -6 5" fill="none" class="ac"/>
-        <polyline points="${poly(sine(2),18,50,36,7,40)}" fill="none"/>
-        <polyline points="${poly(sine(5),72,104,36,7,40)}" fill="none" class="ac"/>`; break;
-    case 'string':
-      inner = `<line x1="16" y1="14" x2="16" y2="58"/><line x1="104" y1="14" x2="104" y2="58"/>
-        <path d="M16 36 Q60 12 104 36" fill="none" class="ac"/><path d="M16 36 Q60 60 104 36" fill="none" opacity=".5"/>`; break;
-    case 'pulse':
-      inner = `<polyline points="14,52 14,20 44,20 44,52 74,52 74,20 104,20 104,52" fill="none" class="ac"/>`; break;
-    case 'sampler':
-      inner = `<polyline points="${poly(t=>Math.sin(t*Math.PI*9)*(0.4+0.6*Math.sin(t*Math.PI)),16,104,36,22,90)}" fill="none"/>
-        <path d="M30 14 v44 M30 14 h6 M30 58 h6" class="ac" fill="none"/>
-        <path d="M90 14 v44 M90 14 h-6 M90 58 h-6" class="ac" fill="none"/>`; break;
-    case 'digital':
-      inner = `<polyline points="14,50 30,50 30,30 46,30 46,42 62,42 62,22 78,22 78,40 94,40 94,28 106,28" fill="none" class="ac"/>`; break;
-    case 'dimension':
-      inner = `<rect x="30" y="22" width="40" height="40" fill="none"/><rect x="50" y="12" width="40" height="40" fill="none" class="ac"/>
-        <line x1="30" y1="22" x2="50" y2="12"/><line x1="70" y1="22" x2="90" y2="12"/>
-        <line x1="30" y1="62" x2="50" y2="52"/><line x1="70" y1="62" x2="90" y2="52"/>`; break;
-    case 'dna':
-      inner = `<polyline points="${poly(sine(1.5),16,104,36,16,60)}" fill="none"/>
-        <polyline points="${poly(t=>-Math.sin(t*Math.PI*2*1.5),16,104,36,16,60)}" fill="none" class="ac"/>
-        <line x1="34" y1="26" x2="34" y2="46"/><line x1="60" y1="26" x2="60" y2="46"/><line x1="86" y1="26" x2="86" y2="46"/>`; break;
-    case 'drwave':
-      inner = `<polyline points="${poly(sine(1),14,104,28,9,40)}" fill="none" opacity=".4"/>
-        <polyline points="${poly(sine(2),14,104,40,9,40)}" fill="none" opacity=".7"/>
-        <polyline points="${poly(sine(3),14,104,52,9,40)}" fill="none" class="ac"/>`; break;
-    case 'dsynth': case 'dbox':
-      inner = `<polyline points="${poly(sine(2),14,104,36,16,60)}" fill="none"/>
-        <polyline points="${poly(t=>Math.sign(Math.sin(t*Math.PI*2*2)),14,104,36,14,120)}" fill="none" class="ac"/>`;
-      if (type === 'dbox') inner = `<g class="ac">${[0,1,2,3].map(r=>[0,1,2,3,4,5].map(c=>`<circle cx="${22+c*16}" cy="${18+r*14}" r="3" fill="none"/>`).join('')).join('')}</g>`;
-      break;
-    case 'phase':
-      inner = `<polyline points="${poly(sine(2),14,104,36,14,80)}" fill="none"/>
-        <polyline points="${poly(t=>Math.sin((t+0.18)*Math.PI*2*2),14,104,36,14,80)}" fill="none" class="ac"/>`; break;
-    case 'cluster':
-      inner = `<g class="ac">` + [0,1,2,3,4,5].map(i=>`<line x1="20" y1="${14+i*8}" x2="${30+i*13}" y2="${14+i*8}"/>`).join('') + `</g>
-        <line x1="20" y1="10" x2="20" y2="62"/>`; break;
-    case 'vocoder':
-      inner = `<g class="ac">` + [12,28,40,22,52,34,18,44,26].map((h,i)=>`<rect x="${16+i*11}" y="${56-h}" width="7" height="${h}" fill="none"/>`).join('') + `</g>`; break;
-    case 'voltage':
-      inner = `<polyline points="14,52 38,18 38,52 62,18 62,52 86,18 86,52 104,30" fill="none" class="ac"/>
-        <line x1="14" y1="58" x2="104" y2="58" opacity=".4"/>`; break;
-    case 'amp':
-      inner = `<polygon points="22,28 22,44 38,44 54,56 54,16 38,28" fill="none" class="ac"/>
-        <path d="M64 26 q8 10 0 20 M74 20 q14 16 0 32 M84 14 q20 22 0 44" fill="none"/>`; break;
-    default:
-      inner = `<polyline points="${poly(sine(2),14,104,36,16,80)}" fill="none" class="ac"/>`;
-  }
-  return `<svg viewBox="0 0 ${W} ${H}" class="engine-svg" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none">${inner}</svg>`;
-}
+/* ── Engine illustrations: shared with the Library cards (/engine-art.js) ── */
+const engineArt = window.OP1_ENGINE_ART;
 
 /* ── ADSR scope geometry ─────────────────────────────────── */
 const SC = { W: 560, H: 200, padL: 24, padR: 24, padT: 22, padB: 30, maxT: 16320 };
@@ -1066,9 +1024,6 @@ function render() {
       <div class="param-col">${synthG + lfoG}</div>
     </div>`;
   }
-  html += '<div class="scale-legend" aria-label="Knob colors"><b>Knob color</b>' +
-    [['percent'],['centered'],['discrete'],['selector'],['hz'],['tempo'],['decimal']]
-      .map(([t]) => `<span class="s-${t}"><i></i>${window.OP1_SCALES[t].label}</span>`).join('') + '</div>';
   viz.innerHTML = html;
   renderAllDials();
   updateHistoryBtns();
@@ -1381,7 +1336,7 @@ function renderClipboard() {
       '<span class="clip-item-name">' + clipEsc(c.name || 'untitled') + '</span>' +
       engHtml +
       '<span class="clip-item-time">' + timeAgo(c.ts) + '</span>' +
-      '<button type="button" class="clip-item-del" data-del-idx="' + i + '" title="Remove">×</button>' +
+      '<button type="button" class="clip-item-del" data-del-idx="' + i + '" title="Remove from clipboard" aria-label="Remove from clipboard"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 4.5h11M6.5 4.5V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1.5M4 4.5l.7 8.6a1 1 0 0 0 1 .9h4.6a1 1 0 0 0 1-.9l.7-8.6M6.8 7v4.5M9.2 7v4.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
     '</div>';
   }).join('');
   updatePasteVisibility();
@@ -1906,6 +1861,9 @@ const rawJson = document.getElementById('rawJson');
 rawJson.addEventListener('toggle', () => { if (rawJson.open) resizeEditor(); });
 
 /* ── Init ────────────────────────────────────────────────── */
+document.getElementById('scaleLegend').innerHTML =
+  ['percent', 'centered', 'discrete', 'selector', 'hz', 'tempo', 'decimal']
+    .map(t => `<span class="s-${t}"><i></i>${window.OP1_SCALES[t].label}</span>`).join('');
 // Library: start from the init patch until a stored patch opens (a user with
 // no patches stays on it). Lab: a sample, to explore the format.
 if (LIBRARY_MODE) loadInit(false); else loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
