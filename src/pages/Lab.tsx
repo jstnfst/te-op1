@@ -298,10 +298,10 @@ function SlotPanel({ panelRef, engine, slot, preview, onSlot }: PanelProps) {
       <div className="fpanel-title">
         <span className="fpanel-idx">[{slot.idx}]</span>
         <span className="fpanel-name">{slot.name ?? (slot.type === "fixed" ? "Fixed constant" : "Unused")}</span>
+        {slot.name && meta && <span className={`scale-chip chip-${slot.type}`}>{meta.label}</span>}
       </div>
-      {slot.name && meta && (
-        <p className="fpanel-scale"><span className={`scale-chip chip-${slot.type}`}>{meta.label}</span>{meta.desc}</p>
-      )}
+      {/* fixed two-line box: a longer description never pushes the dial down */}
+      {slot.name && <p className="fpanel-scale">{meta?.desc}</p>}
 
       {slot.name && (k.mode === "turn" || k.pts.length > 0) ? (
         <>
@@ -338,7 +338,8 @@ function SlotPanel({ panelRef, engine, slot, preview, onSlot }: PanelProps) {
         </p>
       )}
 
-      {slot.name && slot.info && <p className="fpanel-info">{slot.info}</p>}
+      {/* always present for a named slot, so slots with and without a note keep one height */}
+      {slot.name && <p className="fpanel-info">{slot.info}</p>}
 
       <div className="fpanel-links">
         <a href={`/lab/layout#${engine.key}`}>Layout card →</a>

@@ -41,7 +41,7 @@ export default function Library() {
           <p className="lead">
             Community patches for the OP-1 Field.
             {user
-              ? <> Yours are in <Link to="/library/mine">Mine</Link>.</>
+              ? <> Yours are in <Link to="/library/mine#patches">Mine</Link>.</>
               : <> <Link to={loginPath("/library")}>Log in</Link> to like, build packs, and upload.</>}
           </p>
         </div>

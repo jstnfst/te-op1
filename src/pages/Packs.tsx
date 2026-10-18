@@ -84,8 +84,7 @@ export function PackItem({ p, view, showAuthor, onLiked, community, owner }: Pac
   return (
     <Link className="list-row" to={`/library/packs/${p.id}`}>
       <span className="list-type">
-        {owner ? vis
-          : community && !p.is_mine
+        {community && !p.is_mine
           ? <span className="list-owner">{p.author ?? ""}</span>
           : <PackChip p={p} community={community} />}
       </span>
@@ -95,7 +94,7 @@ export function PackItem({ p, view, showAuthor, onLiked, community, owner }: Pac
       </span>
       <span className="list-count">{patchCount(p.item_count)}</span>
       <span className="list-dls"><Popularity downloads={p.download_count} like={like} /></span>
-      <div className="list-actions"><LikeButton like={like} />{del}</div>
+      <div className="list-actions"><LikeButton like={like} />{vis}{del}</div>
     </Link>
   )
 }
@@ -135,7 +134,7 @@ export function MyPacks({ pageParam = "ppage" }: { pageParam?: string }) {
 
   const count = list.total
   return (
-    <Collapsible storageKey="te-op1-packs-mine-open" summary={`My packs${count === null ? "" : ` (${count})`}`}>
+    <Collapsible id="packs" storageKey="te-op1-packs-mine-open" summary={`My packs${count === null ? "" : ` (${count})`}`}>
       <div className="browse-head" style={{ margin: "16px 0 12px" }}>
         <div className="row">
           <input
@@ -231,7 +230,7 @@ export default function Packs() {
           <p className="lead">
             Curated sets of patches, downloaded as one .zip.
             {user
-              ? <> Yours are in <Link to="/library/mine">Mine</Link>.</>
+              ? <> Yours are in <Link to="/library/mine#packs">Mine</Link>.</>
               : <> <Link to={loginPath("/library/packs")}>Log in</Link> to build your own.</>}
           </p>
         </div>

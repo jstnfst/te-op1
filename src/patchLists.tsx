@@ -229,7 +229,7 @@ export function MyPatches({ selection }: { selection: Selection }) {
   const ext = view === "list" ? "list-act-ext" : ""
 
   return (
-    <Collapsible storageKey="te-op1-patches-mine-open" summary={`My patches${list.total === null ? "" : ` (${list.total})`}`}>
+    <Collapsible id="patches" storageKey="te-op1-patches-mine-open" summary={`My patches${list.total === null ? "" : ` (${list.total})`}`}>
       {err && <p className="error">{err}</p>}
       <div className="browse-head">
         <span className="browse-count" />

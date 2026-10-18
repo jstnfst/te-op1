@@ -88,11 +88,14 @@
 .fpanel-slotkey:hover { color: var(--text); }
 .fpanel-slotkey.on { color: var(--text); border-color: var(--border); background: var(--bg); }
 
-.fpanel-title { display: flex; align-items: baseline; gap: 8px; }
+/* index, name, and the scale chip on one line; the chip keeps to the right */
+.fpanel-title { display: flex; align-items: baseline; gap: 8px; min-width: 0; }
+.fpanel-title .scale-chip { margin-left: auto; flex-shrink: 0; align-self: center; }
 .fpanel-idx { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.fpanel-name { font-size: 16px; font-weight: 700; line-height: 1.3; }
-.fpanel-scale { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 8px; margin-top: 6px; font-size: 11px; font-weight: 300;
-  color: var(--muted); line-height: 1.5; }
+.fpanel-name { font-size: 16px; font-weight: 700; line-height: 1.3; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* two lines reserved (and at most two shown), whatever the scale's description */
+.fpanel-scale { margin-top: 6px; font-size: 11px; font-weight: 300; color: var(--muted); line-height: 1.5;
+  min-height: 3em; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; }
 
 .fpanel-dial { display: flex; align-items: center; gap: 16px; margin: 14px 0 6px; }
 .knob-big { width: 120px; height: 120px; flex-shrink: 0; cursor: ns-resize; touch-action: none; user-select: none; }
@@ -118,7 +121,8 @@
 .fpanel-readout > .ro-line { flex-direction: column; align-items: flex-start; gap: 4px; }
 .ro-v.hot { font-size: 16px; font-weight: 800; line-height: 1.3; color: var(--c); overflow-wrap: break-word; }
 .fpanel-readout .ro-arrow { margin: 4px 0 2px; font-size: 11px; color: var(--knob-null); line-height: 1; }
-.fpanel-readout .ro-step { margin-top: 6px; font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--knob-null); }
+/* two lines held for every slot: signed ranges wrap "full turn: lo → hi" onto a second line */
+.fpanel-readout .ro-step { min-height: 2.6em; line-height: 1.3; margin-top: 6px; font-size: 9px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--knob-null); }
 
 .fpanel-axis { margin-top: 10px; }
 .axis-track { position: relative; height: 18px; }
@@ -133,7 +137,7 @@
 .axis-tick.on { background: var(--c); }
 .axis-ends { display: flex; justify-content: space-between; margin-top: 4px; font-size: 9px; color: var(--knob-null); font-variant-numeric: tabular-nums; }
 
-.fpanel-info { margin-top: 10px; font-size: 10px; font-weight: 300; line-height: 1.6; color: var(--muted); }
+.fpanel-info { margin-top: 10px; font-size: 10px; font-weight: 300; line-height: 1.6; color: var(--muted); min-height: 4.8em; }
 .fpanel-empty { margin: 18px 0 8px; font-size: 12px; font-weight: 300; line-height: 1.6; color: var(--muted); }
 .fpanel-links { display: flex; gap: 16px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
 .fpanel-links a { font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); text-decoration: none; }

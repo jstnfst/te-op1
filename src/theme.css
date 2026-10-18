@@ -44,7 +44,7 @@ input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; 
 .lab-issues a { color: var(--text); }
 
 /* collapsible "your own stuff" sections (My packs / My patches) */
-.collapsible { margin: 36px 0 14px; }
+.collapsible { margin: 36px 0 14px; scroll-margin-top: calc(var(--site-header-h, 88px) + 12px); }
 .collapsible > summary { font-size: 11px; font-weight: 700; letter-spacing: .18em; color: var(--muted);
   text-transform: uppercase; cursor: pointer; user-select: none; }
 .collapsible > summary::marker { color: var(--muted); }

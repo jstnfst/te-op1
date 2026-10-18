@@ -47,6 +47,12 @@ function canonicalize(obj: Record<string, unknown>): string {
   return JSON.stringify(sorted)
 }
 
+/** Engine version per synth, for presets that don't carry one (mondo.c synth_version()). */
+const SYNTH_VERSIONS: Record<string, number> = {
+  amp: 3, cluster: 3, digital: 3, dimension: 3, dna: 3, drwave: 2, dsynth: 2,
+  fm: 3, phase: 2, pulse: 2, sampler: 3, string: 3, vocoder: 3, voltage: 2,
+}
+
 export function validatePreset(raw: unknown): ValidateResult {
   let obj: Record<string, unknown>
   if (typeof raw === "string") {
@@ -70,7 +76,10 @@ export function validatePreset(raw: unknown): ValidateResult {
     engine_version = obj.drum_version as number
     if (!Array.isArray(obj.dbox_data)) return { ok: false, error: 'dbox preset needs "dbox_data".' }
   } else {
-    if (!Number.isInteger(obj.synth_version)) return { ok: false, error: 'Preset needs an integer "synth_version".' }
+    // A preset without an engine version (older or hand-made JSON) gets the
+    // engine's own, as mondo build does; only a malformed one is an error.
+    if (obj.synth_version === undefined || obj.synth_version === null) obj = { ...obj, synth_version: SYNTH_VERSIONS[type] ?? 3 }
+    if (!Number.isInteger(obj.synth_version)) return { ok: false, error: '"synth_version" must be an integer.' }
     engine_version = obj.synth_version as number
     if (!isIntArray(obj.adsr, 8)) return { ok: false, error: '"adsr" must be 8 integers (0-32767).' }
     if (!isIntArray(obj.knobs, 8)) return { ok: false, error: '"knobs" must be 8 integers.' }

@@ -315,6 +315,11 @@
     /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
     .clip-panel > summary .clip-active-chip { visibility: hidden; pointer-events: none; }
     .clip-panel > summary.has-chip .clip-active-chip { visibility: visible; pointer-events: auto; }
+    /* deselects the chip's clip; in flow but hidden with it, so the summary never shifts */
+    .clip-clear { font: inherit; font-size: 9px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+      background: none; border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; cursor: pointer; visibility: hidden; pointer-events: none; }
+    .clip-clear:hover { color: var(--text); border-color: var(--text); }
+    .clip-panel > summary.has-chip .clip-clear { visibility: visible; pointer-events: auto; }
 
     /* ── CLIPBOARD PANEL ── */
     .clip-panel { border-top: 1px solid var(--border); padding: 14px 0 6px; margin-top: 6px; }
@@ -359,6 +364,9 @@
     .tag-add-row input[type=text] { font: inherit; font-size: 11px; color: var(--text); background: var(--bg); border: 1px solid var(--border); border-radius: 4px; padding: 5px 8px; width: 110px; }
     .tag-add-row input[type=text]:focus { outline: 1px solid var(--blue); border-color: var(--blue); }
     .tag-save-status { font-size: 10px; color: var(--muted); margin-left: 2px; }
+    /* tags edited but not saved yet: Save tags lights up, "Unsaved" beside it */
+    .btn.unsaved { color: var(--orange); border-color: var(--orange); background: rgba(255,72,0,.1); }
+    .tag-save-status.unsaved { color: var(--orange-ink); }
   </style>
 </head>
 <body data-section="patch">
@@ -465,7 +473,7 @@
       <!-- the clipboard that Copy fills and the Paste buttons read from -->
 
       <details class="clip-panel" id="clipPanel" hidden>
-        <summary><span class="clip-caret">▶</span> Clipboard <span class="clip-count" id="clipCount"></span> <span class="clip-active-chip" id="clipActiveChip"></span></summary>
+        <summary><span class="clip-caret">▶</span> Clipboard <span class="clip-count" id="clipCount"></span> <span class="clip-active-chip" id="clipActiveChip"></span> <button type="button" class="clip-clear" id="clipClear" title="Deselect the copied patch">Clear</button></summary>
         <p class="clip-hint">Pick a copied patch, then use Paste on any section below, or Paste all</p>
         <div class="clip-list" id="clipList"></div>
       </details>
@@ -746,8 +754,13 @@ function initPatch() {
 let state = {};
 let dboxPad = 0;
 function clone(o) { return JSON.parse(JSON.stringify(o)); }
+/* Engine version per synth when a preset doesn't carry one (same table as
+   mondo.c synth_version() and functions/_shared/validate.ts). */
+const SYNTH_VERSIONS = { amp: 3, cluster: 3, digital: 3, dimension: 3, dna: 3, drwave: 2, dsynth: 2,
+  fm: 3, phase: 2, pulse: 2, sampler: 3, string: 3, vocoder: 3, voltage: 2 };
 function normalize(o) {
   o = o || {};
+  if (!o.type) o.type = 'fm';
   if (!Array.isArray(o.knobs)) o.knobs = [0,0,0,0,0,0,0,0];
   if (!Array.isArray(o.fx_params)) o.fx_params = [0,0,0,0,0,0,0,0];
   if (!Array.isArray(o.lfo_params)) o.lfo_params = [0,0,0,0,0,0,0,0];
@@ -758,8 +771,9 @@ function normalize(o) {
       o.dbox_data = Array.from({length: 24}, () => new Array(8).fill(0));
     if (!Array.isArray(o.dyna_env)) o.dyna_env = [0, 8192, 0, 6912, 0, 0, 0, 0];
     if (!o.drum_version) o.drum_version = 2;
+  } else if (!Number.isInteger(o.synth_version)) {
+    o.synth_version = SYNTH_VERSIONS[o.type] || 3;
   }
-  if (!o.type) o.type = 'fm';
   if (!o.fx_type) o.fx_type = 'mother';
   if (!o.lfo_type) o.lfo_type = 'tremolo';
   return o;
@@ -1393,6 +1407,11 @@ function updateActiveClipChips() {
   const summary = document.querySelector('#clipPanel > summary');
   if (summary) summary.classList.toggle('has-chip', !!name);
 }
+document.getElementById('clipClear').addEventListener('click', function (e) {
+  e.preventDefault(); e.stopPropagation();   // a button inside <summary>: don't fold the panel
+  activeClipIdx = -1;
+  saveClipSel(); renderClipboard(); updateActiveClipChips();
+});
 document.getElementById('clipPanel').addEventListener('click', function (e) {
   const del = e.target.closest('[data-del-idx]');
   if (del) { clipRemove(parseInt(del.dataset.delIdx, 10)); return; }
@@ -1873,7 +1892,8 @@ updatePasteVisibility();
 /* ── Community patch tag editor ──
    Tags are editable by the patch owner and admins only (the API enforces the
    same rule); everyone else sees read-only chips. */
-var _patchId = null, _patchTags = [], _tagsEditable = false;
+var _patchId = null, _patchTags = [], _savedTags = [], _tagsEditable = false;
+var _tagSavedTimer = 0;
 const MAX_TAGS = 7;   // same cap as the API; older patches above it keep theirs
 
 function renderTagChips() {
@@ -1887,6 +1907,16 @@ function renderTagChips() {
   inp.disabled = full;
   inp.placeholder = full ? MAX_TAGS + ' tags max' : 'Add tag…';
   document.getElementById('tagAddBtn').disabled = full;
+  updateTagsUnsaved();
+}
+
+/** Mark Save tags while the chips differ from what's stored. */
+function updateTagsUnsaved() {
+  var dirty = _tagsEditable && _patchTags.join(',') !== _savedTags.join(',');
+  var st = document.getElementById('tagStatus');
+  document.getElementById('tagSaveBtn').classList.toggle('unsaved', dirty);
+  if (dirty && st.textContent !== 'Saving…') { st.textContent = 'Unsaved'; st.classList.add('unsaved'); }
+  else if (!dirty && st.textContent === 'Unsaved') { st.textContent = ''; st.classList.remove('unsaved'); }
 }
 
 function removeTag(i) { _patchTags.splice(i, 1); renderTagChips(); }
@@ -1906,7 +1936,7 @@ document.getElementById('tagInput').addEventListener('keydown', function (e) {
 document.getElementById('tagSaveBtn').addEventListener('click', function () {
   if (!_patchId) return;
   var st = document.getElementById('tagStatus');
-  st.textContent = 'Saving…';
+  st.textContent = 'Saving…'; st.classList.remove('unsaved');
   fetch('/api/patches/' + _patchId, {
     method: 'PATCH', credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json' },
@@ -1914,7 +1944,12 @@ document.getElementById('tagSaveBtn').addEventListener('click', function () {
   }).then(function (r) {
     return r.json().then(function (d) { return { ok: r.ok, d: d }; });
   }).then(function (res) {
-    if (res.ok) { st.textContent = 'Saved.'; setTimeout(function () { st.textContent = ''; }, 2000); }
+    if (res.ok) {
+      _savedTags = _patchTags.slice();
+      st.classList.remove('unsaved');
+      document.getElementById('tagSaveBtn').classList.remove('unsaved');
+      st.textContent = 'Saved.'; clearTimeout(_tagSavedTimer); _tagSavedTimer = setTimeout(function () { if (st.textContent === 'Saved.') { st.textContent = ''; updateTagsUnsaved(); } }, 2000);
+    }
     else { st.textContent = res.d.error || 'Error saving.'; }
   }).catch(function () { st.textContent = 'Network error.'; });
 });
@@ -1923,6 +1958,7 @@ function showPatchTags(id, tagsStr, canEdit) {
   _patchId = id;
   _tagsEditable = !!canEdit;
   _patchTags = tagsStr.split(',').map(function (t) { return t.trim(); }).filter(Boolean);
+  _savedTags = _patchTags.slice();
   renderTagChips();
   document.querySelector('.tag-add-row').hidden = !_tagsEditable;
   // Read-only viewers with no tags to look at get no section at all.
@@ -1946,7 +1982,9 @@ function loadCommunityPatch(id) {
       return r.json();
     })
     .then(function (d) {
-      if (d && d.preset && typeof loadPreset === 'function') loadPreset(d.preset);
+      // the row's own name / engine fill anything the stored preset lacks
+      if (d && d.preset && typeof loadPreset === 'function')
+        loadPreset(Object.assign({ name: d.name, type: d.type, fx_type: d.fx_type || undefined, lfo_type: d.lfo_type || undefined, octave: d.octave }, d.preset));
       if (d) {
         sampleSel.selectedIndex = -1;
         if (userSel) userSel.value = String(id);   // reflect the patch in the USER picker if present
