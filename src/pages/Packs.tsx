@@ -97,7 +97,7 @@ export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolea
       storageKey="te-op1-packs-mine-open"
       className={shelf ? "shelf" : undefined}
       summary={shelf
-        ? <><span className="shelf-title">Your packs</span>{count !== null && <span className="shelf-count">{count}</span>}<span className="shelf-sub">public and private packs you've made</span></>
+        ? <><span className="shelf-title">Your packs</span>{count !== null && <span className="shelf-count">{count}</span>}</>
         : `My packs${count === null ? "" : ` (${count})`}`}
     >
       <div className="browse-head" style={{ margin: shelf ? "4px 0 12px" : "16px 0 12px" }}>
@@ -120,7 +120,7 @@ export function MyPacks({ shelf = false, pageParam = "ppage" }: { shelf?: boolea
         view={view}
         noun={["pack", "packs"]}
         pageParam={pageParam}
-        empty={<p className="muted">No packs yet. Create one above, then add patches from the <Link to="/library">library</Link>.</p>}
+        empty={<p className="muted">No packs yet</p>}
         columns={packColumns()}
         renderItem={(p) => <PackItem p={p} view={view} showAuthor={false} />}
       />
@@ -183,9 +183,8 @@ export default function Packs() {
     <>
       <h1 className="hero-title">Packs</h1>
       <p className="lead">
-        Curated sets of patches, downloaded as a single .zip of .aif files. To make one, select
-        patches in <Link to="/library">Browse</Link> and choose Add to pack{user ? ", or name an empty pack below" : ""}.
-        {!user && <> <Link to={loginPath("/library/packs")}>Log in</Link> to build and share your own.</>}
+        Curated sets of patches, downloaded as one .zip.
+        {!user && <> <Link to={loginPath("/library/packs")}>Log in</Link> to build your own.</>}
       </p>
 
       {user && <MyPacks shelf pageParam="ypage" />}

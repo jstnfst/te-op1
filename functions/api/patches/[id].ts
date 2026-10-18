@@ -1,7 +1,7 @@
 import type { Env } from "../../_shared/env"
 import { getSessionUser, json } from "../../_shared/session"
 import { validatePreset } from "../../_shared/validate"
-import { deriveTags } from "../../_shared/tags"
+import { deriveTags, MAX_TAGS } from "../../_shared/tags"
 import { isAdmin } from "../../_shared/admin"
 
 interface PatchRow {
@@ -75,8 +75,11 @@ export const onRequestPatch: PagesFunction<Env> = async ({ params, env, request 
   if (typeof body.name === "string" && body.name.trim()) { binds.push(body.name.trim()); sets.push(`name = ?${binds.length}`) }
   if (typeof body.is_public === "boolean") { binds.push(body.is_public ? 1 : 0); sets.push(`is_public = ?${binds.length}`) }
   if (typeof body.tags === "string") {
-    const normalized = [...new Set(body.tags.split(",").map((t: string) => t.trim().toLowerCase().replace(/[^a-z0-9-]/g, "")).filter(Boolean))].join(",")
-    binds.push(normalized); sets.push(`tags = ?${binds.length}`)
+    const next = [...new Set(body.tags.split(",").map((t: string) => t.trim().toLowerCase().replace(/[^a-z0-9-]/g, "")).filter(Boolean))]
+    const had = new Set(row.tags.split(",").filter(Boolean))
+    if (next.length > MAX_TAGS && next.some((t) => !had.has(t)))
+      return json({ error: `Up to ${MAX_TAGS} tags.` }, { status: 400 })
+    binds.push(next.join(",")); sets.push(`tags = ?${binds.length}`)
   }
   if (body.json !== undefined) {
     const v = validatePreset(body.json)

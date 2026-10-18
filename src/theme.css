@@ -67,7 +67,6 @@ input[type=search].search-big { flex: 1 1 320px; min-width: 0; font-size: 13px; 
 .collapsible.shelf:not([open]) > summary::after { transform: rotate(90deg); }
 .collapsible.shelf > summary:hover::after { color: var(--text); }
 .shelf-count { font-size: 11px; font-weight: 700; color: var(--muted); border: 1px solid var(--border); border-radius: 2px; padding: 1px 6px 0; }
-.shelf-sub { font-size: 11px; font-weight: 300; color: var(--muted); }
 .shelf .collapsible-body { margin-top: 16px; }
 
 /* titled page section (Packs: "Community packs"), same heading scale as the shelf */

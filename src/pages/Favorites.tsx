@@ -21,12 +21,12 @@ export default function Favorites() {
     <>
       <p className="eyebrow">Library</p>
       <h1 className="hero-title">Favorites</h1>
-      <p className="lead">Everything you've liked, newest first. Unlike something and it leaves this page.</p>
+      <p className="lead">Everything you've liked, newest first.</p>
 
       {none ? (
         <p className="muted">
-          Nothing saved yet. Tap the heart on any <Link to="/library">patch</Link> or{" "}
-          <Link to="/library/packs">pack</Link> and it lands here.
+          Nothing yet. Find some <Link to="/library">patches</Link> or{" "}
+          <Link to="/library/packs">packs</Link>.
         </p>
       ) : (
         <>

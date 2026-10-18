@@ -191,7 +191,7 @@ export function SelectionToolbar({
   selection,
   selectAll,
   extra,
-  hint = "Select patches to download them together or add them to a pack",
+  hint = "Select patches",
 }: {
   selection: Selection
   /** All ids in scope (fetched on demand) and how many there are. */

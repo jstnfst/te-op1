@@ -232,9 +232,6 @@ export default function Pack() {
               count: items.total ?? pack.item_count,
               ids: () => apiGet<{ ids: number[] }>(`/api/packs/${pack.id}/items?ids=1`).then((d) => d.ids),
             }}
-            hint={pack.is_owner
-              ? "Select patches to download them, copy them into another pack, or remove them from this one"
-              : "Select patches to download just those, or add them to one of your packs"}
             extra={pack.is_owner ? (ids, done) => (
               <button className="btn danger" disabled={!ids.length || !!removing} onClick={() => removeMany(ids, done)}>
                 {removing || "Remove from pack"}
@@ -245,7 +242,7 @@ export default function Pack() {
         empty={
           <p className="muted pack-empty">
             {pack.is_owner
-              ? <>No patches in this pack yet. Select some in <Link to="/library">Browse</Link> and choose Add to pack.</>
+              ? <>Empty. Add patches from <Link to="/library">Browse</Link>.</>
               : "No patches in this pack yet"}
           </p>
         }

@@ -228,7 +228,7 @@ export default function Home() {
             <div className="fork-body">
               <div>
                 <div className="fork-title">Find a sound</div>
-                <p className="fork-desc">Browse community patches, download the .aif, and load it onto your OP-1. Share your own when you're ready.</p>
+                <p className="fork-desc">Community patches, ready to load onto your OP-1</p>
               </div>
               <KnobGlyph index={dial} />
             </div>

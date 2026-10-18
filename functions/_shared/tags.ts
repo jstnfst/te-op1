@@ -22,6 +22,10 @@ const LFO_MOTION: Record<string, string> = {
   random: "random", velocity: "dynamic", midi: "midi",
 }
 
+// Most tags a user can give a patch. Patches already above it keep their tags
+// (and can drop some); they just can't add more.
+export const MAX_TAGS = 7
+
 // The engine type is deliberately NOT tagged: cards/rows already show it as
 // the engine chip, and browse filters on the type column directly.
 export function deriveTags(p: Presetish): string[] {

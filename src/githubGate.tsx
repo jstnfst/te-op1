@@ -17,7 +17,7 @@ export default function RequireGithubIssues({ title, children }: { title: string
       <>
         <h1 className="hero-title">{title}</h1>
         <p className="lead">
-          Filing an issue posts it to GitHub under your own account, so this tab needs a GitHub sign-in.
+          Issues post to GitHub under your account.
         </p>
         <p className="muted"><Link to={loginPath(location.pathname + location.search)}>Log in with GitHub</Link> to continue.</p>
       </>
@@ -29,8 +29,7 @@ export default function RequireGithubIssues({ title, children }: { title: string
       <>
         <h1 className="hero-title">{title}</h1>
         <p className="lead">
-          Issues are filed on GitHub as you, so this tab is only available when you're signed in
-          with a GitHub account. You're currently signed in with {user.provider}.
+          Issues post to GitHub under your account. You're signed in with {user.provider}.
         </p>
         <p className="muted"><a className="btn primary" href="/api/auth/github">Continue with GitHub</a></p>
       </>
@@ -42,8 +41,7 @@ export default function RequireGithubIssues({ title, children }: { title: string
       <>
         <h1 className="hero-title">{title}</h1>
         <p className="lead">
-          Reporting issues needs one more permission from GitHub (to post issues as you). You've
-          signed in before this was added - reconnect to pick it up.
+          GitHub needs one more permission to post issues as you.
         </p>
         <p className="muted"><a className="btn primary" href="/api/auth/github">Reconnect GitHub</a></p>
       </>

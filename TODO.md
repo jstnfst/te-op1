@@ -1,24 +1,22 @@
-# claude sits in an ivory tower
-claude needs to bring other people onto his level. claude keeps his scripts for deployment, testing, dev server startup and teardown, why would we do this? we need to create a ./master-control.sh bash script that handles everything that we need to handle in this project: build, test, deploy, commit, push, everything that we would normally see scripted by our claude agent but that we should really ship as a feature of the development environment. master-control.sh should use subcommands to help choose the functionality that is executed. examples:
+# the lab/layout filter is in two places
+directly underneath the layout tab in the header is another tab group that filters the results of the knob layouts shown. the SCALE section is yet another filter component. we really ought to have a filter component that makes sense with both of these filters. once the top level filter is chosen (synth, envelope, fx, lfo) that should update the counts on the SCALE filter as well.
 
-subcommand params
-dev status
-dev up
-dev down
-build c
-test website
-webapp typecheck
-webapp build
+# editor page hint text is too focused on a single use case
+generalize the editor page's hint text at the top. "with a pack picked, save new puts the copy in that pack" i mean, that's good hint text but only covers a single use case. perhaps the bottom of the page should have a list of meaningful hints if the user expands a help section. we can elucidate such intricate use cases here for all the elements on this editor: copying, tagging, pack and patch editing, opening files, dragging and dropping, put the knob color legend in the help, etc.
 
-enter plan mode and let's worktogether on this: are there more commands and subcommands that claude usually scripts temporarily and throws away during our sessions that we can reuse for people that don't have claude?
+# the clipboard needs a scroll panel. show at least 3 clipboard items
+the remove clipboard needs to be a trash icon and look more like a button.
 
-# hero on lab hover and the library hover
-right now we have, on the Hero, an ADSR curve in the LAB button that changes onhover, and the animated scope in the hero should be changed to make sense. we have the data required to show an interesting image. lets generate some interesting graphic to show when each of the layout items is hovered. it should be visually interesting, and when swapping between the different layouts should not disturb the visuals too too much -- should be smooth. the default state should show something such that the default state is interesting to look at if the user hovered it and the mouseover exited. also, the library hover state when in the default state (mouseover exit), should also be interesting.
+# library/mine needs a make public/private on packs
+additionally, the make public/private buttons need to be the same width because it messes with the vertical spacing. if there are hundreds or thousands of users, the favorites button should look good vertically, too. in fact, remove the count inside the button, and put the favorite count under the "DOWNLOADS" section, rename that column to "POPULARITY" and show downloads and favorites counts in a column. in fact, change the private/public to an eyeball icon that is closed with a slash over it when private or an open eyeball when public. the confirmation should still show the text, but change to it to CONFIRM? not sure how we're going to maintain the vertical spacing, so maybe just float the confirm button while it's shown.
 
-# nav element for patch editor
-we need an editor nav element "EDITOR" that is activated when the user is editing a patch. we can keep the INSPECTOR nav element in the LAB page. we need a default state for the patch editor that makes sense for logged in and anonymous users who navigate to the EDITOR without first choosing a patch or pack to edit.
+# grid view
+we need to ensure the grid view actually does something meaningful, such as show every tags chip instead of overflow:hidden. the favorites button on the grid chip is not the same height as the rest of the buttons.
 
-# active checkboxes are greyed out but work and other greying out
-when greying out a control, that means it's disabled. however, we can click on ACTIVE checkboxes in the patch editor. never make these "ACTIVE" checkbox controls look disabled, because it seems like they're always able to click. when the controls inside the panel are disabled, even the orange color should become monochrome. I don't like how the section header is greyed out. i think the text should always have the same visibility so don't grey that out either.
+# change every delete button to use a trashcan icon
+grid views and list views use a delete button. change to trash icon to tighten up the display space.
 
+# you reported dead code in public/; remove them if safe to do so
 
+# make the grid view more visually interesting
+and the alignment of things should look good. there should not be a mix of text and button elements in the same control panel surface area.

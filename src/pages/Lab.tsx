@@ -84,16 +84,8 @@ export default function Lab() {
     }
   }
 
-  // counts for the stats line and the legend
-  const stats = useMemo(() => {
-    const byType: Record<string, number> = {}
-    let named = 0
-    for (const e of engines) for (const s of e.slots) {
-      if (s.name) named++
-      if (s.type && s.name) byType[s.type] = (byType[s.type] ?? 0) + 1
-    }
-    return { named, byType }
-  }, [engines])
+  // counts for the stats line and the legend: shared with Layout and Mappings
+  const stats = window.OP1_STATS ?? { engines: 0, namedSlots: 0, fixedSlots: 0, slots: 0, scaleTypes: 0, byType: {} }
   const legend = Object.entries(scales)
     .filter(([k]) => k !== "fixed" && stats.byType[k])
     .sort((a, b) => (stats.byType[b[0]] ?? 0) - (stats.byType[a[0]] ?? 0))
@@ -129,9 +121,9 @@ export default function Lab() {
           </p>
         </div>
         <dl className="lab-stats" aria-label="Coverage">
-          <div><dt>engines</dt><dd>{engines.length}</dd></div>
-          <div><dt>named slots</dt><dd>{stats.named}</dd></div>
-          <div><dt>scale types</dt><dd>{legend.length}</dd></div>
+          <div><dt>engines</dt><dd>{stats.engines}</dd></div>
+          <div><dt>named slots</dt><dd>{stats.namedSlots}</dd></div>
+          <div><dt>scale types</dt><dd>{stats.scaleTypes}</dd></div>
         </dl>
       </header>
 

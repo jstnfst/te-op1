@@ -23,11 +23,8 @@ export default function Library() {
           <p className="eyebrow">Library</p>
           <h1 className="hero-title">Find a sound</h1>
           <p className="lead">
-            Community patches for the OP-1 Field. Open one to see how it's built, download a
-            single .aif, or select several to take them as one .zip or collect them into a pack.
-            {user
-              ? <> Your packs live under <Link to="/library/packs">Packs</Link>.</>
-              : <> <Link to={loginPath("/library")}>Log in</Link> to like patches, build packs, and upload your own.</>}
+            Community patches for the OP-1 Field.
+            {!user && <> <Link to={loginPath("/library")}>Log in</Link> to like, build packs, and upload.</>}
           </p>
         </div>
         <ol className="how-steps" aria-label="How this page works">

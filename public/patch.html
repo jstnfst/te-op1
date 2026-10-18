@@ -69,9 +69,6 @@
       .patch-head .ph-source { margin-left: 0; }
       .ph-rule { margin: 2px 0; }
       .patch-head .ph-source, .patch-head .ph-tags, .patch-head .tag-chips { justify-content: flex-start; }
-      /* stacked, the tags sit right under the actions: the toast takes a line
-         of its own instead of floating over them */
-      .patch-head .toolbar-status { position: static; flex-basis: 100%; margin-top: 0; }
     }
     .ph-id { display: flex; align-items: center; gap: 14px; min-width: 0; }
     .id-art { width: 56px; height: 34px; flex-shrink: 0; color: var(--text); }
@@ -79,7 +76,7 @@
     .engine-svg .ac { stroke: var(--orange); }
     .engine-svg .acf { fill: var(--orange); }
     .ph-id-text { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
-    .ph-engine-row { display: flex; align-items: center; gap: 8px; }
+    .ph-engine-row { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .id-engine { font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--orange); font-size: 11px; }
     /* octave lives on the Keyboard (or Drum box) heading, next to the keys it shifts */
     .oct-pick { display: inline-flex; align-items: center; gap: 6px; }
@@ -276,11 +273,13 @@
     .is-logged-in .tb-save { display: inline-flex; }
     .owner-only { display: none; }
     .is-owner .owner-only { display: inline-flex; }
-    /* Floating status toast: absolutely positioned so it never reflows the toolbar or pushes the page. */
-    .toolbar-status { position: absolute; top: 100%; left: 0; margin-top: 5px; font-size: 10px; color: var(--muted);
-      transition: color .2s; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis;
-      pointer-events: none; z-index: 2; }
+    /* Status of the last action, beside the engine label: right above the
+       patch name it reports on ("DIGITAL · Updated"). */
+    .toolbar-status { min-width: 0; font-size: 10px; font-weight: 400; color: var(--muted);
+      transition: color .2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .toolbar-status:empty { display: none; }
+    .toolbar-status::before { content: '·'; margin-right: 8px; color: var(--muted); }
+    .toolbar-status a { color: inherit; font-weight: 700; }
     .toolbar-status.ok { color: var(--green); }
     .toolbar-status.err { color: var(--danger); }
 
@@ -358,12 +357,9 @@
 <main>
   <section class="intro">
     <h1>Patch editor</h1>
-    <p id="introLab">Load a preset and explore it live. Pick a <b>sample</b>, drag in an <code>.aif</code> or
-      <code>.json</code>, or edit the raw JSON &mdash; the controls and the data stay in sync, both ways.</p>
-    <p id="introLib" hidden>Open a patch from one of your <b>packs</b>, or from all your patches, and edit it with the
-      controls or the raw JSON. Update a patch you own, or save a copy; with a pack picked, the copy goes into that pack.</p>
-    <p id="introAnon" hidden>Start from a <b>sample</b>, or drag in an <code>.aif</code> or <code>.json</code>, shape it with
-      the controls, and download the <code>.aif</code>. Log in to open your own patches and packs and save your edits.</p>
+    <p id="introLab">Explore a preset live. The controls and the raw JSON stay in sync.</p>
+    <p id="introLib" hidden>With a pack picked, Save new puts the copy in that pack.</p>
+    <p id="introAnon" hidden>Shape a patch and download the <code>.aif</code>. Log in to save your edits.</p>
   </section>
   <script src="/layout-params.js"></script>
   <script src="/mapping-data.js"></script>
@@ -386,6 +382,7 @@
           <div class="ph-id-text">
             <div class="ph-engine-row">
               <span class="id-engine" id="idEngine">-</span>
+              <span class="toolbar-status" id="toolbarStatus" role="status"></span>
             </div>
             <input class="id-name" id="nameInput" aria-label="Patch name" autocomplete="off" spellcheck="false">
           </div>
@@ -438,7 +435,6 @@
             <button type="button" class="btn tb-save" title="Save as a new patch in your library">Save new</button>
             <button type="button" class="btn tb-update owner-only" title="Save your changes to this patch">Update</button>
           </div>
-          <span class="toolbar-status" id="toolbarStatus" role="status"></span>
         </div>
 
         <!-- bottom right: tags, only for a stored patch -->
@@ -708,6 +704,24 @@ const SAMPLES = {
   'voltage - voltage_bass-3762': {"adsr":[3648,6208,0,12736,6144,8640,4000,4000],"fx_active":true,"fx_params":[500,0,10287,5504,0,0,0,0],"fx_type":"nitro","knobs":[0,13824,20480,7168,0,0,0,0],"lfo_active":true,"lfo_params":[5808,4984,5136,15360,0,0,0,0],"lfo_type":"element","name":"voltage_bass-3762","octave":-2,"synth_version":2,"type":"voltage"},
   'voltage - voltage_chorus_k-3764': {"adsr":[1600,9792,0,13248,4077,64,4000,4000],"fx_active":true,"fx_params":[0,9216,5120,32767,0,0,0,0],"fx_type":"cwo","knobs":[10240,1535,9216,32767,0,0,0,0],"lfo_active":true,"lfo_params":[10240,1376,8448,5840,0,0,0,0],"lfo_type":"value","name":"voltage_chorus_k-3764","octave":0,"synth_version":2,"type":"voltage"},
 };
+
+/* ── Init patch: the blank starting point for a new patch ──
+   Digital engine with every synth knob at the middle of its range, a plain
+   full-sustain envelope, FX and LFO off. */
+function initPatch() {
+  const knobs = [0, 1, 2, 3, 4, 5, 6, 7].map(function (i) {
+    if (i > 3) return 0;
+    const r = getRange('synth.digital', i);
+    return Math.round((r[0] + r[1]) / 2);
+  });
+  return {
+    adsr: [64, 8128, 32767, 4160, 2048, 64, 4000, 4000],
+    fx_active: false, fx_params: [8000, 11447, 10660, 18368, 0, 0, 0, 0], fx_type: 'delay',
+    knobs: knobs,
+    lfo_active: false, lfo_params: [5808, 4984, 5136, 15360, 0, 0, 0, 0], lfo_type: 'element',
+    name: 'init', octave: 0, synth_version: 2, type: 'digital'
+  };
+}
 
 /* ── State ───────────────────────────────────────────────── */
 let state = {};
@@ -1268,6 +1282,7 @@ document.addEventListener('keydown', function (e) {
 });
 
 function loadPreset(obj) {
+  _onInit = false;
   state = normalize(clone(obj));
   clearUndo();
   syncEditor();
@@ -1503,13 +1518,21 @@ function pasteSection(key) {
 
 /* ── Owner toolbar actions ── */
 var _communityPatchId = null;
-function setToolbarStatus(msg, ok) {
+/** link: optional { href, text } appended after msg (kept up longer so it can be clicked). */
+function setToolbarStatus(msg, ok, link) {
   const el = document.getElementById('toolbarStatus');
   if (!el) return;
   el.textContent = msg;
+  if (link) {
+    const a = document.createElement('a');
+    a.href = link.href; a.textContent = link.text;
+    el.append(' ', a);
+  }
   el.className = 'toolbar-status' + (msg ? (ok ? ' ok' : ' err') : '');
-  if (ok && msg) setTimeout(function () { if (el.textContent === msg) { el.textContent = ''; el.className = 'toolbar-status'; } }, 3000);
+  const shown = el.textContent;
+  if (ok && msg) setTimeout(function () { if (el.textContent === shown) { el.textContent = ''; el.className = 'toolbar-status'; } }, link ? 8000 : 3000);
 }
+function quotedName() { return '"' + (state.name || 'untitled') + '"'; }
 function doUpdate() {
   if (!_communityPatchId) return;
   var json = jsonInput.value;
@@ -1546,11 +1569,11 @@ function doSaveNew() {
           : Promise.resolve(null);
         addToPack.then(function (added) {
           var packName = packSel.value ? packSel.options[packSel.selectedIndex].textContent.replace(/ \(\d+\)$/, '') : '';
-          setToolbarStatus('Saved as patch #' + newId + (added ? ' and added to ' + packName : added === false ? ' (could not add to the pack)' : '') + ' ✓', added !== false);
+          setToolbarStatus('Saved ' + quotedName() + (added ? ' to ' + packName : added === false ? ' (could not add to the pack)' : '') + ' ✓', added !== false);
           return loadCommunityPatch(newId);
         }).then(function () { syncLibraryUrl(); loadPatchList(false); });
       }
-      else if (res.ok) setToolbarStatus('Saved as patch #' + res.d.id + ' ✓', true);
+      else if (res.ok) setToolbarStatus('Saved ' + quotedName() + ' ✓', true, { href: '/library/editor?id=' + res.d.id, text: 'Open' });
       else if (res.status === 401) setToolbarStatus('Sign in to save new.', false);
       else setToolbarStatus(res.d.error || 'Save failed.', false);
     }).catch(function () { setToolbarStatus('Network error.', false); });
@@ -1571,6 +1594,19 @@ const userSel = document.getElementById('userSel');
 const LIBRARY_MODE = location.pathname.indexOf('/library/editor') === 0 || /[?&](id|pack)=/.test(location.search);
 const packSel = document.getElementById('packSel');
 var _packItems = [];   // what the Patch picker currently lists
+const NEW_PATCH = 'new';   // Patch picker value for "+ New patch" (the init patch)
+var _onInit = false;       // the init patch is open, untouched by any other load
+
+/** Open the init patch as an unsaved new patch: Save new stores it. At
+    startup (sync false) the URL is left alone - ?id= / ?pack= haven't been
+    read yet. */
+function loadInit(sync) {
+  loadPreset(initPatch());
+  _onInit = true;
+  clearCommunityPatch();
+  sampleSel.selectedIndex = -1;
+  if (LIBRARY_MODE) { userSel.value = NEW_PATCH; if (sync) syncLibraryUrl(); }
+}
 
 function clearCommunityPatch() {
   document.getElementById('patchTagsSection').hidden = true;
@@ -1592,6 +1628,9 @@ function fillPatchPicker(items) {
   ph.value = ''; ph.disabled = true;
   ph.textContent = items.length ? 'Choose a patch…' : (packSel.value ? 'This pack is empty' : 'No patches yet');
   userSel.appendChild(ph);
+  const fresh = document.createElement('option');
+  fresh.value = NEW_PATCH; fresh.textContent = '+ New patch';
+  userSel.appendChild(fresh);
   items.forEach(p => {
     const o = document.createElement('option');
     o.value = String(p.id);
@@ -1599,7 +1638,8 @@ function fillPatchPicker(items) {
     o.textContent = (p.name || ('patch #' + p.id)) + (p.is_mine === 0 && p.author ? ' (by ' + p.author + ')' : '');
     userSel.appendChild(o);
   });
-  userSel.value = _communityPatchId != null && items.some(p => String(p.id) === String(_communityPatchId)) ? String(_communityPatchId) : '';
+  userSel.value = _communityPatchId != null && items.some(p => String(p.id) === String(_communityPatchId)) ? String(_communityPatchId)
+    : _onInit ? NEW_PATCH : '';
   document.getElementById('userPicker').hidden = false;
 }
 /** Load the Patch picker for the chosen pack ('' = all my patches). */
@@ -1664,6 +1704,7 @@ sampleSel.addEventListener('change', () => {
 packSel.addEventListener('change', () => { syncLibraryUrl(); loadPatchList(false); });
 userSel.addEventListener('change', () => {
   if (!userSel.value) return;
+  if (userSel.value === NEW_PATCH) { loadInit(true); return; }
   loadCommunityPatch(userSel.value).then(syncLibraryUrl);
 });
 
@@ -1865,7 +1906,9 @@ const rawJson = document.getElementById('rawJson');
 rawJson.addEventListener('toggle', () => { if (rawJson.open) resizeEditor(); });
 
 /* ── Init ────────────────────────────────────────────────── */
-loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
+// Library: start from the init patch until a stored patch opens (a user with
+// no patches stays on it). Lab: a sample, to explore the format.
+if (LIBRARY_MODE) loadInit(false); else loadPreset(SAMPLES[Object.keys(SAMPLES)[0]]);
 renderClipboard();
 updatePasteVisibility();
 
@@ -1873,6 +1916,7 @@ updatePasteVisibility();
    Tags are editable by the patch owner and admins only (the API enforces the
    same rule); everyone else sees read-only chips. */
 var _patchId = null, _patchTags = [], _tagsEditable = false;
+const MAX_TAGS = 7;   // same cap as the API; older patches above it keep theirs
 
 function renderTagChips() {
   document.getElementById('tagChips').innerHTML = _patchTags.map(function (t, i) {
@@ -1880,6 +1924,11 @@ function renderTagChips() {
       (_tagsEditable ? '<button type="button" onclick="removeTag(' + i + ')" aria-label="Remove ' + t + '">×</button>' : '') +
       '</span>';
   }).join('');
+  var full = _patchTags.length >= MAX_TAGS;
+  var inp = document.getElementById('tagInput');
+  inp.disabled = full;
+  inp.placeholder = full ? MAX_TAGS + ' tags max' : 'Add tag…';
+  document.getElementById('tagAddBtn').disabled = full;
 }
 
 function removeTag(i) { _patchTags.splice(i, 1); renderTagChips(); }
@@ -1887,7 +1936,7 @@ function removeTag(i) { _patchTags.splice(i, 1); renderTagChips(); }
 document.getElementById('tagAddBtn').addEventListener('click', function () {
   var inp = document.getElementById('tagInput');
   var val = inp.value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
-  if (val && !_patchTags.includes(val)) { _patchTags.push(val); renderTagChips(); }
+  if (val && !_patchTags.includes(val) && _patchTags.length < MAX_TAGS) { _patchTags.push(val); renderTagChips(); }
   inp.value = '';
   inp.focus();
 });

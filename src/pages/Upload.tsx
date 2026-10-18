@@ -68,8 +68,7 @@ export default function Upload() {
     <>
       <h1 className="hero-title">Upload a patch</h1>
       <p className="lead">
-        Drop an OP-1 Field <b>.aif</b> file (or choose one). We read the patch settings out of it and
-        add them to the community library - sampler audio isn't included.
+        Shares the patch settings from an OP-1 Field <b>.aif</b>. Sampler audio isn't included.
       </p>
 
       <div

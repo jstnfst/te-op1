@@ -170,6 +170,7 @@
 <script src="/layout-params.js"></script>
 <script src="/mapping-data.js"></script>
 <script src="/knob-model.js"></script>
+<script src="/op1-stats.js"></script>
 <script>
   // the tables live in /layout-params.js, /mapping-data.js and /knob-model.js
   // (shared with the Lab home, the Mappings page and the patch editor)
@@ -203,14 +204,15 @@
     return { key, group: groupOf(key), pre: dot > 0 ? key.slice(0, dot + 1) : '', name: dot > 0 ? key.slice(dot + 1) : key, slots };
   });
 
-  const named = ENGINES.flatMap(e => e.slots.filter(s => s && s.name));
-  const scaleCount = {};
-  named.forEach(s => { scaleCount[s.scale] = (scaleCount[s.scale] || 0) + 1; });
+  // counts shared with the Lab home and Mappings (op1-stats.js); fixed is a
+  // static legend key, not a filter
+  const STATS = window.OP1_STATS;
+  const scaleCount = Object.assign({}, STATS.byType);
+  delete scaleCount.fixed;
 
   // ── header numbers ──
   document.getElementById('stats').innerHTML = [
-    [ENGINES.length, 'engines'], [named.length, 'named knobs'],
-    [Object.keys(scaleCount).filter(t => t !== 'unknown').length, 'scale types'],
+    [STATS.engines, 'engines'], [STATS.namedSlots, 'named slots'], [STATS.scaleTypes, 'scale types'],
   ].map(([n, l]) => `<div><dt>${l}</dt><dd>${n}</dd></div>`).join('');
 
   // ── filter row ──

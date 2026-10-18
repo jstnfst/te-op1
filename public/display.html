@@ -181,23 +181,26 @@
 
 <script src="/mapping-data.js"></script>
 <script src="/knob-model.js"></script>
+<script src="/layout-params.js"></script>
+<script src="/op1-stats.js"></script>
 <script>
   const SCALE_META = window.OP1_SCALES;
   const DATA = window.OP1_MAPPINGS;
 
   // ── SCALE TYPES, SORTED BY INSTANCE COUNT ───────────────
   // Distribution, scale cards, and the scale filter buttons all list the types
-  // most-common-first, so the ordering itself is information.
-  const counts = {};
-  DATA.forEach(([,,, type]) => { counts[type] = (counts[type] || 0) + 1; });
-  const total = DATA.length;
+  // most-common-first, so the ordering itself is information. Counts are
+  // slots (a fixed "4–7" row is four), shared with the Lab home and Layout.
+  const STATS = window.OP1_STATS;
+  const counts = STATS.byType;
+  const total = STATS.slots;
   const SCALES_BY_COUNT = Object.entries(SCALE_META)
     .filter(([type]) => counts[type])
     .sort((a, b) => counts[b[0]] - counts[a[0]]);
 
   // ── RENDER: STATS ───────────────────────────────────────
   document.getElementById('stats').innerHTML = [
-    [total, 'slots'], [new Set(DATA.map(r => r[0])).size, 'engines'], [SCALES_BY_COUNT.length, 'scale types'],
+    [STATS.engines, 'engines'], [STATS.namedSlots, 'named slots'], [STATS.scaleTypes, 'scale types'],
   ].map(([n, l]) => `<div><dt>${l}</dt><dd>${n}</dd></div>`).join('');
 
   // ── RENDER: DISTRIBUTION + SCALE CARDS ──────────────────
@@ -279,7 +282,7 @@
       tbody.appendChild(row);
     });
     const label = filter === 'all' ? '' : ` · ${(SCALE_META[filter] && SCALE_META[filter].label) || filter}`;
-    document.getElementById('showing').innerHTML = `<b>${shown}</b> of ${total} slots${label}`;
+    document.getElementById('showing').innerHTML = `<b>${shown}</b> of ${DATA.length} rows${label}`;
   }
 
   // Table filter buttons: groups, then scale types (colored like the bar)

@@ -25,5 +25,14 @@ declare global {
       isSelector(eng: string, idx: number): boolean
       isContinuous(eng: string, idx: number): boolean
     }
+    /** public/op1-stats.js: coverage numbers shared by the Lab, Layout, and Mappings pages. */
+    OP1_STATS?: {
+      engines: number
+      namedSlots: number
+      fixedSlots: number
+      slots: number
+      scaleTypes: number
+      byType: Record<string, number>
+    }
   }
 }
