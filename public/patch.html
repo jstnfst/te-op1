@@ -307,9 +307,9 @@
     /* dbox clips: knobs and adsr don't translate to dbox */
     .has-dbox-clip .paste-btn[data-paste="knobs"] { display: none; }
     .has-dbox-clip .paste-btn[data-paste="adsr"] { display: none; }
-    /* dyna paste: only meaningful when a dbox clip is active */
+    /* dyna paste: only meaningful when the clip is a drum patch (dbox or drum kit) */
     .has-clipboard .paste-btn[data-paste="dyna"] { display: none; }
-    .has-dbox-clip .paste-btn[data-paste="dyna"] { display: inline-flex; align-items: center; }
+    .has-dyna-clip .paste-btn[data-paste="dyna"] { display: inline-flex; align-items: center; }
     /* ── ACTIVE CLIP CHIP (in clipboard panel summary) ── */
     .clip-active-chip { display: inline-flex; align-items: center; font: inherit; font-size: 9px; line-height: 1; min-height: 1em; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--blue); background: color-mix(in oklch, var(--blue) 12%, transparent); border: 1px solid color-mix(in oklch, var(--blue) 25%, transparent); border-radius: 4px; padding: 2px 7px; white-space: nowrap; max-width: 140px; overflow: hidden; text-overflow: ellipsis; }
     /* chip stays in flow always so summary height never shifts; visibility driven by has-chip class */
@@ -1396,6 +1396,7 @@ function updatePasteVisibility() {
   v.classList.toggle('has-dbox-clip', isDbox);
   v.classList.toggle('has-dsynth-clip', isDsynth);
   v.classList.toggle('has-pad-clip', isPad);
+  v.classList.toggle('has-dyna-clip', !!clip && !isPad && !!clip.preset && Array.isArray(clip.preset.dyna_env));
   // Keep the drum box paste button label in sync with the active clip type
   const padPasteBtn = v.querySelector('[data-paste="pad"]');
   if (padPasteBtn) padPasteBtn.textContent = isPad ? 'Paste Pad' : 'Paste';
@@ -1482,8 +1483,8 @@ function pasteSection(key) {
   } else if (key === 'octave') {
     if (src.octave != null) state.octave = src.octave;
   } else if (key === 'dyna') {
-    if (src.type !== 'dbox') return;
-    if (src.dyna_env) {
+    // any drum patch carries a dyna env: a dbox, or a drum sample kit
+    if (Array.isArray(src.dyna_env)) {
       for (var i = 0; i < 4; i++) { if (src.dyna_env[i] != null) state.dyna_env[i] = src.dyna_env[i]; }
     }
   }
